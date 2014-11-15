@@ -52,4 +52,6 @@
                ;; #:server-root-path here
                #:extra-files-paths (list htdocs)
                #:servlet-regexp #px"^/srv/.*"
-               )
+	       #:launch-browser? #f
+               #:listen-ip #f
+)
