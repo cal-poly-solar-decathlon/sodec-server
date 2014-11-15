@@ -1,6 +1,7 @@
-#lang racket
+#lang racket/base
 
-(require web-server/servlet
+(require racket/match
+         web-server/servlet
          web-server/servlet-env
          racket/runtime-path
          json)
@@ -42,7 +43,7 @@
                                 (unbox temperature-box)))))]
        [other
         (response/xexpr
-         (~a "other: "other))]
+         (format "other: ~v" other))]
      )])
   )
 
