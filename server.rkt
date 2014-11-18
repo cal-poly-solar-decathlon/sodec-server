@@ -4,10 +4,14 @@
          web-server/servlet
          web-server/servlet-env
          racket/runtime-path
-         json)
+         json
+         db/sqlite3
+         db/base)
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
+
+(sqlite3-connect #:database (build-path here "sodec.db"))
 
 (define INITIAL-TEMPERATURE 60)
 
