@@ -4,22 +4,20 @@
          web-server/servlet
          web-server/servlet-env
          racket/runtime-path
-         json
-         db/sqlite3
-         db/base)
+         "data-model.rkt"
+         json)
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
-(sqlite3-connect #:database (build-path here "sodec.db"))
-
 (define INITIAL-TEMPERATURE 60)
 
 (define temperature-box (box INITIAL-TEMPERATURE))
-
+(define temperature-id (find-device-by-name "Temperature"))
 (thread 
  (lambda ()
    (let loop ()
+     (add-device-status! )
      (set-box! temperature-box
                (+ (unbox temperature-box)
                   (/ (- (random 500) 250) 100)))
