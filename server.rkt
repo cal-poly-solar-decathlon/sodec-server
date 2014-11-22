@@ -1,29 +1,21 @@
 #lang racket/base
 
 (require racket/match
+         racket/runtime-path
          web-server/servlet
          web-server/servlet-env
-         racket/runtime-path
-         "data-model.rkt"
-         json)
+         json
+         "temperatures.rkt"
+         "time.rkt")
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
-(define INITIAL-TEMPERATURE 60)
+;; handle a timestamp request
+(define (handle-timestamp-request)
+  (hash 'timestamp (current-timestamp)))
 
-(define temperature-box (box INITIAL-TEMPERATURE))
-(define temperature-id (find-device-by-name "Temperature"))
-(thread 
- (lambda ()
-   (let loop ()
-     (add-device-status! )
-     (set-box! temperature-box
-               (+ (unbox temperature-box)
-                  (/ (- (random 500) 250) 100)))
-     (sleep 3)
-     (loop))))
-
+;; handle a request
 (define (start req)
   (match req
     [(struct request
@@ -40,9 +32,12 @@
        [(list (struct path/param ("srv" (list)))
               (struct path/param ("temperature" (list))))
         (response/xexpr
-         (jsexpr->string (hash 'temperature
-                               (exact->inexact
-                                (unbox temperature-box)))))]
+         (jsexpr->string 
+          (time (handle-temperature-request))))]
+       [(list (struct path/param ("srv" (list)))
+              (struct path/param ("timestamp" (list))))
+        (response/xexpr
+         (jsexpr->string (handle-timestamp-request)))]
        [other
         (response/xexpr
          (format "other: ~v" other))]
