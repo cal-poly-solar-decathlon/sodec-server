@@ -36,6 +36,11 @@ are not like temperature sensors; instead, there's a stream of discrete
 events, e.g. "occupancy on" and "occupancy off". Push notification is
 probably more important for these sensors.
 
+Hmm... thinking more about APIs, though, I'm not sure there's going
+to be a distinction. Despite the continuous nature of sensors like
+temperature sensors, readings are probably going to arrive in exactly
+the same way as those from discrete events.
+
 Other devices are active.  There's no distinction between continuous
 and discrete, here; a control message simply goes out to a device.
 
@@ -91,6 +96,10 @@ Hmm... we probably need a "heartbeat".
 ... that just gets sent every two or three seconds, to tell the tablets
 that they're still registered.
 
+# Simple REST Api
+
+Independent of the Push interface, I think there's going to have
+to be a simple REST interface for fetching historical data.
 
 # Stress Testing
 
