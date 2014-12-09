@@ -1,30 +1,77 @@
 FORMAT: 1A
 
 # Solar Decathlon Automation
-This API governs the interaction between the solar decathlon wireless client tablets and the central home automation server
+This API governs the interaction between the solar decathlon wireless client 
+tablets and the central home automation server.
 
-# Group Automation
+## Devices
 
-The whole API....
+Devices are named by IDs, which are strings. These strings are essentially
+hard-coded; it's easier that way. There are two kinds of IDs: "sensor IDs"
+and "control IDs". I think it will be easier just to have a convention
+to distinguish them. This is going to reek of 1990's Microsoft hungarian
+notation, but who
+cares.
+
+### Completely tentative list of IDs:
+
+- `s-temp-lr` : the temperature in the living room
+- `s-temp-kit` : the temperature in the kitchen
+- `s-temp-bath` : the temperature in the bathroom
+- `s-occ-bath` : the occupancy sensor in the bathroom
+- `s-amb-bath` : the ambient light sensor in the bathroom
+- `c-bath-toilet-light` : controls the light in the toilet
+- `s-bath-toilet-light` : observes the control messages sent to the light
+     in the toilet
+- `c-bath-sink-light` : controls the light over the sink
+- `s-bath-sink-light` : observes the control messages sent to the light over
+     the bathroom sink
+- ... and so forth.
+
+## Clients
+
+I'm expecting to have to use a 'push' model to communicate to the clients.
+Clients will register themselves, and then the server will send them HTTP
+messages whenever an event occurs. We could allow clients to register 
+for messages on just a subset of devices, but I think that'll just be one
+more thing to break. It's going to be multiple messages per second, but
+I think that should be okay.
+
+Clients will register using their IP addresses, and they'll receive a 
+token that they can use to unregister. Honestly, though, you have to
+assume that clients will often be badly-behaved, and will simply
+drop off the edge of the earth; the server will have to handle
+these gracefully and without undue lag.
+
+## Implementation
+
+Currently, the toy server implements only the resources listed as 
+[IMPLEMENTED]. It also does some temperature stuff, but it doesn't
+yet match the API, so....
+
+# Group Server
+
+This API describes calls that the clients make to the server.
 
 # Ping [/srv/ping]
 
-Check that the server is alive
+Checks that the server is alive. [IMPLEMENTED]
 
-## Ping [GET]
+## Check Server Life [GET]
 
 + Response 200 (application/json)
 
     + Body
     
             "alive"
-
+            
 
 # Timestamp [/srv/timestamp]
 
-Get the current timestamp from the server (represented as seconds since epoch on server)
+The current timestamp from the server (represented as seconds since epoch on 
+server). [IMPLEMENTED]
 
-## Timestamp [GET]
+## Get Current Timestamp [GET]
 
 + Response 200 (application/json)
 
@@ -35,10 +82,67 @@ Get the current timestamp from the server (represented as seconds since epoch on
             }
 
 
-# Device [/srv/device{id}]
 
-A device. A device is identified by an 'id' string.
+# Device Latest Event [/srv/device/{id}/last-event]
+
+The last event of the given device.
 
 + Parameters
-    + id (string) ... ID of the Gist in the form of a hash.
+    + id (string) ... the ID of the device
+    
+## Latest Event [GET]
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "reading":"7989",
+                "timestamp":1418096755
+            }
+
+
+# Register a Client [/srv/register-client?ip={ip}]
+
+Register a client to receive all events from all sensor
+device streams.
+
++ Parameters
+    + ip (string) ... the IPV4 address of the client device
+
+## Register a Client [PUT]
+
++ Response 200 (application/json)
+    + Body
+    
+            {
+                "unreg-token":"AA3MPHT234"
+            }
+
+
+# Unregister a client [/srv/unregister-client?token={token}]
+
+Remove the client with the given token from the list of registered
+clients.
+
+# Group Client
+
+The API for messages sent to the Client
+
+# Event Notification [/cli/{id}/event]
+
+An event has occurred for this device.
+
+How do I document the shape of the POST data? Hmm...
+
++ Parameters
+    + id (string) ... the id of the device with the new event
+    
+## Event has occurred [POST]
+
++ Response 200 (application/json)
+    + Body
+    
+            "ok"
+
 
