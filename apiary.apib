@@ -1,0 +1,44 @@
+FORMAT: 1A
+
+# Solar Decathlon Automation
+This API governs the interaction between the solar decathlon wireless client tablets and the central home automation server
+
+# Group Automation
+
+The whole API....
+
+# Ping [/srv/ping]
+
+Check that the server is alive
+
+## Ping [GET]
+
++ Response 200 (application/json)
+
+    + Body
+    
+            "alive"
+
+
+# Timestamp [/srv/timestamp]
+
+Get the current timestamp from the server (represented as seconds since epoch on server)
+
+## Timestamp [GET]
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "timestamp":1418096756
+            }
+
+
+# Device [/srv/device{id}]
+
+A device. A device is identified by an 'id' string.
+
++ Parameters
+    + id (string) ... ID of the Gist in the form of a hash.
+
