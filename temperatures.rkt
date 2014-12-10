@@ -1,17 +1,14 @@
 #lang typed/racket/base
 
 (require typed/racket/date
-         "data-model.rkt"
-         "time.rkt"
-         "testing-param.rkt")
+         "data-model.rkt")
 
-(provide record-temperature!
-         handle-temperature-request)
+(provide record-temperature!)
 
 ;; a temp is an integer, representing 
 ;; thousandths of a degree Celsius
 
-(define TEMPERATURE-ID 1)
+(define TEMPERATURE-ID "s-temp-kit")
 (define TEMP-ROUNDING 1/1000)
 (define INITIAL-TEMPERATURE (/ 20 TEMP-ROUNDING))
 
@@ -22,15 +19,6 @@
 (: record-temperature! (Natural -> Void))
 (define (record-temperature! temp)
   (record-sensor-status! TEMPERATURE-ID (number->string temp)))
-
-;; convert a temperature status to a jsexpr
-(: temp-status->jsexpr (Status -> (HashTable Symbol Any)))
-(define (temp-status->jsexpr status)
-  (make-immutable-hash
-   (list (cons 'timestamp 
-               ;; there must be some standard JSON date format...
-               (date->string (Status-timestamp status) #t))
-         (cons 'reading (string->number (Status-status status))))))
 
 ;; BOGUS TEMPERATURE READING THREAD
 ;; adds a new reading every five seconds
@@ -44,24 +32,4 @@
      (sleep 5)
      (loop))))
 
-;; respond to a temperature request
-(define (handle-temperature-request)
-  (map temp-status->jsexpr (sensor-statuses TEMPERATURE-ID)))
-
-
-;; can't use submodules with typed?
-
-(require typed/rackunit)
-
-;; testing db created by data-model
-(parameterize ([testing? #t])
-  (check-equal? (handle-temperature-request)
-                (list (make-immutable-hash
-                       (list (cons 'timestamp 
-                                   "Friday, January 1st, 1971 12:00:00am")
-                             (cons 'reading 22900)))
-                      (make-immutable-hash
-                       (list (cons 'timestamp
-                                   "Friday, January 1st, 1971 12:00:02am")
-                             (cons 'reading 22883))))))
 

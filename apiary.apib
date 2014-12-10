@@ -93,6 +93,8 @@ timestamp, but not vice versa.]*
 
 Here's the shape of the "post" data, as json:
 
+*[I bet there's some way to put the response in formally....]*
+
 ```json
 {"day": <number>,
  "month": <number>,
@@ -116,20 +118,20 @@ The last event of the given device.
 
 + Parameters
     + id (string) ... the ID of the device
-    
+
 ## Latest Event [GET]
 
 + Response 200 (application/json)
 
     + Body
-    
+
             {
                 "reading":"7989",
                 "timestamp":1418096755
             }
 
 
-# A range of events [/srv/device/{id}/event-range?start={start},end={end}]
+# Device Event Range [/srv/device/{id}/event-range?start={start},end={end}]
 
 Fetch all events in the given range. More specifically, those with
 timestamps `n` such that `start <= n < end`.

@@ -1,6 +1,7 @@
 #lang racket
 
 (require net/url
+         net/head
          rackunit
          rackunit/text-ui
          racket/date
@@ -34,24 +35,44 @@
 ;; given a URL, make a GET request and wait for a response
 ;; given a url and a string, send the string to the URL and wait for a response.
 (define (remote-call/get url-string)
-  (define eval-response-port (get-impure-port (string->url url-string)))
-  ;; what about timeouts?
-  (define headers (purify-port eval-response-port))
-  ;; strange... why do our servers always come back with text/html as 
-  ;; a mime type?
-  (define reply-code 
-    (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" headers)
-      [(list match digits) (string->number digits)]
-      [other 'unparseable]))
-  (cond [(= reply-code 200)
-         (define reply (first (regexp-match #px".*" eval-response-port)))
-         (close-input-port eval-response-port)
+  (match-define (list response-code first-line headers body-port) 
+    (remote-call/get/core url-string))
+  (cond [(= response-code 200)
+         (define mime-type (extract-field "Content-Type" headers))
+         (unless (string=? mime-type "application/json")
+           (error 'remote-call/get
+                  (format "expected mime type application/json, got ~e"
+                          mime-type)))
+         (define reply (first (regexp-match #px".*" body-port)))
+         (close-input-port body-port)
          (log-debug  (format "reply-bytes : ~v\n" reply))
          (bytes->jsexpr reply)]
         [else 
-         (error 'remote-evaluator-call/bytes
+         (error 'remote-call/get
                 "response code: expected 200, got: ~v" 
-                reply-code)]))
+                response-code)]))
+
+;; given a URL string, return the response code, the first line, the rest
+;; of the headers, and the port for the remainder of the body
+(define (remote-call/get/core url-string)
+  (define eval-response-port (get-impure-port (string->url url-string)))
+  ;; what about timeouts?
+  (define header-string (purify-port eval-response-port))
+  ;; strange... why do our servers always come back with text/html as 
+  ;; a mime type?
+  (match (regexp-match #px"^([^\n]*)\n(.*)" header-string)
+    [(list dc first-line headers)
+     (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" first-line)
+       [(list dc2 response-code-string)
+        (define reply-code (string->number response-code-string))
+        (list reply-code first-line headers eval-response-port)]
+       [other
+        (error 'remote-call/get/core
+               "couldn't extract response code from first response line ~e"
+               first-line)])]
+    [other (error 'remote-call/get
+                  (format "expected response with at least one header line, got ~e"
+                          header-string))]))
 
 (run-tests
 (test-suite
@@ -75,6 +96,23 @@
       (check-true (< (find-seconds 0 0 0 1 1 2014) n))]
      [other 
       (fail "timestamp shape")])
+   
+   (check-equal? (first (remote-call/get/core (string-append l-u "/srv/blothints")))
+                 404)
+   
+   (check-equal? (first (remote-call/get/core (string-append l-u "/srv/device/tttt/latest-event")))
+                 404)
+   
+   
+   
+   (check-equal? (test-subpath "/device/s-temp-lr/latest-event")
+                 "no events")
+   
+   (match (test-subpath "/device/s-temp-kit/latest-event")
+     [(hash-table ('timestamp (? number? n))
+                  ('device-id "s-temp-kit")
+                  ('status (? string? s)))
+      (check-true (number? (string->number s)))])
    
    
    

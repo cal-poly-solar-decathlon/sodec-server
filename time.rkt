@@ -18,7 +18,11 @@
         [else (current-seconds)]))
 
 ;; the beginning of time for testing
-(define EPOCH (find-seconds 0 0 0 1 1 1971))
+(: EPOCH Natural)
+(define EPOCH 
+  (let ([epoch-maybe-negative (find-seconds 0 0 0 1 1 1971)])
+    (cond [(< epoch-maybe-negative 0) (error 'epoch "epoch was negative!")]
+          [else epoch-maybe-negative])))
 
 (: testing-timestamp-box (Boxof Integer))
 (define testing-timestamp-box (box EPOCH))
