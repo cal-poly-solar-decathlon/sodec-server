@@ -66,7 +66,7 @@ This API describes calls that the clients make to the server.
 
 Checks that the server is alive. [IMPLEMENTED]
 
-## Check Server Life [GET]
+## Ping [GET]
 
 + Response 200 (application/json)
 
@@ -80,7 +80,7 @@ Checks that the server is alive. [IMPLEMENTED]
 The current timestamp from the server (represented as seconds since epoch on 
 server). [IMPLEMENTED]
 
-## Get Current Timestamp [GET]
+## Timestamp [GET]
 
 + Response 200 (application/json)
 
@@ -135,8 +135,9 @@ The last event of the given device. [IMPLEMENTED]
     + Body
 
             {
-                "reading":"7989",
-                "timestamp":1418096755
+                "device-id":"{id}"
+                "status":"{status}",
+                "timestamp":{timestamp}
             }
 
 
@@ -155,10 +156,10 @@ timestamps `n` such that `start <= n < end`.
 
     + Body
 
-            [{"reading":"77982","timestamp":1418096755},
-             {"reading":"77983","timestamp":1418096758},
-             {"reading":"77982","timestamp":1418096761},
-             {"reading":"77980","timestamp":1418096764}]
+            [{"device-id":"foo", "status":"77982","timestamp":1418096755},
+             {"device-id":"foo", "status":"77983","timestamp":1418096758},
+             {"device-id":"foo", "status":"77982","timestamp":1418096761},
+             {"device-id":"foo", "status":"77980","timestamp":1418096764}]
 
 
 # Register a Client [/srv/register-client?ip={ip}]
@@ -188,7 +189,7 @@ clients.
 
 The API for messages sent to the Client
 
-# Event Notification [/cli/{id}/event]
+# Event Notification [/client/{id}/event]
 
 An event has occurred for this device.
 
