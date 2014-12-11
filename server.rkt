@@ -89,4 +89,6 @@
                #:servlet-regexp #px"^/srv/.*"
 	       #:launch-browser? #f
                #:listen-ip #f
+               #:port 8080
+               #:log-file (build-path here "server.log")
 )
