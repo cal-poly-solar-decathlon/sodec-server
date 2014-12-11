@@ -67,7 +67,7 @@
          (current-seconds) TEXT/HTML-MIME-TYPE
          (list)
          (list #"<html><body><p>"
-               (string->bytes/utf-8 (format "uri ~v doesn't match known pattern" uri))
+               (string->bytes/utf-8 (format "uri ~v doesn't match known pattern" (url->string uri)))
                #"</p></body></html>"))]
      )])
   )

@@ -80,9 +80,9 @@
  (let ()
 (define l-u 
   ;; test locally:
-  "http://localhost:8080"
+  #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  #;"http://brinckerhoff.org:8025/"
+  "http://calpolysolardecathlon.org:8080"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 
