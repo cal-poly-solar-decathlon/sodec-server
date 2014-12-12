@@ -40,17 +40,17 @@ cares.
 ## Clients
 
 I'm expecting to have to use a 'push' model to communicate to the clients.
-Clients will register themselves, and then the server will send them HTTP
-messages whenever an event occurs. We could allow clients to register 
-for messages on just a subset of devices, but I think that'll just be one
-more thing to break. It's going to be multiple messages per second, but
-I think that should be okay.
 
-Clients will register using their IP addresses, and they'll receive a 
-token that they can use to unregister. Honestly, though, you have to
-assume that clients will often be badly-behaved, and will simply
-drop off the edge of the earth; the server will have to handle
-these gracefully and without undue lag.
+This is an old idea, but it looks like the modern incarnation of it is
+to use WebSockets.
+
+Accordingly, I think the plan at this point is to have a call that initiates
+a WebSocket connection. After this, we're no longer talking about an HTTP
+API, but simply (simply?) about a TCP one. Well, okay, then we have to
+come up with a TCP protocol... ugh.
+
+Also, this may create more work for re-/dis-connection issues.
+
 
 ## Implementation
 
@@ -163,45 +163,5 @@ timestamps `n` such that `start <= n < end`.
 
 # Register a Client [/srv/register-client?ip={ip}]
 
-Register a client to receive all events from all sensor
-device streams.
-
-+ Parameters
-    + ip (string) ... the IPV4 address of the client device
-
-## Register a Client [PUT]
-
-+ Response 200 (application/json)
-    + Body
-    
-            {
-                "unreg-token":"AA3MPHT234"
-            }
-
-
-# Unregister a client [/srv/unregister-client?token={token}]
-
-Remove the client with the given token from the list of registered
-clients.
-
-# Group Client
-
-The API for messages sent to the Client
-
-# Event Notification [/client/{id}/event]
-
-An event has occurred for this device.
-
-How do I document the shape of the POST data? Hmm...
-
-+ Parameters
-    + id (string) ... the id of the device with the new event
-    
-## Event has occurred [POST]
-
-+ Response 200 (application/json)
-    + Body
-    
-            "ok"
-
-
+Rethinking... this is going to turn into a WebSocket initiation.
+Dunno what it looks like, yet.
