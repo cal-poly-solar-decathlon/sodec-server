@@ -7,7 +7,7 @@
     "email": "gabe.villalobos@gmail.com"
   },
   "repository": "gabevillalobos/soldecserver",
-  "license": "MIT",
+  "license": "TBD",
   "files": [
     "index.js",
     "cli.js"

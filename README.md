@@ -1,37 +1,22 @@
-#  [![NPM version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][daviddm-url]][daviddm-image]
-
 > Basic NodeJS web-server for the Solar Decathlon Project
 
+## Before Attempting to Run:
+
+Install node.js: http://nodejs.org/
+Make sure that Node and npm are in your path (This should be an option in the installer)
 
 ## Install
+To install all dependencies run:
 
-```sh
-$ npm install --save soldecserver
-```
+npm install
 
 
 ## Usage
 
-```js
-var soldecserver = require('soldecserver');
+To run the server, use the following command:
 
-soldecserver('Rainbow');
-```
+node cli
 
-```sh
-$ npm install --global soldecserver
-$ soldecserver --help
-```
+## View Test Page:
 
-
-## License
-
-MIT © [Gabe Villalobos]()
-
-
-[npm-url]: https://npmjs.org/package/soldecserver
-[npm-image]: https://badge.fury.io/js/soldecserver.svg
-[travis-url]: https://travis-ci.org/gabevillalobos/soldecserver
-[travis-image]: https://travis-ci.org/gabevillalobos/soldecserver.svg?branch=master
-[daviddm-url]: https://david-dm.org/gabevillalobos/soldecserver.svg?theme=shields.io
-[daviddm-image]: https://david-dm.org/gabevillalobos/soldecserver
+navigate to the following url: localhost:3001
