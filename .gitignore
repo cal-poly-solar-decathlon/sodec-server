@@ -1,4 +1,2 @@
-*~
-compiled
-sodec.db
-server.log
+/node_modules/
+npm-debug.log
