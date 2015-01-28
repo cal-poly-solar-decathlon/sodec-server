@@ -19,9 +19,7 @@
     "Web-Sockets"
   ],
   "dependencies": {
-    "express": "^4.11.0",
-    "meow": "^2.0.0",
-    "socket.io": "^1.2.1"
+    "websocket": "^1.0.17"
   },
   "devDependencies": {
     "grunt-cli": "^0.1.13",

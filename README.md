@@ -15,8 +15,11 @@ npm install
 
 To run the server, use the following command:
 
-node cli
+node index
 
-## View Test Page:
+This will create a websocket server on port 8080 of the host machine. You can then connect to it using your client of choice.
 
-navigate to the following url: localhost:3001
+To test the connection, run the following command in the main directory:
+  node testClient
+
+It should echo the time between the server and the client.
