@@ -1,0 +1,29 @@
+Server storage schema
+
+Table: SENSOR EVENTS
+
+columns:
+- unique id (unique key)
+- date : DATE
+- device : VARCHAR(64)
+- reading : 64-bit INTEGER
+
+the idea is that this table will just pile up sensor events. There's a
+temptation to implement some kind of run-length-encoding to avoid piles
+and piles of data, but I think for now this is the easier solution.
+
+Also, note that I'm specifying the reading as an integer; I think this strikes
+a good balance between filterability (give me all the readings higher than x)
+and flexibility (different sensors can encode their readings in different
+ways).
+
+Table: CONTROL EVENTS
+
+columns:
+- unique id (unique key)
+- date : DATE
+- device : VARCHAR(64)
+- setting : 64-bit INTEGER
+
+Yes, this looks a lot like the sensor events table; I think it makes sense
+to record these in a different table, but I'd be open to discussion.
