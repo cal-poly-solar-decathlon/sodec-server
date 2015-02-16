@@ -11,8 +11,7 @@ Devices are named by IDs, which are strings. These strings are essentially
 hard-coded; it's easier that way. There are two kinds of IDs: "sensor IDs"
 and "control IDs". I think it will be easier just to have a convention
 to distinguish them. This is going to reek of 1990's Microsoft hungarian
-notation, but who
-cares.
+notation, but who cares.
 
 ### Completely tentative list of IDs:
 
@@ -36,21 +35,12 @@ cares.
 - `s-amb-bed` : the ambient light level in the bedroom
 - `c-light-bed` : control of the lights in the bedroom
 - `s-light-bed` : a record of the lighting control events in the bedroom
+- ... others....
 
 ## Clients
 
-I'm expecting to have to use a 'push' model to communicate to the clients.
-
-This is an old idea, but it looks like the modern incarnation of it is
-to use WebSockets.
-
-Accordingly, I think the plan at this point is to have a call that initiates
-a WebSocket connection. After this, we're no longer talking about an HTTP
-API, but simply (simply?) about a TCP one. Well, okay, then we have to
-come up with a TCP protocol... ugh.
-
-Also, this may create more work for re-/dis-connection issues.
-
+In this revision, I'm thinking about publish-subscribe. Looks easier
+to implement and test than websockets.
 
 ## Implementation
 
@@ -161,7 +151,36 @@ timestamps `n` such that `start <= n < end`.
              {"device-id":"foo", "status":"77980","timestamp":1418096764}]
 
 
-# Register a Client [/srv/register-client?ip={ip}]
+# Subscribe to Events [/srv/register-client?ip={ip}]
 
-Rethinking... this is going to turn into a WebSocket initiation.
-Dunno what it looks like, yet.
+Register a client with the server, to receive all events as they occur
+
++ Parameters
+
+## Subscribe [POST]
+
++ Response 200 (application/json)
+
+    + Body
+
+        true
+
+
+# Group Client
+
+Messages sent from the server to a subscribed client
+
+# Notify [/client/notify]
+
+Notification that an event has occurred
+
++ Parameters
+
+## Notify [POST]
+
++ Response 200 (application/json)
+
+    + Body
+
+        true
+
