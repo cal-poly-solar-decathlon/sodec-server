@@ -86,20 +86,18 @@ server). [IMPLEMENTED]
 the server to be in charge of time, but we don't want the clients
 to be hammering the server to see what every timestamp means.
 I think the right compromise is to provide a call that allows
-the clients to "get their bearings" by converting a date to a
+the clients to "get their bearings" by converting a midnight-UTC date to a
 timestamp, but not vice versa.]*
 
-Here's the shape of the "post" data, as json:
+## Compute the timestamp for a UTC midnight date [POST]
 
-*[I bet there's some way to put the response in formally....]*
++ Request (application/json)
 
-```json
-{"day": <number>,
- "month": <number>,
- "year": <number>}
-```
+    + Body
 
-## Compute the timestamp for a date [POST]
+            {   "day" : 12,
+                "month" : 2,
+                "year" : 2015 }
 
 + Response 200 (application/json)
 
@@ -145,42 +143,69 @@ timestamps `n` such that `start <= n < end`.
 
     + Body
 
-            [{"device-id":"foo", "status":"77982","timestamp":1418096755},
-             {"device-id":"foo", "status":"77983","timestamp":1418096758},
-             {"device-id":"foo", "status":"77982","timestamp":1418096761},
-             {"device-id":"foo", "status":"77980","timestamp":1418096764}]
+            [{"device":"foo", "status":"77982","timestamp":1418096755},
+             {"device":"foo", "status":"77983","timestamp":1418096758},
+             {"device":"foo", "status":"77982","timestamp":1418096761},
+             {"device":"foo", "status":"77980","timestamp":1418096764}]
 
 
-# Subscribe to Events [/srv/register-client?ip={ip}]
+# Subscribe to Events [/srv/subscribe]
 
-Register a client with the server, to receive all events as they occur
-
-+ Parameters
+Register a client with the server, to receive all events as they occur.
+NB: There's no unsubscribe; I don't think it'll ever be necessary, and
+the server will have to handle disappearing subscribers anyway.
 
 ## Subscribe [POST]
+
++ Request (application/json)
+
+    + Body
+
+            {"ip":"xxx.xxx.xxx.xxx"}
 
 + Response 200 (application/json)
 
     + Body
 
-        true
+            true
 
 
 # Group Client
 
+# Notify [/totally/bogus]
+
+Notification that an event has occurred.
+
+As an aside, this model (that is, apiary) is totally broken... I can't refer to a model
+from outside? There are some major issues here.
+
+## Event [/client/notify]
+
 Messages sent from the server to a subscribed client
 
-# Notify [/client/notify]
++ Model (application/json)
 
-Notification that an event has occurred
+    A JSON object representing a control or sensor event
 
-+ Parameters
+    As a side note... this JSON schema mechanism is... weak.
 
-## Notify [POST]
+    + Body
+
+            {   "type": "controlorsensor",
+                "device" : "thedevicename",
+                "timestamp" : 472379717,
+                "reading" : 2271938470
+            }
+
+
+### Notify [POST]
+
++ Request (application/json)
+    [Event][]
 
 + Response 200 (application/json)
 
     + Body
 
-        true
+            true
 
