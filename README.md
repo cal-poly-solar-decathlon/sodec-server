@@ -18,7 +18,11 @@ To acces from a web-browser, use the folling url: localhost:3000
 
 ## Current Routes:
 /s-temp-lr - Living room temperature, currently a random value
+
 /s-occ-lr - Living room occupancy, currently random
+
 /power - Power generation value, currently random
+
 /arduino - Test route for Arduino to POST data to.
+
 
