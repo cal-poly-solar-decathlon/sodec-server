@@ -12,6 +12,8 @@ var arduino = require('./routes/arduino');
 var power = require('./routes/power');
 var occupancy = require('./routes/s-occ-lr');
 
+var request = require('request');
+
 
 var app = express();
 
@@ -68,3 +70,12 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
+
+setInterval(function() {
+    console.log('test');
+    request('egauge.com/cgi-bin/egauge-show?c', function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log(body) // Print the google web page.
+        }
+    });
+}, 1 * 1000);
