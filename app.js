@@ -72,7 +72,7 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 setInterval(function() {
-    console.log('test');
+    //console.log('test');
     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
         if (!error && response.statusCode == 200) {
             console.log(body) // Print the google web page.
