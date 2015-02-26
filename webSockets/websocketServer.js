@@ -4,7 +4,6 @@ var WebSocketServer = require('websocket').server;
 
 var port = 3001;
 
-
 // Create a web-server to host the websocket.
 var server = http.createServer(function(req, res) {
   console.log((new Date()) + ' Request received for ' + req.url);
@@ -25,7 +24,6 @@ var wsServer = new WebSocketServer({
 
   autoAcceptConnections: false
 });
-
 
 
 // Function that deterines which clients can connect to the WebSocket service.
@@ -62,4 +60,9 @@ wsServer.on('request', function(req) {
   connection.on('close', function(reasonCode, description) {
     console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected');
   });
+
+  setInterval(function () {
+    connection.sendUTF('Hooray! New Data!');
+  }, 3000);
+
 });
