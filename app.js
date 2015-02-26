@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var webSocketServer = require('./webSocket/webSocketServer');
 //var mySqlDemo = require('./mysql_demo');
 
 var routes = require('./routes/index');
@@ -75,8 +76,8 @@ module.exports = app;
 setInterval(function() {
     //console.log('test');
     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body) // Print the google web page.
+        if (!error && response.statusCode === 200) {
+            console.log(body); // Print the google web page.
         }
     });
 }, 1 * 1000);
