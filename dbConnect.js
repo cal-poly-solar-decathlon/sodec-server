@@ -9,9 +9,9 @@ exports.initConnect = function() {
 
     var connection = mysql.createConnection({
       host     : 'localhost',
-      user     : 'solar_test',
-      password : 'solar',
-      database : 'events'
+      user     : 'root',
+      password : 'sodec',
+      database : 'sodec'
     });
 
     connection.connect((function(err){
