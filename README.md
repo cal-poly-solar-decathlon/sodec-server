@@ -2,7 +2,7 @@
 
 ## Pre-requisites
 
-Make sure that you've installed Node.js! This is the only major requirement
+Make sure that you've installed Node.js and NPM intalled! This is the only major requirement
 
 ## To run:
 
