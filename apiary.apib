@@ -80,7 +80,7 @@ server). [IMPLEMENTED]
             }
 
 
-# Timestamp From Date [/srv/timestamp/from-date]
+# Timestamp From Date [/srv/timestamp/from-date{?date}]
 
 *[NOTE: I've waffled quite a bit over what API to provide here; we want
 the server to be in charge of time, but we don't want the clients
@@ -89,15 +89,11 @@ I think the right compromise is to provide a call that allows
 the clients to "get their bearings" by converting a midnight-UTC date to a
 timestamp, but not vice versa.]*
 
-## Compute the timestamp for a UTC midnight date [POST]
++ Parameters
+    + date (json) ... the requested date{"year":number,"month":number,"day":number}
 
-+ Request (application/json)
 
-    + Body
-
-            {   "day" : 12,
-                "month" : 2,
-                "year" : 2015 }
+## Compute the timestamp for a UTC midnight date [GET]
 
 + Response 200 (application/json)
 
@@ -108,12 +104,12 @@ timestamp, but not vice versa.]*
             }
 
 
-# Device Latest Event [/srv/device/{id}/latest-event]
+# Device Latest Event [/srv/latest-event{?device}]
 
 The last event of the given device. [IMPLEMENTED]
 
 + Parameters
-    + id (string) ... the ID of the device
+    + device (string) ... the id of the selected device
 
 ## Latest Event [GET]
 
@@ -122,20 +118,22 @@ The last event of the given device. [IMPLEMENTED]
     + Body
 
             {
-                "device-id":"{id}"
-                "status":"{status}",
+                "device-id":{id}
+                "status":{status},
                 "timestamp":{timestamp}
             }
 
 
-# Device Event Range [/srv/device/{id}/event-range?start={start},end={end}]
+# Device Event Range [/srv/events-in-range{?device,start,end}]
 
 Fetch all events in the given range. More specifically, those with
 timestamps `n` such that `start <= n < end`.
 
 + Parameters
-    + start (integer) ... the timestamp of the beginning of the range
-    + end (integer) ... the timestamp of the end of the range
+    + device (string) ... the id of the selected device
+    + start (number) ... the timestamp of the beginning of the desired range
+    + end (numbe) ... the timestamp of the end of the desired range
+
 
 ## Get events in a range [GET]
 
