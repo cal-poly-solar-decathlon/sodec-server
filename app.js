@@ -31,12 +31,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', routes);
-app.use('/users', users);
-app.use('/arduino', arduino);
-app.use('/s-temp-lr', tempLr);
-app.use('/power', power);
-app.use('/s-occ-lr', occupancy);
+app.use('/srv/', routes);
+app.use('/srv/users', users);
+app.use('/srv/arduino', arduino);
+app.use('/srv/s-temp-lr', tempLr);
+app.use('/srv/power', power);
+app.use('/srv/s-occ-lr', occupancy);
 
 
 // catch 404 and forward to error handler
