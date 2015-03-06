@@ -9,14 +9,16 @@
 ;; thousandths of a degree Celsius
 
 (define TEMPERATURE-ID "s-temp-kit")
-(define TEMP-ROUNDING 1/1000)
-(define INITIAL-TEMPERATURE (/ 20 TEMP-ROUNDING))
+(define TEMP-QUANTA 1000)
+(define TEMP-ROUNDING (/ 1 TEMP-QUANTA))
+(define INITIAL-TEMPERATURE (* 20 TEMP-QUANTA))
 
+(: temperature-box (Boxof Integer))
 (define temperature-box (box INITIAL-TEMPERATURE))
 
 
 ;; record the temperature
-(: record-temperature! (Natural -> Void))
+(: record-temperature! (Integer -> Void))
 (define (record-temperature! temp)
   (record-sensor-status! TEMPERATURE-ID (number->string temp)))
 

@@ -7,7 +7,6 @@
          racket/date
          json)
 
-
 ;; given a url and a string, send the string to the URL and wait for a response.
 #;(define (remote-evaluator-call/bytes url-string str)
   (define post-bytes (str->post-bytes str))
@@ -86,6 +85,7 @@
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 
+  
    (define (test-subpath subpath)
      (remote-call/get (string-append l-u "/srv" subpath)))
    
@@ -97,18 +97,31 @@
      [other 
       (fail "timestamp shape")])
    
-   (check-equal? (first (remote-call/get/core (string-append l-u "/srv/blothints")))
-                 404)
+   ;; simple 404:
+   (let ()
+     (define 404-call (remote-call/get/core (string-append l-u "/srv/blothints")))
+     (check-equal? (first 404-call) 404)
+     (check-match
+      (first
+       (regexp-match #px".*" (fourth 404-call)))
+      (regexp #px"blothints")))
    
-   (check-equal? (first (remote-call/get/core (string-append l-u "/srv/device/tttt/latest-event")))
-                 404)
+   ;; near miss on the device name:
+   (let ()
+     (define 404-call
+       (remote-call/get/core
+        (string-append l-u "/srv/latest-event?device=uhnoth")))
+     (check-equal? (first 404-call) 404)
+     (check-match
+      (first
+       (regexp-match #px".*" (fourth 404-call)))
+      (regexp #px#"uhnoth")))
    
    
-   
-   (check-equal? (test-subpath "/device/s-temp-lr/latest-event")
+   (check-equal? (test-subpath "/latest-event?device=s-temp-lr")
                  "no events")
    
-   (match (test-subpath "/device/s-temp-kit/latest-event")
+   (match (test-subpath "/latest-event?device=s-temp-kit")
      [(hash-table ('timestamp (? number? n))
                   ('device-id "s-temp-kit")
                   ('status (? string? s)))

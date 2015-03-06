@@ -9,7 +9,8 @@
          "data-model.rkt"
          "temperatures.rkt"
          "time.rkt"
-         "ids.rkt")
+         "ids.rkt"
+         xml)
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
@@ -19,18 +20,35 @@
   (hash 'timestamp (current-timestamp)))
 
 ;; handle a device reading request
-(define (handle-device-latest-event-request id)
-  (cond [(ID? id)
-         (response/json
-          (maybe-event->jsexpr (sensor-latest-event id)))]
-        [else (response/full 
-               404
-               #"unknown device name"
-               (current-seconds) TEXT/HTML-MIME-TYPE
-               (list)
-               (list #"<html><body><p>"
-                     (string->bytes/utf-8 (format "device ~v unknown" id))
-                     #"</p></body></html>"))]))
+(define (handle-device-latest-event-request query)
+  (define query-fields (map car query))
+  (cond
+    [(equal? query-fields '(device))
+     (define id (cdr (assoc 'device query)))
+     (cond [(ID? id)
+            (response/json
+             (maybe-event->jsexpr (sensor-latest-event id)))]
+           [else
+            (404-response
+             #"unknown device name"
+             (format "device ~v unknown" id))])]
+    [else
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with exactly these query fields: (id), got: ~v"
+              query-fields))]))
+
+;; issue a 404 response:
+(define (404-response header-msg body-msg)
+  (response/full
+   404
+   header-msg
+   (current-seconds) TEXT/HTML-MIME-TYPE
+   (list)
+   (list
+    (string->bytes/utf-8
+     (xexpr->string
+      `(html (body (p ,body-msg))))))))
 
 
 
@@ -49,10 +67,9 @@
      
      (match (url-path uri)
        [(list (struct path/param ("srv" (list)))
-              (struct path/param ("device" (list)))
-              (struct path/param (id (list)))
               (struct path/param ("latest-event" (list))))
-        (time (handle-device-latest-event-request id))]
+        (time (handle-device-latest-event-request
+               (url-query uri)))]
        [(list (struct path/param ("srv" (list)))
               (struct path/param ("timestamp" (list))))
         (response/json (handle-timestamp-request))]
@@ -61,14 +78,9 @@
               (struct path/param ("ping" (list))))
         (response/json "alive")]
        [other
-        (response/full 
-         404
+        (404-response
          #"unknown server path"
-         (current-seconds) TEXT/HTML-MIME-TYPE
-         (list)
-         (list #"<html><body><p>"
-               (string->bytes/utf-8 (format "uri ~v doesn't match known pattern" (url->string uri)))
-               #"</p></body></html>"))]
+         (format "uri ~v doesn't match known pattern" (url->string uri)))]
      )])
   )
 
