@@ -35,7 +35,7 @@
     [else
      (404-response
       #"wrong query fields"
-      (format "expected a query with exactly these query fields: (id), got: ~v"
+      (format "expected a query with exactly these query fields: (device), got: ~v"
               query-fields))]))
 
 ;; issue a 404 response:
