@@ -1,4 +1,4 @@
--- Server storage schema
+/*Server storage schema
 
 -- All right, forget it... I just put in CREATE TABLES commands.
 
@@ -14,16 +14,7 @@
 -- Sadly, this must be in bottom-up order to allow the foreign constraints
 -- to be registered correctly.
 
---
--- Table structure for table `devices`
---
-
-CREATE TABLE `devices` (
-  `name` varchar(64) NOT NULL,
-  `name` varchar(256) NOT NULL,
-  PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+*/
 
 --
 -- Table structure for table `sensorevents`
@@ -78,4 +69,24 @@ CREATE TABLE `controleventresults` (
   CONSTRAINT `controleventresults_ibfk_2` FOREIGN KEY (`code`) REFERENCES `controleventresultcodes` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Table structure for table `controleventresultcodes`
+--
+
+CREATE TABLE `controleventresultcodes` (
+  `id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+
+--
+-- Table structure for table `devices`
+--
+
+CREATE TABLE `devices` (
+  `name` varchar(64) NOT NULL,
+  `name` varchar(256) NOT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
