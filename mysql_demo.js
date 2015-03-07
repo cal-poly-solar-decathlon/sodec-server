@@ -14,7 +14,7 @@ db.getLastSensor(connection, function(err, result) {
         } else {            
             // code to execute on data retrieval
             console.log("result from last sensor is : ", result);   
-        }    
+        }
 });
 
 connection.end();
