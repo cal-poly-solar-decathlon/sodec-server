@@ -77,6 +77,7 @@ module.exports = app;
 
 // polls egauge for data every 1000ms
 setInterval(function() {
+    console.log("Polling egauge");
     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
         if (!error && response.statusCode === 200) {
             console.log(body);
@@ -87,6 +88,8 @@ setInterval(function() {
                     db.addSensorEvent(connection, device, elements[j]);
                 }
             }
+        } else {
+            console.log(error);
         }
     });
 }, 1 * 1000);
