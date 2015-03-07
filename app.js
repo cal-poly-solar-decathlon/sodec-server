@@ -85,7 +85,8 @@ setInterval(function() {
             var text = body.split('\n');
             for (var i = 1; i < 2; i++) {
                 elements = text[i].split(',');
-                console.log(elements);
+                console.log(elements[0]);
+                db.addEgaugeEvent(connection, elements[1], elements[2]);
                 // for (var j = 0; j < elements.length; j++) {
                 //     console.log(elements[j]);
                 //     // db.addSensorEvent(connection, device, elements[j]);
