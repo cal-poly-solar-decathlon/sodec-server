@@ -81,6 +81,7 @@ exports.addSensorEvent = function(connection, device, reading) {
             }
         });
 }
+
 // get last event
 exports.getLastSensor = function(connection, callback) {
     connection.query("SELECT * FROM sensorevents " +
@@ -124,5 +125,17 @@ exports.getControlEventRange = function(connection, device, from, to) {
     });
 };
 
+// Get last event for egauge
+exports.getLastEgauge = function(connection) {
+    connection.query("SELECT * FROM egauge " +
+                     " ORDER BY id DESC LIMIT 1;", function(err, result) {
+        if (err) {
+            callback(err, null);
+        }
+        else {
+            callback(null, result);
+        }
+    });
+};
 
 
