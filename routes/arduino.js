@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 
 /* GET temperature of the living room (random for now). */
-router.post('/', function(req, res, next) {
+router.post('/arduino', function(req, res, next) {
    var temp = req.body.temperature;
    var humidity = req.body.humidity;
    res.json({

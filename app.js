@@ -9,10 +9,10 @@ var webSocketServer = require('./webSockets/webSocketServer');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-var tempLr = require('./routes/s-temp-lr');
 var arduino = require('./routes/arduino');
 var power = require('./routes/power');
-var occupancy = require('./routes/s-occ-lr');
+var latestEvent = require('./routes/latest-event');
+var eventsInRange = require('./routes/events-in-range');
 
 var request = require('request');
 
@@ -34,11 +34,11 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/srv/', routes);
-app.use('/srv/users', users);
-app.use('/srv/arduino', arduino);
-app.use('/srv/s-temp-lr', tempLr);
+app.use('/srv/', users);
+app.use('/srv/', arduino);
 app.use('/srv/power', power);
-app.use('/srv/s-occ-lr', occupancy);
+app.use('/srv/latest-event', latestEvent);
+app.use('/srv/events-in-range', eventsInRange);
 
 
 // catch 404 and forward to error handler
