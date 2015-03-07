@@ -88,6 +88,8 @@ setInterval(function() {
                     db.addSensorEvent(connection, device, elements[j]);
                 }
             }
+        } else {
+            console.log(error);
         }
     });
 }, 1 * 1000);
