@@ -16,8 +16,10 @@ var occupancy = require('./routes/s-occ-lr');
 
 var request = require('request');
 
-
 var app = express();
+
+var db         = require('./dbConnect.js');
+var connection = db.initConnect();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -73,11 +75,18 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
+// polls egauge for data every 1000ms
 setInterval(function() {
-    //console.log('test');
     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
         if (!error && response.statusCode === 200) {
-            console.log(body); // Print the google web page.
+            console.log(body);
+            var text = body.split('\n');
+            for (var i = 1; i < body.length; i++) {
+                elements = text.split(',');
+                for (var j = 0; j < elements.length; j++) {
+                    db.addSensorEvent(connection, device, elements[j]);
+                }
+            }
         }
     });
 }, 1 * 1000);
