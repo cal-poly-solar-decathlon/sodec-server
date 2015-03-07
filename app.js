@@ -15,6 +15,7 @@ var latestEvent = require('./routes/latest-event');
 var eventsInRange = require('./routes/events-in-range');
 
 var request = require('request');
+var jquery = require('jquery');
 
 var app = express();
 
@@ -80,16 +81,25 @@ setInterval(function() {
     console.log("Polling egauge");
     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
         if (!error && response.statusCode === 200) {
-            console.log(body);
+            // console.log(body);
             var text = body.split('\n');
-            for (var i = 1; i < body.length; i++) {
-                elements = text.split(',');
-                for (var j = 0; j < elements.length; j++) {
-                    db.addSensorEvent(connection, device, elements[j]);
-                }
+            for (var i = 1; i < 2; i++) {
+                elements = text[i].split(',');
+                console.log(elements);
+                // for (var j = 0; j < elements.length; j++) {
+                //     console.log(elements[j]);
+                //     // db.addSensorEvent(connection, device, elements[j]);
+                // }
             }
         } else {
             console.log(error);
         }
     });
-}, 1 * 1000);
+}, 3 * 1000);
+
+
+// inserting random data into egauge table for testing on vps
+// setInterval(function() {
+//     var random = (Math.floor (Math.random() * Math.pow(2,12)) + (Math.floor (Math.random() * Math.pow(2,2)) / Math.pow(10,2)))
+//     console.log(random);
+// }, 30 * 1000);
