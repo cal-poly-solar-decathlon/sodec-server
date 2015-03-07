@@ -1,4 +1,4 @@
-Server storage schema
+/*Server storage schema
 
 All right, forget it... I just put in CREATE TABLES commands.
 
@@ -9,7 +9,7 @@ and piles of data, but I think for now this is the easier solution.
 Also, note that I'm specifying the reading as an integer; I think this strikes
 a good balance between filterability (give me all the readings higher than x)
 and flexibility (different sensors can encode their readings in different
-ways).
+ways).*/
 
 --
 -- Table structure for table `sensorevents`
@@ -59,14 +59,10 @@ CREATE TABLE `controleventresults` (
 
 CREATE TABLE `egauge` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `device` varchar(64) NOT NULL,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `usage` decimal(20) NOT NULL,
   `generation` decimal(20) NOT NULL,
-  `usage` decimal(20) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `device` (`device`),
-  CONSTRAINT `controlevents_ibfk_1` FOREIGN KEY (`device`) REFERENCES `devices` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
