@@ -112,7 +112,7 @@ exports.getSensorEventRange = function(connection, device, from, to, callback) {
 
 // Fetch all control events in the given range.
 // More specifically, those with timestamps n such that start <= n < end.
-exports.getControlEventRange = function(connection, device, from, to) {
+exports.getControlEventRange = function(connection, device, from, to, callback) {
     connection.query("SELECT * FROM controlevents" +
                      " WHERE timestamp >= '" + from  +"' AND " +
                      " timestamp < '" + to + "';", function(err, result) {
@@ -126,7 +126,7 @@ exports.getControlEventRange = function(connection, device, from, to) {
 };
 
 // Get last event for egauge
-exports.getLastEgauge = function(connection) {
+exports.getLastEgauge = function(connection, callback) {
     connection.query("SELECT * FROM egauge " +
                      " ORDER BY id DESC LIMIT 1;", function(err, result) {
         if (err) {
@@ -138,4 +138,17 @@ exports.getLastEgauge = function(connection) {
     });
 };
 
+// insert egauge events
+exports.addEgaugeEvent = function(connection, usage, generation) {
+    connection.query("INSERT INTO egauge" +
+                     " (`usage`, `generation`)" +
+                     " VALUES (" + usage + "," + generation + ");", function(err, result) {
+
+            if(err) {
+                console.log("error adding sensor event " + usage + " with " + generation);
+                console.log(err);
+                throw err;
+            }
+        });
+}
 

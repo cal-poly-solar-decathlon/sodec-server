@@ -60,9 +60,9 @@ CREATE TABLE `controleventresults` (
 CREATE TABLE `egauge` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `usage` decimal(20) NOT NULL,
-  `generation` decimal(20) NOT NULL,
-  PRIMARY KEY (`id`),
+  `usage` decimal(6, 4) NOT NULL,
+  `generation` decimal(6, 4) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
