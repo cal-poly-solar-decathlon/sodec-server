@@ -2,32 +2,33 @@ var mysql     = require('mysql');
 
 
 
-// Establishes connections. Returns connection
-exports.initConnect = function() {
-    var express   = require("express");
-    var app       = express();
+// Establishes connections.
+var express   = require("express");
+var app       = express();
 
-    var connection = mysql.createConnection({
-      host     : 'localhost',
-      user     : 'root',
-      password : 'sodec',
-      database : 'sodec'
-    });
+var connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : 'sodec',
+  database : 'sodec'
+});
 
-    connection.connect((function(err){
-        if(!err) {
-            console.log("Database is connected ... \n\n");
-        } else {
-            console.log("Error connecting database ... \n\n");
-        }
-    }));
-    return connection;
-};
+connection.connect((function(err){
+    if(!err) {
+        console.log("Database is connected ... \n\n");
+    } else {
+        console.log("Error connecting database ... \n\n");
+    }
+}));
+
+exports.endConnection = function() {
+    connection.end();
+}
 
 // insert device
-exports.addNewDevice = function(connection, device) {
-    connection.query("INSERT INTO devices" +
-                     " VALUES (" + device + ");", function(err, result) {
+exports.addNewDevice = function(device) {
+    connection.query("INSERT INTO devices " +
+                     "VALUES ('" + device + "');", function(err, result) {
             if(err) {
                 console.log(err);
             }
@@ -35,9 +36,9 @@ exports.addNewDevice = function(connection, device) {
 };
 
 // insert control event results
-exports.addEventResults = function(connection, code, details) {
-    connection.query("INSERT INTO controleventresults" +
-                     " VALUES (" + code + "," + details + ");", function(err, result) {
+exports.addEventResults = function(id, code, details) {
+    connection.query("INSERT INTO controleventresults " +
+                     "VALUES (" + id + "," + code + ",'" + details + "');", function(err, result) {
             if(err) {
                 console.log(err);
             }
@@ -45,7 +46,7 @@ exports.addEventResults = function(connection, code, details) {
 };
 
 // insert control event result codes
-exports.addResultCode = function(connection, resultCode) {
+exports.addResultCode = function(resultCode) {
     connection.query("INSERT INTO controleventresultcodes" +
                      " VALUES (" + resultCode + ");", function(err, result) {
 
@@ -56,7 +57,7 @@ exports.addResultCode = function(connection, resultCode) {
 };
 
 // insert control events
-exports.addControlEvent = function(connection, device, setting) {
+exports.addControlEvent = function(device, setting) {
     connection.query("INSERT INTO controlevents" +
                      " (device, setting)" +
                      " VALUES ('" + device + "'," + setting + ");", function(err, result) {
@@ -69,53 +70,84 @@ exports.addControlEvent = function(connection, device, setting) {
 };
 
 // insert sensor events
-exports.addSensorEvent = function(connection, device, reading) {
+exports.addSensorEvent = function(device, reading) {
     connection.query("INSERT INTO sensorevents" +
-                     " (device, reading)" +
-                     " VALUES ('" + device + "'," + reading + ");", function(err, result) {
+                 " (device, reading)" +
+                 " VALUES ('" + device + "'," + reading + ");", function(err, result) {
 
-            if(err) {
-                console.log("error adding sensor event " + device + " with " + reading);
-                console.log(err);
-                throw err;
-            }
-        });
+        if(err) {
+            console.log("error adding sensor event " + device + " with " + reading);
+            console.log(err);
+            throw err;
+        }
+    });
 }
 
 // get last event
-exports.getLastSensor = function(connection, callback) {
-    connection.query("SELECT * FROM sensorevents " +
-                     " ORDER BY id DESC LIMIT 1;", function(err, result) {
-        if (err) {
-            callback(err, null);
-        }
-        else {
-            callback(null, result);
-        }
-    });
+exports.getLastSensorEvent = function(device, callback) {
+     if (device == "egauge") {
+        connection.query("SELECT * FROM egauge " +
+                         " ORDER BY id DESC LIMIT 1;", function(err, result) {
+            if (err) {
+                callback(err, null);
+            }
+            else {
+                callback(null, result);
+            }
+        });
+    } else {
+        connection.query("SELECT * FROM sensorevents " +
+                         "WHERE device = '" + device + "'" + 
+                         " ORDER BY id DESC LIMIT 1;", function(err, result) {
+            if (err) {
+                callback(err, null);
+            }
+            else {
+                callback(null, result);
+            }
+        });
+    }
 }
 
 // Fetch all sensor events in the given range.
 // More specifically, those with timestamps n such that start <= n < end.
-exports.getSensorEventRange = function(connection, device, from, to, callback) {
-    connection.query("SELECT * FROM sensorevents" +
-                     " WHERE timestamp >= '" + from  +"' AND " +
-                     " timestamp < '" + to + "';", function(err, result) {
-        if (err) {
-            callback(err, null);
-        }
-        else {
-            callback(null, result);
-        }
-    });
+exports.getSensorEventRange = function(device, start, end, callback) {
+    if (device == "egauge") {
+        connection.query("SELECT * FROM egauge" +
+                     " WHERE timestamp >= '" + start  +"' AND " +
+                     " timestamp < '" + end + "';", function(err, result) {
+            if (err) {
+                callback(err, null);
+            }
+            else {
+                console.log(start);
+                console.log(end);
+                callback(null, result);
+            }
+        });
+    }
+    else {
+        connection.query("SELECT * FROM sensorevents" +
+                         " WHERE timestamp >= '" + start + "' AND " +
+                         " timestamp < '" + end + "' AND " +
+                         " device = '" + device + "';", function(err, result) {
+            if (err) {
+                callback(err, null);
+            }
+            else {
+                callback(null, result);
+            }
+        });
+    }
 };
 
 // Fetch all control events in the given range.
 // More specifically, those with timestamps n such that start <= n < end.
-exports.getControlEventRange = function(connection, device, from, to, callback) {
-    connection.query("SELECT * FROM controlevents" +
-                     " WHERE timestamp >= '" + from  +"' AND " +
-                     " timestamp < '" + to + "';", function(err, result) {
+exports.getControlRange = function(device, start, end, callback) {
+   connection.query("SELECT * FROM controlevents" +
+                     " WHERE timestamp >= '" + start  +"' AND " +
+                     " timestamp < '" + end + "' AND " +
+                     " device = '" + device + "';", function(err, result) {
         if (err) {
             callback(err, null);
         }
@@ -125,10 +157,9 @@ exports.getControlEventRange = function(connection, device, from, to, callback) 
     });
 };
 
-// Get last event for egauge
-exports.getLastEgauge = function(connection, callback) {
-    connection.query("SELECT * FROM egauge " +
-                     " ORDER BY id DESC LIMIT 1;", function(err, result) {
+exports.findDevice = function(device, callback) {
+    connection.query("SELECT * FROM devices " +
+                     "WHERE name = '" + device +"';", function(err, result) {
         if (err) {
             callback(err, null);
         }
@@ -138,8 +169,7 @@ exports.getLastEgauge = function(connection, callback) {
     });
 };
 
-// insert egauge events
-exports.addEgaugeEvent = function(connection, usage, generation) {
+exports.addEgaugeEvent = function(usage, generation) {
     connection.query("INSERT INTO egauge" +
                      " (`usage`, `generation`)" +
                      " VALUES (" + usage + "," + generation + ");", function(err, result) {
@@ -150,5 +180,5 @@ exports.addEgaugeEvent = function(connection, usage, generation) {
                 throw err;
             }
         });
-}
+};
 

@@ -19,8 +19,7 @@ var jquery = require('jquery');
 
 var app = express();
 
-var db         = require('./dbConnect.js');
-var connection = db.initConnect();
+var db  = require('./dbConnect.js');
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -77,31 +76,31 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 // polls egauge for data every 1000ms
-setInterval(function() {
-    console.log("Polling egauge");
-    request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
-        if (!error && response.statusCode === 200) {
-            // console.log(body);
-            var text = body.split('\n');
-            for (var i = 1; i < 2; i++) {
-                elements = text[i].split(',');
-                console.log(elements[0]);
-                db.addEgaugeEvent(connection, elements[1], elements[2]);
-                // for (var j = 0; j < elements.length; j++) {
-                //     console.log(elements[j]);
-                //     // db.addSensorEvent(connection, device, elements[j]);
-                // }
-            }
-        } else {
-            console.log(error);
-        }
-    });
-}, 3 * 1000);
+// setInterval(function() {
+//     console.log("Polling egauge");
+//     request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
+//         if (!error && response.statusCode === 200) {
+//             // console.log(body);
+//             var text = body.split('\n');
+//             for (var i = 1; i < 2; i++) {
+//                 elements = text[i].split(',');
+//                 console.log(elements[0]);
+//                 db.addEgaugeEvent(connection, elements[1], elements[2]);
+//                 // for (var j = 0; j < elements.length; j++) {
+//                 //     console.log(elements[j]);
+//                 //     // db.addSensorEvent(connection, device, elements[j]);
+//                 // }
+//             }
+//         } else {
+//             console.log(error);
+//         }
+//     });
+// }, 3 * 1000);
 
 
 // inserting random data into egauge table for testing on vps
-// setInterval(function() {
-//     var random = (Math.floor (Math.random() * Math.pow(2,12)) + (Math.floor (Math.random() * Math.pow(2,2)) / Math.pow(10,2)))
-//     console.log(random);
-//       db.addEgaugeEvent(connection, random, random / random);
-// }, 30 * 1000);
+setInterval(function() {
+    var random = (Math.floor (Math.random() * Math.pow(2,12)) + (Math.floor (Math.random() * Math.pow(2,2)) / Math.pow(10,2)))
+    // console.log(random);
+      db.addEgaugeEvent(random, random / random);
+}, 5 * 1000);
