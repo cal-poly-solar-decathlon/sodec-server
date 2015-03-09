@@ -13,29 +13,50 @@ and "control IDs". I think it will be easier just to have a convention
 to distinguish them. This is going to reek of 1990's Microsoft hungarian
 notation, but who cares.
 
-### Completely tentative list of IDs:
+places:
+- `out` - north outside wall,
+- `bed` - bedroom,
+- `bath` - bathroom,
+- `lr` - living room
+- `mech` - mechanical room
 
-- `s-temp-lr` : the temperature in the living room
-- `s-occ-lr` : whether the living room is occupied
-- `s-amb-lr` : the ambient light level in the living room
-- `c-light-lr` : control of the lights in the living room
-- `s-light-lr` : a record of the lighting control events in the living room
-- `s-temp-bath` : the temperature in the bathroom
-- `s-occ-bath` : whether the bathroom is occupied
-- `s-amb-bath` : the ambient light level in the bathroom
-- `c-light-bath` : control of the lights in the bathroom
-- `s-light-bath` : a record of the lighting control events in the bathroom
-- `s-temp-kit` : the temperature in the kitchen
-- `s-occ-kit` : whether the kitchen is occupied
-- `s-amb-kit` : the ambient light level in the kitchen
-- `c-light-kit` : control of the lights in the kitchen
-- `s-light-kit` : a record of the lighting control events in the kitchen
+Sensors (taken from 2015/02/20 drawings):
+
+- `hum` : Humidity : out, bed, bath, lr
+- `amb` : Ambient Light: bed, mech, lr, bath
+- `occ` : Occupancy sensors: bed, mech, lr, bath
+
+### List of IDS taken from 2015-02-20 construction drawings.
+
+Lights are completely up in the air. The rest of them seem plausible.
+
+
+- `s-temp-out` : the temperature in the outside north wall
 - `s-temp-bed` : the temperature in the bedroom
+- `s-temp-bath` : the temperature in the bathroom
+- `s-temp-lr` : the temperature in the living room
+- `s-hum-out` : the humidity in the outside north wall
+- `s-hum-bed` : the humidity in the bedroom
+- `s-hum-bath` : the humidity in the bathroom
+- `s-hum-lr` : the humidity in the living room
 - `s-occ-bed` : whether the bedroom is occupied
+- `s-occ-mech` : whether the mechanical room is occupied
+- `s-occ-lr` : whether the living room is occupied
+- `s-occ-bath` : whether the bathroom is occupied
 - `s-amb-bed` : the ambient light level in the bedroom
+- `s-amb-mech` : the ambient light level in the mechanical room
+- `s-amb-lr` : the ambient light level in the living room
+- `s-amb-bath` : the ambient light level in the bathroom
 - `c-light-bed` : control of the lights in the bedroom
-- `s-light-bed` : a record of the lighting control events in the bedroom
-- ... others....
+- `c-light-mech` : control of the lights in the mechanical room
+- `c-light-lr` : control of the lights in the living room
+- `c-light-bath` : control of the lights in the bathroom
+- `c-light-kit` : control of the lights in the kitchen
+
+## Representing Sensor Readings
+
+Sensor readings are encoded as 64-bit integers. For temperatures, these
+are 1000ths of celsius degrees. 
 
 ## Clients
 
