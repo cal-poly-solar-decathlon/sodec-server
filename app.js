@@ -103,4 +103,5 @@ setInterval(function() {
 // setInterval(function() {
 //     var random = (Math.floor (Math.random() * Math.pow(2,12)) + (Math.floor (Math.random() * Math.pow(2,2)) / Math.pow(10,2)))
 //     console.log(random);
+//       db.addEgaugeEvent(connection, random, random / random);
 // }, 30 * 1000);
