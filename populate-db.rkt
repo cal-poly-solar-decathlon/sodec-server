@@ -15,11 +15,21 @@
 
 (define (populate-db)
   (for ([device-name sensor-names])
+    (with-handlers ([(lambda (exn)
+                       (and (exn:fail? exn)
+                            (regexp-match #px"^query-exec: Duplicate entry "
+                                          (exn-message exn))))
+                     (lambda (exn)
+                       (fprintf (current-error-port)
+                                "device ~v already present, ignoring\n"
+                                device-name))])
       (query-exec conn
                   "INSERT INTO devices VALUE (?)"
-                  (symbol->string device-name)))
+                  (symbol->string device-name))))
   
   (query-exec conn
                 "INSERT INTO controleventresultcodes VALUE (0)"))
+
+(populate-db)
 
 #;(define START-TIMESTAMP (sql-timestamp ))

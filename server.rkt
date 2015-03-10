@@ -1,22 +1,18 @@
 #lang racket/base
 
 (require racket/match
-         racket/runtime-path
-         racket/date
          web-server/servlet
-         web-server/servlet-env
          json
+         racket/date
          "data-model.rkt"
-         "temperatures.rkt"
          "ids.rkt"
          xml)
 
-(define-runtime-path here ".")
-(define-runtime-path htdocs "./htdocs")
+(provide start)
 
 ;; handle a timestamp request
 (define (handle-timestamp-request)
-  (hash 'timestamp (current-timestamp)))
+  (hash 'timestamp (date->seconds (current-timestamp))))
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)
@@ -92,14 +88,11 @@
    null
    (list (jsexpr->bytes jsexpr))))
 
-(serve/servlet start
-               ;; I see... changing server root path means you need
-               ;; your own configuration files....
-               ;; #:server-root-path here
-               #:extra-files-paths (list htdocs)
-               #:servlet-regexp #px"^/srv/.*"
-	       #:launch-browser? #f
-               #:listen-ip #f
-               #:port 8080
-               #:log-file (build-path here "server.log")
-)
+
+(module+ test
+  (require rackunit)
+  
+  (check-match (jsexpr->bytes (handle-timestamp-request))
+               (regexp #px#"^\\{\"timestamp\":[[:digit:]]+\\}$"))
+  
+  (check-equal? 3 3))

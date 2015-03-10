@@ -5,7 +5,11 @@
                ("kit" "kitchen")
                ("bed" "bedroom")
                ("mech" "mechanical room")
-               ("out" "outside north wall")))
+               ("out" "outside north wall")
+               ("bogus" "fake room for testing")))
+
+;; generate the list of sensor names. Used to populate the
+;; database.  This list must also match the one in ids.rkt
 
 (provide sensor-names)
 
@@ -15,7 +19,7 @@
 
 
 (define sensor-patterns
-  '(("s-temp" ("out" "bed" "bath" "lr") "the temperature in the ~a")
+  '(("s-temp" ("out" "bed" "bath" "lr" "bogus") "the temperature in the ~a")
     ("s-hum" ("out" "bed" "bath" "lr") "the humidity in the ~a")
     ("s-occ" ("bed" "mech" "lr" "bath") "whether the ~a is occupied")
     ("s-amb" ("bed" "mech" "lr" "bath") "the ambient light level in the ~a")
@@ -28,8 +32,17 @@
             [r (in-list (second pat))])
   (~a "- `"(first pat)"-"r"` : "(format (third pat) (second (assoc r rooms)))"\n")))
 
+;; as strings, for ids.rkt:
+(for*/list ([pat (in-list sensor-patterns)]
+            [r (in-list (second pat))])
+  (~a (first pat)"-"r))
+
 (define sensor-names
   (for*/list ([pat (in-list sensor-patterns)]
               [r (in-list (second pat))])
     (string->symbol (~a (first pat)"-"r))))
+
+
+
+
 

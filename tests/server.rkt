@@ -79,9 +79,9 @@
  (let ()
 (define l-u 
   ;; test locally:
-  #;"http://localhost:8080"
+  "http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "http://calpolysolardecathlon.org:8080"
+  #;"http://calpolysolardecathlon.org:8080"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 
@@ -118,14 +118,14 @@
       (regexp #px#"uhnoth")))
    
    
-   (check-equal? (test-subpath "/latest-event?device=s-temp-lr")
+   (check-equal? (test-subpath "/latest-event?device=s-temp-bogus")
                  "no events")
    
-   (match (test-subpath "/latest-event?device=s-temp-kit")
-     [(hash-table ('timestamp (? number? n))
-                  ('device-id "s-temp-kit")
-                  ('status (? string? s)))
-      (check-true (number? (string->number s)))])
+   (check-match
+    (test-subpath "/latest-event?device=s-temp-bed")
+    (hash-table ('timestamp (? number? n))
+                  ('device-id "s-temp-bed")
+                  ('status (? number? s))))
    
    
    
