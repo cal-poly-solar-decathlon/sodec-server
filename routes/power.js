@@ -16,7 +16,7 @@ router.get('/', function(req, res, next) {
             console.log("result from last sensor is : ", result);   
             var json = JSON.stringify(result);
             // console.log(json);
-            res.send(result);
+            res.send(json);
         }
 	});
 });
