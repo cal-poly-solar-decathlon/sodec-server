@@ -35,6 +35,7 @@ CREATE TABLE `sensorevents` (
   `reading` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `device` (`device`),
+  INDEX (`timestamp`) USING BTREE,
   CONSTRAINT `sensorevents_ibfk_1` FOREIGN KEY (`device`) REFERENCES `devices` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -49,6 +50,7 @@ CREATE TABLE `controlevents` (
   `setting` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `device` (`device`),
+  INDEX (`timestamp`) USING BTREE,
   CONSTRAINT `controlevents_ibfk_1` FOREIGN KEY (`device`) REFERENCES `devices` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 

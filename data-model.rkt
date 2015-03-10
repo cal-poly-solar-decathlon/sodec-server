@@ -151,13 +151,16 @@ CREATE TABLE `test_sensorevents` (
   (define db-hits
     (query-rows 
      conn 
-     (string-append "SELECT * FROM "(event-table)" WHERE DEVICE=? AND TIMESTAMP = "
-                    "(SELECT MAX(timestamp) FROM "(event-table)" WHERE DEVICE=?)")
-     id id))
+     (string-append
+      "SELECT * FROM "(event-table)" WHERE DEVICE=? ORDER BY timestamp "
+      "DESC LIMIT 1;")
+     id))
   (match db-hits
     [(list) #f]
     [(list only-hit) (row->event only-hit)]
-    [(cons first-hit others) (row->event first-hit)]))
+    [(cons first-hit others)
+     (error 'sensor-latest-event 
+            "internal error: limit 1 query returned >1 result")]))
 
 ;; convert an Event to a jsexpr
 ;; convert a temperature event to a jsexpr
@@ -265,3 +268,10 @@ CREATE TABLE `test_sensorevents` (
   
   (check-not-exn (lambda () (current-timestamp)))
   )
+
+(collect-garbage)
+(collect-garbage)
+(collect-garbage)
+(time (sensor-latest-event "s-temp-bed"))
+(time (sensor-latest-event "s-temp-bed"))
+(time (sensor-latest-event "s-temp-bed"))
