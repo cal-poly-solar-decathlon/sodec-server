@@ -58,11 +58,6 @@ Lights are completely up in the air. The rest of them seem plausible.
 Sensor readings are encoded as 64-bit integers. For temperatures, these
 are 1000ths of celsius degrees. 
 
-## Clients
-
-In this revision, I'm thinking about publish-subscribe. Looks easier
-to implement and test than websockets.
-
 ## Implementation
 
 Currently, the test server implements only the resources listed as 
@@ -144,11 +139,34 @@ The last event of the given device. [IMPLEMENTED]
                 "timestamp":{timestamp}
             }
 
+# Post a sensor reading [/srv/record-reading{?device}]
+
+## Record Reading [POST]
+
+A Post request adds new data, using the server's current
+timestamp. There's a (plaintext) secret used to validate
+the sender. Since this request just travels over the local
+wire, we don't need to worry about encrypting it. Famous
+last words.
+
++ Request (application/json)
+
+            {
+                "status":{status},
+                "secret":{secret}
+            }
+
++ Response 200 (application/json)
+
+    + Body
+
+            "okay"
+
 
 # Device Event Range [/srv/events-in-range{?device,start,end}]
 
 Fetch all events in the given range. More specifically, those with
-timestamps `n` such that `start <= n < end`.
+timestamps `n` such that `start <= n < end`. [IMPLEMENTED]
 
 + Parameters
     + device (string) ... the id of the selected device

@@ -10,6 +10,7 @@
 
 (provide start)
 
+(define SEKRIT "$a8Es#crB469")
 
 ;; handle a request. "front door" of the server
 (define (start req)
@@ -23,29 +24,41 @@
         host-ip
         host-port
         client-ip))
-     (match (url-path uri)
-       ;; latest event for a sensor
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("latest-event" (list))))
-        (time (handle-device-latest-event-request
-               (url-query uri)))]
-       ;; events in a range for a sensor
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("events-in-range" (list))))
-        (time (handle-device-events-in-range-request
-               (url-query uri)))]
-       ;; timestamp of the server
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("timestamp" (list))))
-        (response/json (handle-timestamp-request))]
-       ;; a simple 'ping'
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("ping" (list))))
-        (response/json "alive")]
-       [other
-        (404-response
-         #"unknown server path"
-         (format "uri ~v doesn't match known pattern" (url->string uri)))])]))
+     (match method
+       ["GET"
+        (match (url-path uri)
+          ;; latest event for a sensor
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("latest-event" (list))))
+           (time (handle-device-latest-event-request
+                  (url-query uri)))]
+          ;; events in a range for a sensor
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("events-in-range" (list))))
+           (time (handle-device-events-in-range-request
+                  (url-query uri)))]
+          ;; timestamp of the server
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("timestamp" (list))))
+           (response/json (handle-timestamp-request))]
+          ;; a simple 'ping'
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("ping" (list))))
+           (response/json "alive")]
+          [other
+           (404-response
+            #"unknown server path"
+            (format "GET url ~v doesn't match known pattern" (url->string uri)))])]
+       ["POST"
+        (match (url-path uri)
+          ;; record a new reading
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("record-reading" (list))))
+           (time (handle-new-reading post-data/raw))]
+          [other
+           (404-response
+            #"unknown server path"
+            (format "POST url ~v doesn't match known pattern" (url->string uri)))])])]))
 
 ;; handle a timestamp request
 (define (handle-timestamp-request)
