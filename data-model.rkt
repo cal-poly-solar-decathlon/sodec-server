@@ -43,7 +43,7 @@
 (define-runtime-path here ".")
 
 ;; create a connection to the database
-(define conn (mysql-connect #:database "sodec"
+(define conn (mysql-connect #:database "sodec2"
                             #:user "clements"
                             #:password "aoeuidht"))
 
@@ -269,9 +269,3 @@ CREATE TABLE `test_sensorevents` (
   (check-not-exn (lambda () (current-timestamp)))
   )
 
-(collect-garbage)
-(collect-garbage)
-(collect-garbage)
-(time (sensor-latest-event "s-temp-bed"))
-(time (sensor-latest-event "s-temp-bed"))
-(time (sensor-latest-event "s-temp-bed"))

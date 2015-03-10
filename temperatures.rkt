@@ -8,7 +8,7 @@
 ;; a temp is an integer, representing 
 ;; thousandths of a degree Celsius
 
-(define TEMPERATURE-ID "s-temp-kit")
+(define TEMPERATURE-ID "s-temp-bed")
 (define TEMP-QUANTA 1000)
 (define TEMP-ROUNDING (/ 1 TEMP-QUANTA))
 (define INITIAL-TEMPERATURE (* 20 TEMP-QUANTA))
@@ -20,7 +20,7 @@
 ;; record the temperature
 (: record-temperature! (Integer -> Void))
 (define (record-temperature! temp)
-  (record-sensor-status! TEMPERATURE-ID (number->string temp)))
+  (record-sensor-status! TEMPERATURE-ID temp))
 
 ;; BOGUS TEMPERATURE READING THREAD
 ;; adds a new reading every five seconds

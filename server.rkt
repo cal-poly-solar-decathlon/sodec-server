@@ -8,7 +8,6 @@
          json
          "data-model.rkt"
          "temperatures.rkt"
-         "time.rkt"
          "ids.rkt"
          xml)
 
