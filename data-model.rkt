@@ -28,12 +28,16 @@
                 (#:user String #:password String #:database String -> Connection)])
 
 
-(provide record-sensor-status!
+(provide current-timestamp
          sensor-events
          sensor-latest-event
+         sensor-events-in-range
+         record-sensor-status!
          (struct-out SensorEvent)
          maybe-event->jsexpr
-         current-timestamp)
+         events->jsexpr
+         testing?
+         reset-database-test-tables!)
 
 (struct SensorEvent ([device : ID]
                      [timestamp : date]
@@ -54,13 +58,6 @@
         [else "sensorevents"]))
 
 
-;; NB: sqlite doesn't do ... well, nearly every kind of type.
-;; I'm just using "text" to represent dates, because that's what we've got...
-;; EXTREMELY DANGEROUS. DESTROYS ALL DATA
-#;(define (reset-database!)
-  (query-exec conn "DROP TABLE events")
-  (query-exec conn "CREATE TABLE events (id TEXT, timestamp INTEGER, value TEXT)"))
-
 ;; NB: this table can't be temporary--if it is, we can't refer to it twice
 ;; in the same query.
 (define test-table-sql-stmt
@@ -72,13 +69,14 @@ CREATE TABLE `test_sensorevents` (
   `reading` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `device` (`device`),
+  INDEX (`timestamp`) USING BTREE,
   CONSTRAINT `temp_sensorevents_ibfk_11234` FOREIGN KEY (`device`) REFERENCES `devices` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 |
   )
 
 ;; create temporary tables for testing
-(define (create-database-test-tables!)
+(define (reset-database-test-tables!)
   (with-handlers ([exn:fail?
                   (lambda (exn)
                     (fprintf (current-error-port)
@@ -86,8 +84,6 @@ CREATE TABLE `test_sensorevents` (
     (query-exec conn "DROP TABLE test_sensorevents;"))
   (query-exec conn test-table-sql-stmt))
 
-;; safe to do this every time...
-(create-database-test-tables!)
 
 ;; type stuff: convert a vector of values to an SensorEvent
 (: row->event ((Vectorof Any) -> SensorEvent))
@@ -136,8 +132,23 @@ CREATE TABLE `test_sensorevents` (
   (map row->event 
        (query-rows 
         conn 
-        (string-append "SELECT * FROM "(event-table)" WHERE DEVICE=? ORDER BY timestamp")
+        (string-append "SELECT * FROM "(event-table)" WHERE device=? ORDER BY timestamp")
         id)))
+
+;; return sensor statuses in some time range (one sensor)
+(: sensor-events-in-range (String date date -> (Listof SensorEvent)))
+(define (sensor-events-in-range id start end)
+  (map row->event
+       (query-rows 
+        conn
+        (string-append
+         "SELECT * FROM "(event-table)" WHERE device=? "
+         "AND timestamp >= ? "
+         "AND timestamp < ? "
+         "ORDER BY timestamp")
+        id
+        (date->timestamp start)
+        (date->timestamp end))))
 
 ;; return the latest sensor status from one sensor.
 ;; choose arbitrarily in case of tie.
@@ -147,13 +158,13 @@ CREATE TABLE `test_sensorevents` (
     (raise-argument-error 'sensor-latest-event
                           "known device ID"
                           0 id))
-  ;; this looks nasty but mysql does well with it:
   (define db-hits
     (query-rows 
      conn 
      (string-append
-      "SELECT * FROM "(event-table)" WHERE DEVICE=? ORDER BY timestamp "
-      "DESC LIMIT 1;")
+      "SELECT * FROM "(event-table)" WHERE DEVICE=? " 
+      "ORDER BY timestamp DESC " 
+      "LIMIT 1;")
      id))
   (match db-hits
     [(list) #f]
@@ -167,11 +178,22 @@ CREATE TABLE `test_sensorevents` (
 (: maybe-event->jsexpr ((U SensorEvent False) -> (U (HashTable Symbol Any) String)))
 (define (maybe-event->jsexpr event)
   (cond [(SensorEvent? event)
-         (make-immutable-hash
-          (list (cons 'device-id (SensorEvent-device event))
-                (cons 'timestamp (date->seconds (SensorEvent-timestamp event)))
-                (cons 'status (SensorEvent-reading event))))]
+         (event->jsexpr event)]
         [else "no events"]))
+
+;; convert a list of events to a jsexpr
+;; convert a temperature event to a jsexpr
+(: events->jsexpr ((Listof SensorEvent) -> (Listof (HashTable Symbol Any))))
+(define (events->jsexpr events)
+  (map event->jsexpr events))
+
+;; convert an Event to a jsexpr
+(: event->jsexpr (SensorEvent -> (HashTable Symbol Any)))
+(define (event->jsexpr event)
+  (make-immutable-hash
+   (list (cons 'device-id (SensorEvent-device event))
+         (cons 'timestamp (date->seconds (SensorEvent-timestamp event)))
+         (cons 'status (SensorEvent-reading event)))))
 
 ;;;;;
 ;;
@@ -182,16 +204,11 @@ CREATE TABLE `test_sensorevents` (
 ;; get the current timestamp from the mysql server
 (: current-timestamp (-> date))
 (define (current-timestamp)
-  (cond 
-    ;; when testing, use bogus timestamps starting at EPOCH,
-    ;; and artificially incremented by calls to increment-test-timestamp!
-    [(testing?) (seconds->date (unbox testing-timestamp-box))]
-    [else
-     (define server-timestamp 
-       (query-value conn "SELECT CURRENT_TIMESTAMP;"))
-     (cond [(sql-timestamp? server-timestamp) (timestamp->date server-timestamp)]
-           [else (error 'get-timestamp
-                        "expected string from server, got: ~v\n" server-timestamp)])]))
+  (define server-timestamp 
+    (query-value conn "SELECT CURRENT_TIMESTAMP;"))
+  (cond [(sql-timestamp? server-timestamp) (timestamp->date server-timestamp)]
+        [else (error 'get-timestamp
+                     "expected string from server, got: ~v\n" server-timestamp)]))
 
 ;; convert a mysql timestamp string to a racket date
 (: timestamp->date (sql-timestamp -> date))
@@ -207,65 +224,13 @@ CREATE TABLE `test_sensorevents` (
                  (sql-timestamp-month timestamp)
                  (sql-timestamp-year timestamp))))
 
-
-
-;; the beginning of time for testing
-(: EPOCH Natural)
-(define EPOCH 
-  (let ([epoch-maybe-negative (find-seconds 0 0 0 1 1 1971)])
-    (cond [(< epoch-maybe-negative 0) (error 'epoch "epoch was negative!")]
-          [else epoch-maybe-negative])))
-
-(: testing-timestamp-box (Boxof Integer))
-(define testing-timestamp-box (box EPOCH))
-
-
-
-(parameterize ([testing? #t])
-  
-  (: se->dr ((U False SensorEvent) -> (List ID Integer)))
-  (define (se->dr e)
-    (cond [(eq? #f e) (error 'se->dr "test fail")]
-          [else (list (SensorEvent-device e)
-                      (SensorEvent-reading e))]))
-  
-  (check-not-exn
-   (lambda () (record-sensor-status! "s-temp-lr" 32279)))
-  
-  ;; this is the latest:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 32279))
-
-  (record-sensor-status! "s-temp-bed" 22900)
-  
-  ;; this is still the latest:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 32279))
-  
-  (sleep 1.5)
-  (record-sensor-status! "s-temp-lr" 33116)
-  
-  ;; now the latest has changed:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 33116))
-
-  (sleep 1.5)
-  (record-sensor-status! "s-temp-bed" 22883)
- 
-  ;; don't have test times or check-match, :(
-  (define hash (maybe-event->jsexpr (sensor-latest-event "s-temp-lr")))
-  (cond [(string? hash) (check-equal? "true" "false")]
-        [else 
-         (check-equal? (hash-ref hash 'device-id) "s-temp-lr")
-         (check-true (integer? (hash-ref hash 'timestamp)))
-         (check-equal? (hash-ref hash 'status) 33116)])
-  
-  
-  (check-equal?
-   (map se->dr (sensor-events "s-temp-bed"))
-   (list (list "s-temp-bed" 22900)
-         (list "s-temp-bed" 22883)))
-  
-  (check-not-exn (lambda () (current-timestamp)))
-  )
-
+(: date->timestamp (date -> sql-timestamp))
+(define (date->timestamp date)
+  (sql-timestamp (date-year date)
+                 (date-month date)
+                 (date-day date)
+                 (date-hour date)
+                 (date-minute date)
+                 (date-second date)
+                 0
+                 #f))

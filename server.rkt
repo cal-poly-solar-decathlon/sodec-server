@@ -10,6 +10,43 @@
 
 (provide start)
 
+
+;; handle a request. "front door" of the server
+(define (start req)
+  (match req
+    [(struct request
+       (method
+        uri
+        headers/raw
+        bindings/raw-promise
+        post-data/raw
+        host-ip
+        host-port
+        client-ip))
+     (match (url-path uri)
+       ;; latest event for a sensor
+       [(list (struct path/param ("srv" (list)))
+              (struct path/param ("latest-event" (list))))
+        (time (handle-device-latest-event-request
+               (url-query uri)))]
+       ;; events in a range for a sensor
+       [(list (struct path/param ("srv" (list)))
+              (struct path/param ("events-in-range" (list))))
+        (time (handle-device-events-in-range-request
+               (url-query uri)))]
+       ;; timestamp of the server
+       [(list (struct path/param ("srv" (list)))
+              (struct path/param ("timestamp" (list))))
+        (response/json (handle-timestamp-request))]
+       ;; a simple 'ping'
+       [(list (struct path/param ("srv" (list)))
+              (struct path/param ("ping" (list))))
+        (response/json "alive")]
+       [other
+        (404-response
+         #"unknown server path"
+         (format "uri ~v doesn't match known pattern" (url->string uri)))])]))
+
 ;; handle a timestamp request
 (define (handle-timestamp-request)
   (hash 'timestamp (date->seconds (current-timestamp))))
@@ -33,6 +70,44 @@
       (format "expected a query with exactly these query fields: (device), got: ~v"
               query-fields))]))
 
+;; handle a device time range reading request
+(define (handle-device-events-in-range-request query)
+  (match query
+    [(list-no-order
+      (cons 'device (? ID? id))
+      (cons 'start (regexp NUM-REGEXP (list start-str)))
+      (cons 'end (regexp NUM-REGEXP (list end-str))))
+     (define start (string->number start-str))
+     (define end (string->number end-str))
+     (cond [(< end start)
+            (404-response
+             #"end before start"
+             (format "expected a query with start <= end, got: ~e"
+                     query))]
+           [(< DAY-SECONDS (- end start))
+            (404-response
+             #"range too long"
+             (format "expected a query length of less than one day, got ~e"
+                     (- end start)))]
+           [else
+            (response/json
+             (events->jsexpr 
+              (sensor-events-in-range id 
+                                      (seconds->date start)
+                                      (seconds->date end))))])]
+    [else
+     ;; spent a while on stack overflow checking what response code is
+     ;; best, seems there's quite a bit of disagreement...
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with fields matching spec, got: ~e"
+              query))]))
+
+(define NUM-REGEXP #px"^[[:digit:]]+$")
+
+(define DAY-SECONDS 86400)
+(define nat? exact-nonnegative-integer?)
+
 ;; issue a 404 response:
 (define (404-response header-msg body-msg)
   (response/full
@@ -47,37 +122,6 @@
 
 
 
-;; handle a request
-(define (start req)
-  (match req
-    [(struct request
-       (method
-        uri
-        headers/raw
-        bindings/raw-promise
-        post-data/raw
-        host-ip
-        host-port
-        client-ip)) 
-     
-     (match (url-path uri)
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("latest-event" (list))))
-        (time (handle-device-latest-event-request
-               (url-query uri)))]
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("timestamp" (list))))
-        (response/json (handle-timestamp-request))]
-       ;; a simple 'ping'
-       [(list (struct path/param ("srv" (list)))
-              (struct path/param ("ping" (list))))
-        (response/json "alive")]
-       [other
-        (404-response
-         #"unknown server path"
-         (format "uri ~v doesn't match known pattern" (url->string uri)))]
-     )])
-  )
 
 ;; a successful json response
 ;; jsexpr -> response

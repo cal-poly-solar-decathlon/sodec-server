@@ -48,8 +48,10 @@
          (bytes->jsexpr reply)]
         [else 
          (error 'remote-call/get
-                "response code: expected 200, got: ~v" 
-                response-code)]))
+                "response code: expected 200, got: ~v\nwith message: ~v\nand body: ~v" 
+                response-code
+                first-line
+                (regexp-match #px".*" body-port))]))
 
 ;; given a URL string, return the response code, the first line, the rest
 ;; of the headers, and the port for the remainder of the body
@@ -126,6 +128,18 @@
     (hash-table ('timestamp (? number? n))
                   ('device-id "s-temp-bed")
                   ('status (? number? s))))
+   
+   
+   (check-true
+    (let ([result
+           (test-subpath "/events-in-range?device=s-temp-bed;start=14;end=19")])
+      (andmap (lambda (elt)
+                (match elt
+                  [(hash-table ('timestamp (? number? n))
+                               ('device-id "s-temp-bed")
+                               ('status (? number? s)))
+                   #t]))
+              result)))
    
    
    
