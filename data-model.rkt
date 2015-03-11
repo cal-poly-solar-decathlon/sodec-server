@@ -9,6 +9,9 @@
 
 (require/typed db/base
                [#:opaque Connection connection?]
+               [#:opaque ConnectionPool connection-pool?]
+               [virtual-connection (ConnectionPool -> Connection)]
+               [connection-pool ((-> Connection) -> ConnectionPool)]
                [query-exec (Connection String Any * -> Void)]
                [query-rows (Connection String Any * ->
                                        (Listof (Vectorof Any)))]
@@ -47,9 +50,13 @@
 (define-runtime-path here ".")
 
 ;; create a connection to the database
-(define conn (mysql-connect #:database "sodec2"
-                            #:user "clements"
-                            #:password "aoeuidht"))
+(define conn 
+  (virtual-connection
+   (connection-pool
+    (lambda ()
+      (mysql-connect #:database "sodec2"
+                     #:user "clements"
+                     #:password "aoeuidht")))))
 
 
 ;; when testing, use the testing events table
