@@ -25,7 +25,7 @@
         host-port
         client-ip))
      (match method
-       ["GET"
+       [#"GET"
         (match (url-path uri)
           ;; latest event for a sensor
           [(list (struct path/param ("srv" (list)))
@@ -49,7 +49,7 @@
            (404-response
             #"unknown server path"
             (format "GET url ~v doesn't match known pattern" (url->string uri)))])]
-       ["POST"
+       [#"POST"
         (match (url-path uri)
           ;; record a new reading
           [(list (struct path/param ("srv" (list)))
@@ -115,6 +115,10 @@
       #"wrong query fields"
       (format "expected a query with fields matching spec, got: ~e"
               query))]))
+
+;; handle an incoming reading
+(define (handle-new-reading query post-data)
+  (error 'unimplemented))
 
 (define NUM-REGEXP #px"^[[:digit:]]+$")
 
