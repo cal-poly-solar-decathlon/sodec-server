@@ -77,8 +77,11 @@
   #;"http://li592-145.members.linode.com:8025")
 
 
-(define (test-subpath subpath)
+(define (call-subpath subpath)
   (remote-call/get (string-append l-u "/srv" subpath)))
+
+(define (call-subpath/post subpath post-bytes)
+  (remote-call/post (string-append l-u "/srv" subpath) post-bytes))
 
 (run-tests
 (test-suite
@@ -88,40 +91,37 @@
 
   
    
-   (check-equal? (test-subpath "/ping") "alive")
+   (check-equal? (call-subpath "/ping") "alive")
    
-   (match (test-subpath "/timestamp")
+   (match (call-subpath "/timestamp")
      [(hash-table ('timestamp (? number? n)))
       (check-true (< (find-seconds 0 0 0 1 1 2014) n))]
      [other 
       (fail "timestamp shape")])
    
+   (define ((port-containing str) port)
+     (regexp-match (regexp-quote str) port))
+   
    ;; simple 404:
-   (let ()
-     (define 404-call (remote-call/get/core (string-append l-u "/srv/blothints")))
-     (check-equal? (first 404-call) 404)
-     (check-match
-      (first
-       (regexp-match #px".*" (fourth 404-call)))
-      (regexp #px"blothints")))
+   (check-match (remote-call/get/core (string-append l-u "/srv/blothints"))
+                (list 404
+                      _1
+                      _2
+                      (? (port-containing "blothints") _3)))
    
    ;; near miss on the device name:
-   (let ()
-     (define 404-call
-       (remote-call/get/core
-        (string-append l-u "/srv/latest-event?device=uhnoth")))
-     (check-equal? (first 404-call) 404)
-     (check-match
-      (first
-       (regexp-match #px".*" (fourth 404-call)))
-      (regexp #px#"uhnoth")))
+   (check-match (remote-call/get/core (string-append l-u "/srv/latest-event?device=uhnoth"))
+                (list 404
+                      _1
+                      _2
+                      (? (port-containing "uhnoth") _3)))
    
    
-   (check-equal? (test-subpath "/latest-event?device=s-temp-bogus")
+   (check-equal? (call-subpath "/latest-event?device=s-temp-testing-empty")
                  "no events")
    
    (check-match
-    (test-subpath "/latest-event?device=s-temp-bed")
+    (call-subpath "/latest-event?device=s-temp-bed")
     (hash-table ('timestamp (? number? n))
                   ('device-id "s-temp-bed")
                   ('status (? number? s))))
@@ -129,7 +129,7 @@
    
    (check-true
     (let ([result
-           (test-subpath "/events-in-range?device=s-temp-bed;start=14;end=19")])
+           (call-subpath "/events-in-range?device=s-temp-bed;start=14;end=19")])
       (andmap (lambda (elt)
                 (match elt
                   [(hash-table ('timestamp (? number? n))
@@ -139,17 +139,44 @@
               result)))
    
    
+   ;; RECORD-READING
+   (check-match (remote-call/post/core
+                 (string-append l-u "/srv/record-reading?device=uhnoth")
+                 #"1234")
+                (list 404
+                      "HTTP/1.1 404 unknown device name\r"
+                      _2
+                      (? (port-containing "uhnoth") _3)))
    
+   (check-match (remote-call/post/core
+                 (string-append l-u "/srv/record-reading?device=s-temp-lr")
+                 #"abcd")
+                (list 400
+                      "HTTP/1.1 400 bad JSON in POST\r"
+                      _2
+                      _3))
+   
+   (check-equal? (remote-call/post
+                  (string-append l-u "/srv/record-reading?device=s-temp-testing-blackhole")
+                  #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+                 "okay")
 )))
 
 
-(define ts (hash-ref (test-subpath "/timestamp") 'timestamp))
+(define ts (hash-ref (call-subpath "/timestamp") 'timestamp))
 
 ;; this is getting a bit nasty in the string-append region...
 (printf "number of readings in the last day: ~v\n"
         (length
-         (test-subpath (~a "/events-in-range?device=s-temp-bed;start="
+         (call-subpath (~a "/events-in-range?device=s-temp-bed;start="
                            (- ts 86400)
                            ";end="
                            ts))))
+
+(define last-reading
+  (call-subpath "/latest-event?device=s-temp-bed"))
+
+(define last-reading-time (hash-ref last-reading 'timestamp))
+
+(printf "time since last reading: ~v seconds\n" (- ts last-reading-time))
 

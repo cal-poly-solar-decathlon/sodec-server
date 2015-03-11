@@ -21,6 +21,7 @@
      "s-amb-mech"
      "s-amb-lr"
      "s-amb-bath"
-     "s-temp-bogus"))
+     "s-temp-testing-blackhole"
+     "s-temp-testing-empty"))
 
 (define-predicate ID? ID)

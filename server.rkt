@@ -54,7 +54,7 @@
           ;; record a new reading
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("record-reading" (list))))
-           (time (handle-new-reading post-data/raw))]
+           (time (handle-new-reading (url-query uri) post-data/raw))]
           [other
            (404-response
             #"unknown server path"
@@ -66,26 +66,24 @@
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)
-  (define query-fields (map car query))
-  (cond
-    [(equal? query-fields '(device))
-     (define id (cdr (assoc 'device query)))
-     (cond [(ID? id)
-            (response/json
-             (maybe-event->jsexpr (sensor-latest-event id)))]
-           [else
-            (404-response
-             #"unknown device name"
-             (format "device ~v unknown" id))])]
+  (match query
+    [(list (cons 'device (? ID? id)))
+     (response/json
+      (maybe-event->jsexpr (sensor-latest-event id)))]
+    [(list (cons 'device bad-device))
+     (404-response
+      #"unknown device name"
+      (format "device ~v unknown" bad-device))]
     [else
      (404-response
       #"wrong query fields"
-      (format "expected a query with exactly these query fields: (device), got: ~v"
-              query-fields))]))
+      (format "expected a query with fields matching spec, got: ~v"
+              query))]))
 
 ;; handle a device time range reading request
 (define (handle-device-events-in-range-request query)
   (match query
+    ;; could give more fine-grained error messages here...
     [(list-no-order
       (cons 'device (? ID? id))
       (cons 'start (regexp NUM-REGEXP (list start-str)))
@@ -118,7 +116,46 @@
 
 ;; handle an incoming reading
 (define (handle-new-reading query post-data)
-  (error 'unimplemented))
+  (match query
+    [(list (cons 'device (? ID? id)))
+     (with-handlers ([(lambda (exn)
+                        (and (exn:fail? exn)
+                             (regexp-match #px"bytes->jsexpr" (exn-message exn))))
+                      (lambda (exn)
+                        (fail-response
+                         400
+                         #"bad JSON in POST"
+                         (format "expected POST bytes parseable as JSON, got: ~e"
+                                 post-data)))])
+       (define jsexpr (bytes->jsexpr post-data))
+       (match jsexpr
+         [(hash-table ('status (? integer? reading))
+                      ('secret (? string? secret)))
+          (cond [(string=? secret SEKRIT)
+                 (record-sensor-status! id (inexact->exact reading))
+                 (response/json "okay")]
+                [else 
+                 (fail-response
+                  403
+                  #"wrong secret"
+                  "request didn't come with the right secret")])]
+         [else 
+          (fail-response
+           400
+           #"wrong JSON in POST"
+           (format "expected JSON data matching spec, got: ~e"
+                   jsexpr))]))]
+    [(list (cons 'device bad-device))
+     (404-response
+      #"unknown device name"
+      (format "device ~v unknown" bad-device))]
+    [other
+     ;; spent a while on stack overflow checking what response code is
+     ;; best, seems there's quite a bit of disagreement...
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with fields matching spec, got: ~e"
+              query))]))
 
 (define NUM-REGEXP #px"^[[:digit:]]+$")
 
@@ -127,8 +164,12 @@
 
 ;; issue a 404 response:
 (define (404-response header-msg body-msg)
+  (fail-response 404 header-msg body-msg))
+
+;; issue a failure response
+(define (fail-response code header-msg body-msg)
   (response/full
-   404
+   code
    header-msg
    (current-seconds) TEXT/HTML-MIME-TYPE
    (list)
@@ -136,8 +177,6 @@
     (string->bytes/utf-8
      (xexpr->string
       `(html (body (p ,body-msg))))))))
-
-
 
 
 ;; a successful json response
