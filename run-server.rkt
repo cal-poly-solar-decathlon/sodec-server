@@ -2,7 +2,8 @@
 
 (require web-server/servlet-env
          racket/runtime-path
-         "server.rkt")
+         "server.rkt"
+         "temperatures.rkt")
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")

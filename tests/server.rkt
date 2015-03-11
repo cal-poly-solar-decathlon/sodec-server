@@ -67,21 +67,26 @@
                   (format "expected response with at least one header line, got ~e"
                           header-string))]))
 
+
+(define l-u 
+  ;; test locally:
+  #;"http://localhost:8080"
+  ;; test brinckerhoff.org (whatever it points to)
+  "http://calpolysolardecathlon.org:8080"
+  ;; test new linode
+  #;"http://li592-145.members.linode.com:8025")
+
+
+(define (test-subpath subpath)
+  (remote-call/get (string-append l-u "/srv" subpath)))
+
 (run-tests
 (test-suite
  "racket evaluator tests"
  (let ()
-(define l-u 
-  ;; test locally:
-  "http://localhost:8080"
-  ;; test brinckerhoff.org (whatever it points to)
-  #;"http://calpolysolardecathlon.org:8080"
-  ;; test new linode
-  #;"http://li592-145.members.linode.com:8025")
+
 
   
-   (define (test-subpath subpath)
-     (remote-call/get (string-append l-u "/srv" subpath)))
    
    (check-equal? (test-subpath "/ping") "alive")
    
@@ -135,9 +140,16 @@
    
    
    
-   
-   
-   
 )))
 
+
+(define ts (hash-ref (test-subpath "/timestamp") 'timestamp))
+
+;; this is getting a bit nasty in the string-append region...
+(printf "number of readings in the last day: ~v\n"
+        (length
+         (test-subpath (~a "/events-in-range?device=s-temp-bed;start="
+                           (- ts 86400)
+                           ";end="
+                           ts))))
 
