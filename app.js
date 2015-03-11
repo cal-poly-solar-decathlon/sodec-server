@@ -111,10 +111,16 @@ setInterval(function() {
             console.log(response.statusCode);
         }
    }).on('error',function(e){
-      console.log("Error: " + e.message); 
+      console.log("Error: " + e.message);
       console.log( e.stack );
    });
 }, 10 * 1000);
+
+setInterval(function() {
+    var random =randomNum(50.1, 70.9);
+    console.log("Adding value " + random);
+    db.addSensorEvent('s-temp-lr', random);
+}, 5000);
 
 
 // inserting random data into egauge table for testing on vps
@@ -123,3 +129,8 @@ setInterval(function() {
     // console.log(random);
       db.addEgaugeEvent(random, random / random);
 }, 60 * 1000);
+
+function randomNum(min, max)
+{
+   return (Math.random() * ( min - max) + max).toFixed(3);
+}
