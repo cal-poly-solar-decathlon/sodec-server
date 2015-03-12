@@ -127,7 +127,7 @@ exports.getSensorEventRange = function(device, start, end, callback) {
         });
     }
     else {
-        connection.query("SELECT device as 'device-id', reading as status, timestamp FROM sensorevents" +
+        connection.query("SELECT device, reading as status, timestamp FROM sensorevents" +
                          " WHERE timestamp >= '" + start + "' AND " +
                          " timestamp < '" + end + "' AND " +
                          " device = '" + device + "';", function(err, result) {
