@@ -114,7 +114,7 @@ setInterval(function() {
       console.log("Error: " + e.message);
       console.log( e.stack );
    });
-}, 1 * 1000);
+}, 10 * 1000);
 
 setInterval(function() {
     var random =randomNum(50.1, 70.9);
