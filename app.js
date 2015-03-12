@@ -99,7 +99,7 @@ setInterval(function() {
                // console.log("Text: " + text);
                elements = text[1];
                console.log("ELEMENTS: " + elements);
-               db.addEgaugeEvent(elements[1], elements[2]);
+               db.addEgaugeEvent(parseInt(elements[1]), parseInt(elements[2]));
                // for (var i = 1; i < 2; i++) {
                //    elements = text[i].toString().split(',');
                //    console.log("log: " + elements[0]);
@@ -114,7 +114,7 @@ setInterval(function() {
       console.log("Error: " + e.message);
       console.log( e.stack );
    });
-}, 10 * 1000);
+}, 1 * 1000);
 
 setInterval(function() {
     var random =randomNum(50.1, 70.9);
@@ -127,7 +127,7 @@ setInterval(function() {
 setInterval(function() {
     var random = (Math.floor (Math.random() * Math.pow(2,12)) + (Math.floor (Math.random() * Math.pow(2,2)) / Math.pow(10,2)))
     // console.log(random);
-      db.addEgaugeEvent(random, random / random);
+      db.addEgaugeEvent(parseInt(random * 1000), parseInt(random / random));
 }, 60 * 1000);
 
 function randomNum(min, max)

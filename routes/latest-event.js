@@ -31,10 +31,12 @@ router.get('/', function(req, res, next)
                             
                             function convertTime(key, value) {
                                 if (key == "timestamp") {
-                                    return (new Date(value)).toLocaleString();
+                                    return (new Date(value).getTime());
                                 }
                                 return value;
                             }
+
+
 
                             var json = JSON.stringify(result, convertTime);
                             res.send(json);
