@@ -73,6 +73,7 @@
   "http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
   #;"http://calpolysolardecathlon.org:8080"
+  #;"http://calpolysolardecathlon.org:3000"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 

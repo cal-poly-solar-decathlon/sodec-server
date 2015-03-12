@@ -185,8 +185,10 @@
 (define (response/json jsexpr)
   (response/full
    200 #"Okay"
-   (current-seconds) #"application/json"
-   null
+   (current-seconds)
+   #"application/json"
+   (list (make-header #"Access-Control-Allow-Origin"
+                      #"*"))
    (list (jsexpr->bytes jsexpr))))
 
 
