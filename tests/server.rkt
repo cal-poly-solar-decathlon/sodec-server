@@ -70,9 +70,9 @@
 
 (define l-u 
   ;; test locally:
-  #;"http://localhost:8080"
+  "http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "http://calpolysolardecathlon.org:8080"
+  #;"http://calpolysolardecathlon.org:8080"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 
@@ -166,10 +166,10 @@
 (define ts (hash-ref (call-subpath "/timestamp") 'timestamp))
 
 ;; this is getting a bit nasty in the string-append region...
-(printf "number of readings in the last day: ~v\n"
+(printf "number of readings in the last hour: ~v\n"
         (length
          (call-subpath (~a "/events-in-range?device=s-temp-bed;start="
-                           (- ts 86400)
+                           (- ts 3600)
                            ";end="
                            ts))))
 

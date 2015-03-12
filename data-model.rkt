@@ -28,7 +28,11 @@
 
 (require/typed db/mysql
                [mysql-connect
-                (#:user String #:password String #:database String -> Connection)])
+                (#:user String #:password String #:database String
+                        (#:socket Path-String) -> Connection)])
+
+(require/typed "mysql-socket.rkt"
+               [mysql-socket String])
 
 
 (provide current-timestamp
@@ -56,7 +60,8 @@
     (lambda ()
       (mysql-connect #:database "sodec2"
                      #:user "clements"
-                     #:password "aoeuidht")))))
+                     #:password "aoeuidht"
+                     #:socket mysql-socket)))))
 
 
 ;; when testing, use the testing events table

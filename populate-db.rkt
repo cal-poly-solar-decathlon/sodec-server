@@ -1,6 +1,7 @@
-#lang racket
+#lang racket/base
 
 (require "generate-sensor-names.rkt"
+         "mysql-socket.rkt"
          db)
 
 (define conn
@@ -10,7 +11,7 @@
       (mysql-connect #:user "clements"
                      #:database "sodec2"
                      #:password "aoeuidht"
-                     ;;#:port 11306
+                     #:socket mysql-socket
                      )))))
 
 (define (populate-db)

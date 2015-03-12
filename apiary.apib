@@ -168,7 +168,10 @@ last words.
 # Device Event Range [/srv/events-in-range{?device,start,end}]
 
 Fetch all events in the given range. More specifically, those with
-timestamps `n` such that `start <= n < end`. [IMPLEMENTED]
+timestamps `n` such that `start <= n < end`. Currently, the difference
+between 'start' and 'end' can't be greater than 3600 seconds, to
+limit the size of the response.
+[IMPLEMENTED]
 
 + Parameters
     + device (string) ... the id of the selected device

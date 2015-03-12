@@ -95,10 +95,10 @@
              #"end before start"
              (format "expected a query with start <= end, got: ~e"
                      query))]
-           [(< DAY-SECONDS (- end start))
+           [(< HOUR-SECONDS (- end start))
             (404-response
              #"range too long"
-             (format "expected a query length of less than one day, got ~e"
+             (format "expected a query length of less than or equal to one hour, got ~e"
                      (- end start)))]
            [else
             (response/json
@@ -159,6 +159,7 @@
 
 (define NUM-REGEXP #px"^[[:digit:]]+$")
 
+(define HOUR-SECONDS 3600)
 (define DAY-SECONDS 86400)
 (define nat? exact-nonnegative-integer?)
 
