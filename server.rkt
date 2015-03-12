@@ -30,13 +30,13 @@
           ;; latest event for a sensor
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("latest-event" (list))))
-           (time (handle-device-latest-event-request
-                  (url-query uri)))]
+           (handle-device-latest-event-request
+            (url-query uri))]
           ;; events in a range for a sensor
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("events-in-range" (list))))
-           (time (handle-device-events-in-range-request
-                  (url-query uri)))]
+           (handle-device-events-in-range-request
+            (url-query uri))]
           ;; timestamp of the server
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("timestamp" (list))))
@@ -54,7 +54,7 @@
           ;; record a new reading
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("record-reading" (list))))
-           (time (handle-new-reading (url-query uri) post-data/raw))]
+           (handle-new-reading (url-query uri) post-data/raw)]
           [other
            (404-response
             #"unknown server path"
