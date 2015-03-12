@@ -86,7 +86,7 @@ exports.addSensorEvent = function(device, reading) {
 // get last event
 exports.getLastSensorEvent = function(device, callback) {
      if (device == "egauge") {
-        connection.query("SELECT * FROM egauge " +
+        connection.query("SELECT timestamp, `usage`, `generation` FROM egauge " +
                          " ORDER BY id DESC LIMIT 1;", function(err, result) {
             if (err) {
                 callback(err, null);
@@ -96,7 +96,7 @@ exports.getLastSensorEvent = function(device, callback) {
             }
         });
     } else {
-        connection.query("SELECT * FROM sensorevents " +
+        connection.query("SELECT device as 'device-id', reading as status, timestamp FROM sensorevents " +
                          "WHERE device = '" + device + "'" + 
                          " ORDER BY id DESC LIMIT 1;", function(err, result) {
             if (err) {
@@ -113,7 +113,7 @@ exports.getLastSensorEvent = function(device, callback) {
 // More specifically, those with timestamps n such that start <= n < end.
 exports.getSensorEventRange = function(device, start, end, callback) {
     if (device == "egauge") {
-        connection.query("SELECT * FROM egauge" +
+        connection.query("SELECT timestamp, `usage`, `generation` FROM egauge" +
                      " WHERE timestamp >= '" + start  +"' AND " +
                      " timestamp < '" + end + "';", function(err, result) {
             if (err) {
@@ -127,7 +127,7 @@ exports.getSensorEventRange = function(device, start, end, callback) {
         });
     }
     else {
-        connection.query("SELECT * FROM sensorevents" +
+        connection.query("SELECT device as 'device-id', reading as status, timestamp FROM sensorevents" +
                          " WHERE timestamp >= '" + start + "' AND " +
                          " timestamp < '" + end + "' AND " +
                          " device = '" + device + "';", function(err, result) {
