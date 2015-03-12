@@ -6,11 +6,11 @@
          racket/date
          "data-model.rkt"
          "ids.rkt"
+         "secret.rkt"
          xml)
 
 (provide start)
 
-(define SEKRIT "$a8Es#crB469")
 
 ;; handle a request. "front door" of the server
 (define (start req)

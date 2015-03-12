@@ -58,7 +58,7 @@ Lights are completely up in the air. The rest of them seem plausible.
 ## Representing Sensor Readings
 
 Sensor readings are encoded as 64-bit integers. For temperatures, these
-are 1000ths of celsius degrees. 
+are 10ths of celsius degrees. 
 
 ## Implementation
 
@@ -181,14 +181,19 @@ limit the size of the response.
 
 ## Get events in a range [GET]
 
+To save space on the wire, the data is delivered as a sequence of deltas. More
+specifically, the initial timestamp and status are delivered in full. Following
+this, the remainder of the readings are delivered as a sequence of sequences
+of length 2, where each element contains the number of seconds since the prior
+reading and the difference in the status since the last reading.
+
 + Response 200 (application/json)
 
     + Body
 
-            [{"device":"foo", "status":"77982","timestamp":1418096755},
-             {"device":"foo", "status":"77983","timestamp":1418096758},
-             {"device":"foo", "status":"77982","timestamp":1418096761},
-             {"device":"foo", "status":"77980","timestamp":1418096764}]
+            {baseTimestamp:1418096755,
+             baseStatus:224,
+             seriesData:[[5,5],[5,0],[5,-2],[5,4]]}
 
 
 # Subscribe to Events [/srv/subscribe]
