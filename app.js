@@ -95,7 +95,7 @@ setInterval(function() {
                for (var i = 1; i < 2; i++) {
                   elements = text[i].toString().split(',');
                   console.log("log: " + elements[0]);
-                  db.addEgaugeEvent(parseInt(elements[1]), parseInt(elements[2]));
+                  db.addEgaugeEvent(parseInt(elements[1]) * 1000, parseInt(elements[2]) * 1000);
                }
             });
         } else {
@@ -106,13 +106,13 @@ setInterval(function() {
       console.log("Error: " + e.message); 
       console.log( e.stack );
    });
-}, 5 * 1000);
+}, 60 * 1000);
 
 setInterval(function() {
-    var random =randomNum(50.1, 70.9);
-    console.log("Adding value " + random);
-    db.addSensorEvent('s-temp-lr', random);
-}, 5000);
+    var random = randomNum(50.1, 70.9);
+    console.log("Adding value " + random * 1000);
+    db.addSensorEvent('s-temp-lr', random * 1000);
+}, 60 * 1000);
 
 
 // inserting random data into egauge table for testing on vps
