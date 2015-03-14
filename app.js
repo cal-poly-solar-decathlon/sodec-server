@@ -80,41 +80,33 @@ module.exports = app;
 setInterval(function() {
     console.log("Polling egauge");
     var options = {
-      // url: 'http://google.com'
+      // host: 'egauge15668',
       host: '192.168.2.2',
       port: 80,
-      path: '/cgi-bin/egauge-show?c',
+      path: '/cgi-bin/egauge-show?c&n=5',
       method: 'GET'
-      // host: 'egauge15668',
-      // path: '/cgi-bin/egauge-show?c'
     };
-    // request('http://egauge15668/cgi-bin/egauge-show?c', function (error, response, body) {
       http.get(options, function(response) {
-         // console.log("response.statusCode: " + response.statusCode);
 
          if (response.statusCode === 200) {
             response.on('data', function(chunk) {
-               // console.log("BODY: " + chunk);
                var text = chunk.toString().split('\n');
-               // console.log("Text: " + text);
                elements = text[1];
-               console.log("ELEMENTS: " + elements);
-               db.addEgaugeEvent(parseInt(elements[1]), parseInt(elements[2]));
-               // for (var i = 1; i < 2; i++) {
-               //    elements = text[i].toString().split(',');
-               //    console.log("log: " + elements[0]);
-               //    db.addEgaugeEvent(elements[1], elements[2]);
-               // }
+               for (var i = 1; i < 2; i++) {
+                  elements = text[i].toString().split(',');
+                  console.log("log: " + elements[0]);
+                  db.addEgaugeEvent(parseInt(elements[1]), parseInt(elements[2]));
+               }
             });
         } else {
             console.log("ERROR: ");
             console.log(response.statusCode);
         }
-   }).on('error',function(e){
-      console.log("Error: " + e.message);
+   }).on('error', function(e){
+      console.log("Error: " + e.message); 
       console.log( e.stack );
    });
-}, 10 * 1000);
+}, 5 * 1000);
 
 setInterval(function() {
     var random =randomNum(50.1, 70.9);
