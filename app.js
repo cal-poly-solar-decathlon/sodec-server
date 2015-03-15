@@ -13,6 +13,7 @@ var arduino = require('./routes/arduino');
 var power = require('./routes/power');
 var latestEvent = require('./routes/latest-event');
 var eventsInRange = require('./routes/events-in-range');
+var recordReading = require('./routes/record-reading');
 
 var request = require('request');
 var jquery = require('jquery');
@@ -35,12 +36,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/srv/', routes);
-app.use('/srv/', users);
-app.use('/srv/', arduino);
+app.use('/srv/users', users);
+app.use('/srv/arduino', arduino);
 app.use('/srv/power', power);
 app.use('/srv/latest-event', latestEvent);
 app.use('/srv/events-in-range', eventsInRange);
-
+app.use('/srv/record-reading', recordReading);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -77,6 +78,7 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 // polls egauge for data every 1000ms
+/*
 setInterval(function() {
     console.log("Polling egauge");
     var options = {
@@ -107,7 +109,7 @@ setInterval(function() {
       console.log( e.stack );
    });
 }, 60 * 1000);
-
+*/
 setInterval(function() {
     var random = randomNum(50.1, 70.9);
     console.log("Adding value " + random * 1000);
