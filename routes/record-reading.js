@@ -3,7 +3,7 @@ var router = express.Router();
 
 router.post('/', function(req, res, next) {
 	var dev = req.query.device;
-	var value = req.query.status;
+	var value = req.body.status;
 
 	db.addSensorEvent(dev, value);
 });
