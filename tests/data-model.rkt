@@ -77,9 +77,12 @@
                       (struct SensorEvent ["s-temp-bed"
                                            (? date? ts2)
                                            224])))
-  (check-match (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
-               (hash-table ('baseTimestamp (? number? n))
-                           ('baseStatus 229)
-                           ('seriesData (list (list (? number? n) -1) (list (? number? n) -4)))))
+  
+  (check-match
+   (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
+   (hash-table ('baseTimestamp (? number? n))
+               ('baseStatus 229)
+               ('seriesData 
+                (list (list (? number? n1) -1) (list (? number? n2) -4)))))
   
   )

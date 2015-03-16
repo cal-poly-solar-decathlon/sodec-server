@@ -84,6 +84,16 @@
 (define (call-subpath/post subpath post-bytes)
   (remote-call/post (string-append l-u "/srv" subpath) post-bytes))
 
+;; events in last hour on the "s-temp-bed" device
+(define (events-in-last-hour)
+  (define ts (hash-ref (call-subpath "/timestamp") 'timestamp))
+
+  ;; this is getting a bit nasty in the string-append region...
+  (call-subpath (~a "/events-in-range?device=s-temp-bed;start="
+                    (- ts 3600)
+                    ";end="
+                    ts)))
+
 (run-tests
 (test-suite
  "racket evaluator tests"
@@ -128,17 +138,24 @@
                   ('status (? number? s))))
    
    
-   (check-true
-    (let ([result
-           (call-subpath "/events-in-range?device=s-temp-bed;start=14;end=19")])
-      (andmap (lambda (elt)
-                (match elt
-                  [(hash-table ('timestamp (? number? n))
-                               ('device-id "s-temp-bed")
-                               ('status (? number? s)))
-                   #t]))
-              result)))
+   (check-equal?
+    (call-subpath "/events-in-range?device=s-temp-bed;start=0;end=0")
+    "no events")
    
+   (check-match (events-in-last-hour)
+                (hash-table ('baseTimestamp (? number? _1))
+                            ('baseStatus (? values _2))
+                            ('seriesData (? values _3))))
+   
+   ;; more than a day of data:
+   (check-match (remote-call/get/core 
+                 (string-append 
+                  l-u
+                  "/srv/events-in-range?device=s-temp-bed;start=0;end=100000"))
+                (list 400
+                      "HTTP/1.1 400 range too long\r"
+                      _2
+                      _3))
    
    ;; RECORD-READING
    (check-match (remote-call/post/core
@@ -174,13 +191,16 @@
                     ts)))
 
 (printf "number of readings in the last hour: ~v\n"
-        (length last-hour-jsexpr))
+        (add1 (length (hash-ref last-hour-jsexpr 'seriesData))))
 
 (define jsexpr-len
   (bytes-length
    (jsexpr->bytes last-hour-jsexpr)))
 
-(printf "bytes per reading: ~v\n" (/ jsexpr-len (length last-hour-jsexpr)))
+(printf "bytes per reading: ~v\n" (/ jsexpr-len 
+                                     (add1 (length 
+                                            (hash-ref last-hour-jsexpr
+                                                      'seriesData)))))
 
 (define last-reading
   (call-subpath "/latest-event?device=s-temp-bed"))

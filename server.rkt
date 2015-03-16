@@ -95,14 +95,15 @@
              #"end before start"
              (format "expected a query with start <= end, got: ~e"
                      query))]
-           [(< HOUR-SECONDS (- end start))
-            (404-response
+           [(< DAY-SECONDS (- end start))
+            (fail-response
+             400
              #"range too long"
-             (format "expected a query length of less than or equal to one hour, got ~e"
+             (format "expected a query length of less than or equal to one day, got ~e"
                      (- end start)))]
            [else
             (response/json
-             (events->jsexpr 
+             (events->jsexpr/short
               (sensor-events-in-range id 
                                       (seconds->date start)
                                       (seconds->date end))))])]

@@ -188,7 +188,8 @@ To save space on the wire, the data is delivered as a sequence of deltas. More
 specifically, the initial timestamp and status are delivered in full. Following
 this, the remainder of the readings are delivered as a sequence of sequences
 of length 2, where each element contains the number of seconds since the prior
-reading and the difference in the status since the last reading.
+reading and the difference in the status since the last reading. If there
+are no events in the range, the server returns the json string "no events".
 
 + Response 200 (application/json)
 

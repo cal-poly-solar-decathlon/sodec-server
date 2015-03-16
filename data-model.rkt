@@ -227,11 +227,11 @@ CREATE TABLE `test_sensorevents` (
              (list (- (date->seconds (SensorEvent-timestamp event-b))
                       (date->seconds (SensorEvent-timestamp event-a)))
                    (- (SensorEvent-reading event-b)
-                      (SensorEvent-reading event-b)))))
+                      (SensorEvent-reading event-a)))))
          (make-immutable-hash
           (ann
            (list (cons 'baseTimestamp (date->seconds (SensorEvent-timestamp (car events))))
-                 (cons 'baseReading (SensorEvent-reading (car events)))
+                 (cons 'baseStatus (SensorEvent-reading (car events)))
                  (cons 'seriesData diffs))
            (Listof (Pairof Symbol Any))))]))
 
