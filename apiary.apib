@@ -58,12 +58,15 @@ Lights are completely up in the air. The rest of them seem plausible.
 ## Representing Sensor Readings
 
 Sensor readings are encoded as 64-bit integers. For temperatures, these
-are 10ths of celsius degrees. 
+are 10ths of celsius degrees. So, for instance, the temperature -3.4 degrees
+celsius would be represented as -34. Humidities are reported in 10ths of
+a percent of relative humidity. So, for instance, 78.4% humidity would
+be represented as 784.
 
 ## Implementation
 
 Currently, the test server implements only the resources listed as 
-[IMPLEMENTED]. 
+[IMPLEMENTED].
 
 # Group Server
 
