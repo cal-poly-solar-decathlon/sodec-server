@@ -43,6 +43,7 @@
          (struct-out SensorEvent)
          maybe-event->jsexpr
          events->jsexpr
+         events->jsexpr/short
          testing?
          reset-database-test-tables!)
 
@@ -185,6 +186,12 @@ CREATE TABLE `test_sensorevents` (
      (error 'sensor-latest-event 
             "internal error: limit 1 query returned >1 result")]))
 
+;;;;;;
+;;
+;; JSON
+;;
+;;;;;;
+
 ;; convert an Event to a jsexpr
 ;; convert a temperature event to a jsexpr
 (: maybe-event->jsexpr ((U SensorEvent False) -> (U (HashTable Symbol Any) String)))
@@ -206,6 +213,27 @@ CREATE TABLE `test_sensorevents` (
    (list (cons 'device-id (SensorEvent-device event))
          (cons 'timestamp (date->seconds (SensorEvent-timestamp event)))
          (cons 'status (SensorEvent-reading event)))))
+
+;; convert a list of events to a jsexpr
+;; convert a temperature event to a jsexpr
+(: events->jsexpr/short ((Listof SensorEvent) -> (U String (HashTable Symbol Any))))
+(define (events->jsexpr/short events)
+  (cond [(null? events) "no events"]
+        [else
+         (define diffs
+           (for/list : (Listof (List Integer Integer))
+             ([event-a (in-list events)]
+              [event-b (in-list (cdr events))])
+             (list (- (date->seconds (SensorEvent-timestamp event-b))
+                      (date->seconds (SensorEvent-timestamp event-a)))
+                   (- (SensorEvent-reading event-b)
+                      (SensorEvent-reading event-b)))))
+         (make-immutable-hash
+          (ann
+           (list (cons 'baseTimestamp (date->seconds (SensorEvent-timestamp (car events))))
+                 (cons 'baseReading (SensorEvent-reading (car events)))
+                 (cons 'seriesData diffs))
+           (Listof (Pairof Symbol Any))))]))
 
 ;;;;;
 ;;

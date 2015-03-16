@@ -167,12 +167,20 @@
 (define ts (hash-ref (call-subpath "/timestamp") 'timestamp))
 
 ;; this is getting a bit nasty in the string-append region...
+(define last-hour-jsexpr
+  (call-subpath (~a "/events-in-range?device=s-temp-bed;start="
+                    (- ts 3600)
+                    ";end="
+                    ts)))
+
 (printf "number of readings in the last hour: ~v\n"
-        (length
-         (call-subpath (~a "/events-in-range?device=s-temp-bed;start="
-                           (- ts 3600)
-                           ";end="
-                           ts))))
+        (length last-hour-jsexpr))
+
+(define jsexpr-len
+  (bytes-length
+   (jsexpr->bytes last-hour-jsexpr)))
+
+(printf "bytes per reading: ~v\n" (/ jsexpr-len (length last-hour-jsexpr)))
 
 (define last-reading
   (call-subpath "/latest-event?device=s-temp-bed"))

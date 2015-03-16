@@ -57,7 +57,7 @@
 (define TEMP-QUANTA 10)
 (define TEMP-ROUNDING (/ 1 TEMP-QUANTA))
 (define INITIAL-TEMPERATURE (* 20 TEMP-QUANTA))
-(define HOST "calpolysolardecathlon.org:8080")
+(define HOST "localhost:8080")
 (define TIMEOUT-SECONDS 3.0)
 
 sync

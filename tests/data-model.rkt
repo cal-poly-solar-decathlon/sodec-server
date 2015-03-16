@@ -16,37 +16,37 @@
                       (SensorEvent-reading e))]))
   
   (check-not-exn
-   (lambda () (record-sensor-status! "s-temp-lr" 32279)))
+   (lambda () (record-sensor-status! "s-temp-lr" 322)))
   
   ;; this is the latest:
   (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 32279))
+                (list "s-temp-lr" 322))
 
-  (record-sensor-status! "s-temp-bed" 22900)
+  (record-sensor-status! "s-temp-bed" 229)
   
   ;; this is still the latest:
   (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 32279))
+                (list "s-temp-lr" 322))
   
   (sleep 1.5)
-  (record-sensor-status! "s-temp-lr" 33116)
+  (record-sensor-status! "s-temp-lr" 331)
   
   ;; now the latest has changed:
   (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 33116))
+                (list "s-temp-lr" 331))
 
   (sleep 1.5)
-  (record-sensor-status! "s-temp-bed" 22883)
+  (record-sensor-status! "s-temp-bed" 228)
  
   (check-match (maybe-event->jsexpr (sensor-latest-event "s-temp-lr"))
                (hash-table ('device-id "s-temp-lr")
                            ('timestamp (? number? n))
-                           ('status 33116)))
+                           ('status 331)))
   
   (check-equal?
    (map se->dr (sensor-events "s-temp-bed"))
-   (list (list "s-temp-bed" 22900)
-         (list "s-temp-bed" 22883)))
+   (list (list "s-temp-bed" 229)
+         (list "s-temp-bed" 228)))
   
   (check-not-exn (lambda () (current-timestamp)))
   
@@ -60,9 +60,26 @@
   (check-match (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
                 (list (struct SensorEvent ["s-temp-bed"
                                            (? date? ts1)
-                                           22900])
+                                           229])
                       (struct SensorEvent ["s-temp-bed"
                                            (? date? ts2)
-                                           22883])))
+                                           228])))
+  
+  (record-sensor-status! "s-temp-bed" 224)
+  
+  (check-match (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
+                (list (struct SensorEvent ["s-temp-bed"
+                                           (? date? ts1)
+                                           229])
+                      (struct SensorEvent ["s-temp-bed"
+                                           (? date? ts2)
+                                           228])
+                      (struct SensorEvent ["s-temp-bed"
+                                           (? date? ts2)
+                                           224])))
+  (check-match (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
+               (hash-table ('baseTimestamp (? number? n))
+                           ('baseStatus 229)
+                           ('seriesData (list (list (? number? n) -1) (list (? number? n) -4)))))
   
   )
