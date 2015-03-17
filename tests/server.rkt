@@ -58,6 +58,11 @@
      (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" first-line)
        [(list dc2 response-code-string)
         (define reply-code (string->number response-code-string))
+        (unless (regexp-match #px"Access-Control-Allow-Origin: \\*"
+                              headers)
+          (error 'response-port->results
+                 "didn't find expected CORS header in headers: ~e\n"
+                 headers))
         (list reply-code first-line headers response-port)]
        [other
         (error 'remote-call/get/core
@@ -70,9 +75,9 @@
 
 (define l-u 
   ;; test locally:
-  "http://localhost:8080"
+  #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  #;"http://calpolysolardecathlon.org:8080"
+  "http://calpolysolardecathlon.org:8080"
   #;"http://calpolysolardecathlon.org:3000"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")

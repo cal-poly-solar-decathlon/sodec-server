@@ -174,7 +174,9 @@
    code
    header-msg
    (current-seconds) TEXT/HTML-MIME-TYPE
-   (list)
+   ;; need CORS headers even on fails to allow them to be read...
+   (list (make-header #"Access-Control-Allow-Origin"
+                      #"*"))
    (list
     (string->bytes/utf-8
      (xexpr->string
