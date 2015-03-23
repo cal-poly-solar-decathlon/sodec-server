@@ -27,43 +27,47 @@ exports.endConnection = function() {
 
 // insert device
 exports.addNewDevice = function(device) {
-    connection.query("INSERT INTO devices " +
-                     "VALUES ('" + device + "');", function(err, result) {
+    var query = connection.query("INSERT INTO devices " +
+                     "VALUES (?)", device, function(err, result) {
             if(err) {
-                console.log(err);
+              console.log("error with this query: " + query.sql);
+              console.log(err);  
             }
         });
 };
 
 // insert control event results
 exports.addEventResults = function(id, code, details) {
-    connection.query("INSERT INTO controleventresults " +
-                     "VALUES (" + id + "," + code + ",'" + details + "');", function(err, result) {
+    var query = connection.query("INSERT INTO controleventresults " +
+                     "VALUES (?, ?, ?)", [id, code, details], function(err, result) {
             if(err) {
-                console.log(err);
+              console.log("error with this query: " + query.sql);
+              console.log(err);  
             }
         });
 };
 
 // insert control event result codes
 exports.addResultCode = function(resultCode) {
-    connection.query("INSERT INTO controleventresultcodes" +
-                     " VALUES (" + resultCode + ");", function(err, result) {
+    var query = connection.query("INSERT INTO controleventresultcodes" +
+                     " VALUES (?)", resultCode, function(err, result) {
 
             if(err) {
-                console.log(err);
+              console.log("error with this query: " + query.sql);
+              console.log(err);
             }
         });
 };
 
 // insert control events
 exports.addControlEvent = function(device, setting) {
-    connection.query("INSERT INTO controlevents" +
+    var query = connection.query("INSERT INTO controlevents" +
                      " (device, setting)" +
-                     " VALUES ('" + device + "'," + setting + ");", function(err, result) {
+                     " VALUES (?,?)", [device, setting], function(err, result) {
 
             if(err) {
                 console.log("error adding control event " + device + " with " + setting);
+                console.log("error with this query: " + query.sql);
                 console.log(err);
             }
         });
@@ -73,7 +77,7 @@ exports.addControlEvent = function(device, setting) {
 exports.addSensorEvent = function(device, reading) {
     connection.query("INSERT INTO sensorevents" +
                  " (device, reading)" +
-                 " VALUES ('" + device + "'," + reading + ");", function(err, result) {
+                 " VALUES (?, ?)", [device, reading], function(err, result) {
 
         if(err) {
             console.log("error adding sensor event " + device + " with " + reading);
@@ -86,9 +90,10 @@ exports.addSensorEvent = function(device, reading) {
 // get last event
 exports.getLastSensorEvent = function(device, callback) {
      if (device == "egauge") {
-        connection.query("SELECT timestamp, `usage`, `generation` FROM egauge " +
+        var query = connection.query("SELECT timestamp, `usage`, `generation` FROM egauge " +
                          " ORDER BY id DESC LIMIT 1;", function(err, result) {
             if (err) {
+                console.log("error with this query: " + query.sql);
                 callback(err, null);
             }
             else {
@@ -96,10 +101,11 @@ exports.getLastSensorEvent = function(device, callback) {
             }
         });
     } else {
-        connection.query("SELECT device as 'device-id', reading as status, timestamp FROM sensorevents " +
-                         "WHERE device = '" + device + "'" + 
-                         " ORDER BY id DESC LIMIT 1;", function(err, result) {
+        var query = connection.query("SELECT device as 'device-id', reading as status, timestamp FROM sensorevents " +
+                         "WHERE device = ?" + 
+                         " ORDER BY id DESC LIMIT 1", device, function(err, result) {
             if (err) {
+                console.log("error with this query: " + query.sql);
                 callback(err, null);
             }
             else {
@@ -113,25 +119,25 @@ exports.getLastSensorEvent = function(device, callback) {
 // More specifically, those with timestamps n such that start <= n < end.
 exports.getSensorEventRange = function(device, start, end, callback) {
     if (device == "egauge") {
-        connection.query("SELECT timestamp, `usage`, `generation` FROM egauge" +
-                     " WHERE timestamp >= '" + start  +"' AND " +
-                     " timestamp < '" + end + "';", function(err, result) {
+        var query = connection.query("SELECT timestamp, `usage`, `generation` FROM egauge" +
+                     " WHERE timestamp >= ? AND " +
+                     " timestamp < ?", [start, end], function(err, result) {
             if (err) {
+                console.log("error with this query: " + query.sql);
                 callback(err, null);
             }
             else {
-                console.log(start);
-                console.log(end);
                 callback(null, result);
             }
         });
     }
     else {
-        connection.query("SELECT device, reading as status, timestamp FROM sensorevents" +
-                         " WHERE timestamp >= '" + start + "' AND " +
-                         " timestamp < '" + end + "' AND " +
-                         " device = '" + device + "';", function(err, result) {
+        var query = connection.query("SELECT device, reading as status, timestamp FROM sensorevents" +
+                         " WHERE timestamp >= ? AND " +
+                         " timestamp < ? AND " +
+                         " device = ?", [start, end, device], function(err, result) {
             if (err) {
+                console.log("error with this query: " + query.sql);
                 callback(err, null);
             }
             else {
@@ -144,11 +150,12 @@ exports.getSensorEventRange = function(device, start, end, callback) {
 // Fetch all control events in the given range.
 // More specifically, those with timestamps n such that start <= n < end.
 exports.getControlRange = function(device, start, end, callback) {
-   connection.query("SELECT * FROM controlevents" +
-                     " WHERE timestamp >= '" + start  +"' AND " +
-                     " timestamp < '" + end + "' AND " +
-                     " device = '" + device + "';", function(err, result) {
+   var query = connection.query("SELECT * FROM controlevents" +
+                     " WHERE timestamp >= ? AND " +
+                     " timestamp < ? AND " +
+                     " device = ?", [start, end, device], function(err, result) {
         if (err) {
+            console.log("error with this query: " + query.sql);
             callback(err, null);
         }
         else {
@@ -158,9 +165,10 @@ exports.getControlRange = function(device, start, end, callback) {
 };
 
 exports.findDevice = function(device, callback) {
-    connection.query("SELECT * FROM devices " +
-                     "WHERE name = '" + device +"';", function(err, result) {
+    var query = connection.query("SELECT * FROM devices " +
+                     "WHERE name = ?", device, function(err, result) {
         if (err) {
+            console.log("error with this query: " + query.sql);
             callback(err, null);
         }
         else {
@@ -170,12 +178,12 @@ exports.findDevice = function(device, callback) {
 };
 
 exports.addEgaugeEvent = function(usage, generation) {
-    connection.query("INSERT INTO egauge" +
+    var query = connection.query("INSERT INTO egauge" +
                      " (`usage`, `generation`)" +
-                     " VALUES (" + usage + "," + generation + ");", function(err, result) {
+                     " VALUES (?, ?)", [usage, generation], function(err, result) {
 
             if(err) {
-                console.log("error adding sensor event " + usage + " with " + generation);
+                console.log("error with this query: " + query.sql);
                 console.log(err);
                 throw err;
             }
