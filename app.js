@@ -14,6 +14,8 @@ var power = require('./routes/power');
 var latestEvent = require('./routes/latest-event');
 var eventsInRange = require('./routes/events-in-range');
 var recordReading = require('./routes/record-reading');
+var timestamp = require('./routes/timestamp');
+var ping = require('./routes/ping');
 
 var request = require('request');
 var jquery = require('jquery');
@@ -42,6 +44,9 @@ app.use('/srv/power', power);
 app.use('/srv/latest-event', latestEvent);
 app.use('/srv/events-in-range', eventsInRange);
 app.use('/srv/record-reading', recordReading);
+app.use('/srv/timestamp', timestamp);
+app.use('/srv/ping', ping);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -114,7 +119,7 @@ setInterval(function() {
     var random = randomNum(50.1, 70.9);
     console.log("Adding value " + random * 1000);
     db.addSensorEvent('s-temp-lr', random * 1000);
-}, 60 * 1000);
+}, 6 * 1000);
 
 
 // inserting random data into egauge table for testing on vps
