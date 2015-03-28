@@ -8,11 +8,8 @@ describe('/latest-event route tests', function() {
 		it('should return a sensor reading', function(done){
 			request(serverString)
 				.get('/latest-event?device=s-temp-lr')
-				.expect(200)
-				.end(function(err, res){
-					if (err) return done(err);
-					done();
-				});
+				.expect('Content-Type', /json/)
+				.expect(200, done);
 		});
 	});
 });
