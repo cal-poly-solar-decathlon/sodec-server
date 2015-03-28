@@ -20,6 +20,7 @@
     "node-gcm": "^0.9.15",
     "request": "^2.53.0",
     "serve-favicon": "~2.2.0",
+    "supertest": "^0.15.0",
     "websocket": "^1.0.17"
   }
 }
