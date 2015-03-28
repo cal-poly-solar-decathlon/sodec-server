@@ -51,12 +51,12 @@ router.get('/', function(req, res, next) {
                             }
 
                             var json = JSON.stringify(result, convertTime);
-                            res.send(json);
+                            res.status(200).send(json);
                         }
                     });
                 }
                 else {
-                    res.send("no device of name: " + dev);
+                    res.status(400).send("no device of name: " + dev);
                 }
             }
         });
