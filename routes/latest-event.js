@@ -31,15 +31,15 @@ router.get('/', function(req, res, next)
                             
                             function convertTime(key, value) {
                                 if (key == "timestamp") {
-                                    return (new Date(value).getTime());
+                                    return (new Date(value).getTime() / 1000);
                                 }
                                 return value;
                             }
 
 
 
-                            var json = JSON.stringify(result, convertTime);
-                            res.send(json);
+                            var json = JSON.stringify(result[0], convertTime);
+                            res.status(200).send(json);
                         }
                     });
                 }
