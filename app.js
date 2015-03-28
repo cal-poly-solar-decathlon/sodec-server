@@ -5,6 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var webSocketServer = require('./webSockets/webSocketServer');
+var cors = require('cors');
 //var mySqlDemo = require('./mysql_demo');
 
 var routes = require('./routes/index');
@@ -36,6 +37,18 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+// Enables CORS support on all routes
+app.use(cors());
+
+// Changes all content types to json for requests
+
+app.use(function(req, res, next) {
+  res.contentType('application/json');
+  next();
+});
+
 
 app.use('/srv/', routes);
 app.use('/srv/users', users);
@@ -110,11 +123,12 @@ setInterval(function() {
             console.log(response.statusCode);
         }
    }).on('error', function(e){
-      console.log("Error: " + e.message); 
+      console.log("Error: " + e.message);
       console.log( e.stack );
    });
 }, 60 * 1000);
 */
+
 setInterval(function() {
     var random = randomNum(50.1, 70.9);
     console.log("Adding value " + random * 1000);
@@ -133,3 +147,4 @@ function randomNum(min, max)
 {
    return (Math.random() * ( min - max) + max).toFixed(3);
 }
+
