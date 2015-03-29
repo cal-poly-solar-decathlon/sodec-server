@@ -23,12 +23,12 @@ router.get('/', function(req, res, next)
                     db.getLastSensorEvent(dev, function(err, result) {
                         if (err) {
                             // error handling code goes here
-                            console.log("ERROR : ",err);            
-                        } 
-                        else {            
+                            console.log("ERROR : ",err);
+                        }
+                        else {
                             // code to execute on data retrieval
-                            // console.log("result from last sensor is : ", result);   
-                            
+                            // console.log("result from last sensor is : ", result);
+
                             function convertTime(key, value) {
                                 if (key == "timestamp") {
                                     return (new Date(value).getTime() / 1000);
@@ -36,9 +36,14 @@ router.get('/', function(req, res, next)
                                 return value;
                             }
 
+                            if(result.length <= 0) {
+                              result = 'no events';
+                            }
+                            else {
+                                result = result[0];
+                            }
 
-
-                            var json = JSON.stringify(result[0], convertTime);
+                            var json = JSON.stringify(result, convertTime);
                             res.status(200).send(json);
                         }
                     });

@@ -4,7 +4,7 @@ var db      = require('../dbConnect.js');
 
 // Format of time is given as ISO 8601 format: YYYY-MM-DDTHH:MM:SS
 // Example: 2015-03-07T12:00:12
-// Can search by day also YYYY-MM-DD 
+// Can search by day also YYYY-MM-DD
 
 router.get('/', function(req, res, next) {
    var dev = req.query.device;
@@ -39,17 +39,22 @@ router.get('/', function(req, res, next) {
                     db.getSensorEventRange(dev, startDate, endDate, function(err, result) {
                         if (err) {
                             // error handling code goes here
-                            console.log("ERROR : ",err);            
-                        } 
-                        else {            
+                            console.log("ERROR : ",err);
+                        }
+                        else {
                             // code to execute on data retrieval
-                            // console.log("result from range sensor is : ", result);   
-                            
+                            // console.log("result from range sensor is : ", result);
+
                             function convertTime(key, value) {
                                 if (key == "timestamp") {
                                     return (new Date(value).getTime() / 1000);
                                 }
                                 return value;
+                            }
+
+                            if(result.length <= 0)
+                            {
+                              result = 'no events';
                             }
 
                             var json = JSON.stringify(result, convertTime);
