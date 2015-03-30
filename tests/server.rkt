@@ -21,7 +21,7 @@
   (match-define (list response-code first-line headers body-port) results)
   (cond [(= response-code 200)
          (define mime-type (extract-field "Content-Type" headers))
-         (unless (string=? mime-type "application/json")
+         (unless (regexp-match #px"^application/json(;.*)?$" mime-type)
            (error 'remote-call/get
                   (format "expected mime type application/json, got ~e"
                           mime-type)))
@@ -77,8 +77,8 @@
   ;; test locally:
   #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "http://calpolysolardecathlon.org:8080"
-  #;"http://calpolysolardecathlon.org:3000"
+  #;"http://calpolysolardecathlon.org:8080"
+  "http://calpolysolardecathlon.org:3000"
   ;; test new linode
   #;"http://li592-145.members.linode.com:8025")
 
