@@ -5,11 +5,13 @@ var db = require('../dbConnect');
 router.post('/', function(req, res, next) {
 	var dev = req.query.device;
 	var value = req.body.status;
+	var okStatus = JSON.stringify('okay');
+
 
 	if(value)
 	{
 		db.addSensorEvent(dev, value);
-		res.status(200).send({success: 'ok'});
+		res.status(200).send(okStatus);
 	}
 	else
 	{
