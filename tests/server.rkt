@@ -83,9 +83,9 @@
 
 (define l-u 
   ;; test locally:
-  #;"http://localhost:8080"
+  "http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "http://calpolysolardecathlon.org:8080"
+  #;"http://calpolysolardecathlon.org:8080"
   #;"http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
@@ -192,20 +192,23 @@
     "count-events-in-range"
     (check-match (remote-call/get/core
                   (rel-url "/srv/count-events-in-range"))
-                 (list 400
-                       "HTTP/1.1 400 missing query binding" _2 _3))
+                 (list 404
+                       "HTTP/1.1 404 wrong query fields\r" _2 _3))
 
     (check-match (remote-call/get/core
-                  (rel-url "/srv/count-events-in-range?device=foo"))
+                  (rel-url "/srv/count-events-in-range?device=foo;start=0;end=1"))
                  (list 404
-                       "HTTP/1.1 404 unknown device"  _2 _3))
+                       "HTTP/1.1 404 wrong query fields\r"  _2 _3))
 
     (define ((number-in-range a b) n)
       (and (<= a n) (< n b)))
     
     (check-pred (number-in-range 10 722)
-                (remote-call/get
-                 (rel-url "/srv/count-events-in-range?device=s-temp-lr"))))
+                (let ([ts (hash-ref (call-subpath "/timestamp") 'timestamp)])
+                (remote-call/get 
+                 (rel-url (~a
+                           "/srv/count-events-in-range?device=s-temp-lr;start="
+                           (- ts 3600)";end="ts))))))
 
    ;; RECORDING READINGS
 

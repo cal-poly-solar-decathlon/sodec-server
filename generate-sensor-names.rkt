@@ -25,9 +25,28 @@
     #;("c-light" ("bed" "mech" "lr" "bath" "kit") "control of the lights in the ~a")
     #;("s-light" "a record of the lighting control events in the ~a")))
 
+(define light-spec
+  "Entry Bookend (1A)
+Chandelier (1B)
+TV Light (2A)
+Kitchen Uplight (3A)
+Under-Counter (3B)
+Pendant Bar Lights (3C)
+Bathroom Ambient (4A)
+Mirror (4B)
+Flexspace Uplight (5A)
+Flexspace Cabinet (5B)
+Bedroom Uplight (6A)
+Bedroom Cabinet (6B)
+Porch Lights (8A)
+Uplights and Pot Lights (8B)")
+
+
 (define extra-devices
   '(("s-temp-testing-blackhole" "a temperature bin to test recording")
     ("s-temp-testing-empty" "a temperature bin that's always empty")))
+
+#;()
 
 (for-each
  display
