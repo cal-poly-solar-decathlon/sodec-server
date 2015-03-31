@@ -37,6 +37,11 @@
                  (struct path/param ("events-in-range" (list))))
            (handle-device-events-in-range-request
             (url-query uri))]
+          ;; number of events in a range for a sensor
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("count-events-in-range" (list))))
+           (handle-device-count-events-in-range-request
+            (url-query uri))]
           ;; timestamp of the server
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("timestamp" (list))))
@@ -107,6 +112,36 @@
               (sensor-events-in-range id 
                                       (seconds->date start)
                                       (seconds->date end))))])]
+    [else
+     ;; spent a while on stack overflow checking what response code is
+     ;; best, seems there's quite a bit of disagreement...
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with fields matching spec, got: ~e"
+              query))]))
+
+;; handle a device time range COUNT reading request
+;; possible abstraction...?
+(define (handle-device-count-events-in-range-request query)
+  (match query
+    ;; could give more fine-grained error messages here...
+    [(list-no-order
+      (cons 'device (? ID? id))
+      (cons 'start (regexp NUM-REGEXP (list start-str)))
+      (cons 'end (regexp NUM-REGEXP (list end-str))))
+     (define start (string->number start-str))
+     (define end (string->number end-str))
+     (cond [(< end start)
+            (404-response
+             #"end before start"
+             (format "expected a query with start <= end, got: ~e"
+                     query))]
+           [else
+            (response/json
+             (count-sensor-events-in-range
+              id 
+              (seconds->date start)
+              (seconds->date end)))])]
     [else
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...

@@ -1,6 +1,7 @@
 #lang racket
-
+ 
 (require rackunit
+         rackunit/text-ui
          "../data-model.rkt"
          racket/date)
 
@@ -8,6 +9,9 @@
 ;; safe to do this every time...
 (reset-database-test-tables!)
 
+(run-tests
+(test-suite
+ "data model tests"
 (parameterize ([testing? #t])
   
   (define (se->dr e)
@@ -77,6 +81,9 @@
                       (struct SensorEvent ["s-temp-bed"
                                            (? date? ts2)
                                            224])))
+
+  (check-equal? (count-sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
+                3)
   
   (check-match
    (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
@@ -85,4 +92,4 @@
                ('seriesData 
                 (list (list (? number? n1) -1) (list (? number? n2) -4)))))
   
-  )
+  )))

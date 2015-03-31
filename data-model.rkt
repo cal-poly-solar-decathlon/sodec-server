@@ -15,7 +15,7 @@
                [query-exec (Connection String Any * -> Void)]
                [query-rows (Connection String Any * ->
                                        (Listof (Vectorof Any)))]
-               [query-value (Connection String ->
+               [query-value (Connection String Any * ->
                                         Any)]
                [#:struct sql-timestamp ([year : Natural]
                                         [month : Natural]
@@ -39,6 +39,7 @@
          sensor-events
          sensor-latest-event
          sensor-events-in-range
+         count-sensor-events-in-range
          record-sensor-status!
          (struct-out SensorEvent)
          maybe-event->jsexpr
@@ -162,6 +163,20 @@ CREATE TABLE `test_sensorevents` (
         id
         (date->timestamp start)
         (date->timestamp end))))
+
+;; return sensor statuses in some time range (one sensor)
+(: count-sensor-events-in-range (String date date -> Natural))
+(define (count-sensor-events-in-range id start end)
+  (ensure-nat
+   (query-value
+    conn
+    (string-append
+     "SELECT COUNT(*) FROM "(event-table)" WHERE device=? "
+     "AND timestamp >= ? "
+     "AND timestamp < ? ")
+    id
+    (date->timestamp start)
+    (date->timestamp end))))
 
 ;; return the latest sensor status from one sensor.
 ;; choose arbitrarily in case of tie.
