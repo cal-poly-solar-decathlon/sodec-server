@@ -54,6 +54,20 @@ Lights are completely up in the air. The rest of them seem plausible.
 - `c-light-kit` : control of the lights in the kitchen
 - `s-temp-testing-blackhole` : a temperature bin to test recording
 - `s-temp-testing-empty` : a temperature bin that's always empty
+- `s-light-entry-bookend-1A`
+- `s-light-chandelier-1B`
+- `s-light-tv-light-2A`
+- `s-light-kitchen-uplight-3A`
+- `s-light-under-counter-3B`
+- `s-light-pendant-bar-lights-3C`
+- `s-light-bathroom-ambient-4A`
+- `s-light-mirror-4B`
+- `s-light-flexspace-uplight-5A`
+- `s-light-flexspace-cabinet-5B`
+- `s-light-bedroom-uplight-6A`
+- `s-light-bedroom-cabinet-6B`
+- `s-light-porch-lights-8A`
+- `s-light-uplights-and-pot-lights-8B`
 
 ## Representing Sensor Readings
 
@@ -61,7 +75,9 @@ Sensor readings are encoded as 64-bit integers. For temperatures, these
 are 10ths of celsius degrees. So, for instance, the temperature -3.4 degrees
 celsius would be represented as -34. Humidities are reported in 10ths of
 a percent of relative humidity. So, for instance, 78.4% humidity would
-be represented as 784.
+be represented as 784. Light settings are specified as tenths of a percent
+(like humidity). So, for instance, a light that's off would be represented
+as 1000, and one set at 20% would be represented as 200.
 
 ## Implementation
 

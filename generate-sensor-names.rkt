@@ -46,7 +46,12 @@ Uplights and Pot Lights (8B)")
   '(("s-temp-testing-blackhole" "a temperature bin to test recording")
     ("s-temp-testing-empty" "a temperature bin that's always empty")))
 
-#;()
+(define light-names
+  (for/list ([light-line (in-list (regexp-split #px"\n" light-spec))])
+    (match (regexp-match #px"^(.*)\\(([0-9]+)([ABC])\\)" light-line)
+      [(list _ name room-num index)
+       (~a "s-light-" (regexp-replace* #px" " (string-downcase name) "-")
+           room-num index)])))
 
 (for-each
  display
@@ -55,7 +60,9 @@ Uplights and Pot Lights (8B)")
             [r (in-list (second pat))])
   (~a "- `"(first pat)"-"r"` : "(format (third pat) (second (assoc r rooms)))"\n"))
  (for/list ([d (in-list extra-devices)])
-   (~a "- `"(first d)"` : "(second d)"\n"))))
+   (~a "- `"(first d)"` : "(second d)"\n"))
+ (for/list ([l (in-list light-names)])
+   (~a "- `"l"`\n"))))
 
 ;; as strings, for ids.rkt:
 (define device-strs
@@ -64,12 +71,8 @@ Uplights and Pot Lights (8B)")
                [r (in-list (second pat))])
      (~a (first pat)"-"r))
    (for/list ([d extra-devices])
-     (first d))))
+     (first d))
+   light-names))
 
 (define sensor-names
   (map string->symbol device-strs))
-
-
-
-
-
