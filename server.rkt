@@ -14,6 +14,11 @@
 
 ;; handle a request. "front door" of the server
 (define (start req)
+  (with-handlers ;; log all errors...
+      ([(lambda (exn) #t)
+        (lambda (exn)
+          (log-error (exn-message exn))
+          server-fail-response)])
   (match req
     [(struct request
        (method
@@ -50,6 +55,10 @@
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("ping" (list))))
            (response/json "alive")]
+          ;; a deliberate exception for testing logging
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("divbyzero" (list))))
+           (/ 1 0)]
           [other
            (404-response
             #"unknown server path"
@@ -63,7 +72,7 @@
           [other
            (404-response
             #"unknown server path"
-            (format "POST url ~v doesn't match known pattern" (url->string uri)))])])]))
+            (format "POST url ~v doesn't match known pattern" (url->string uri)))])])])))
 
 ;; handle a timestamp request
 (define (handle-timestamp-request)
@@ -202,6 +211,11 @@
 ;; issue a 404 response:
 (define (404-response header-msg body-msg)
   (fail-response 404 header-msg body-msg))
+
+;; a generic server exception 500:
+(define server-fail-response
+  (fail-response 500 #"server exception"
+                 "Server-side exception. Check logs for more detail."))
 
 ;; issue a failure response
 (define (fail-response code header-msg body-msg)
