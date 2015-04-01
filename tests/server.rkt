@@ -83,9 +83,9 @@
 
 (define l-u 
   ;; test locally:
-  "http://localhost:8080"
+  #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  #;"http://calpolysolardecathlon.org:8080"
+  "http://calpolysolardecathlon.org:8080"
   #;"http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
@@ -255,6 +255,12 @@
 
 (printf "number of readings in the last hour: ~v\n"
         (add1 (length (hash-ref last-hour-jsexpr 'seriesData))))
+
+(printf "number of readings in the last hour: ~v\n"
+        (call-subpath (~a "/count-events-in-range?device=s-temp-bed;start="
+                    (- ts 3600)
+                    ";end="
+                    ts)))
 
 (define jsexpr-len
   (bytes-length
