@@ -4,6 +4,7 @@
          net/head
          net/url
          json
+         math/distributions
          "secret.rkt")
 
 ;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
@@ -139,6 +140,7 @@
 ;; start humidity threads:
 (for ([id (in-list humidity-ids)])
   (run-mock-device id 5 (make-humidity-generator)))
+
 
 ;; don't die, just run forever...
 (let loop ()
