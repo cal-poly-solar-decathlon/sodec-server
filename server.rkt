@@ -212,11 +212,6 @@
 (define (404-response header-msg body-msg)
   (fail-response 404 header-msg body-msg))
 
-;; a generic server exception 500:
-(define server-fail-response
-  (fail-response 500 #"server exception"
-                 "Server-side exception. Check logs for more detail."))
-
 ;; issue a failure response
 (define (fail-response code header-msg body-msg)
   (response/full
@@ -230,6 +225,11 @@
     (string->bytes/utf-8
      (xexpr->string
       `(html (body (p ,body-msg))))))))
+
+;; a generic server exception 500:
+(define server-fail-response
+  (fail-response 500 #"server exception"
+                 "Server-side exception. Check logs for more detail."))
 
 
 ;; a successful json response
