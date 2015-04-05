@@ -48,16 +48,15 @@ router.get('/', function(req, res, next) {
                             {
                               result = 'no events';
                             }
-
-                            console.log(result);
-                            if (dev == 'egauge')
-                              var json = deltaEgauge(result);
-                            else
-                              var json = deltaSequence(result);
+                            else {
+                              if (dev == 'egauge')
+                                result = deltaEgauge(result);
+                              else
+                                result = deltaSequence(result);
+                            }
                             
-                            console.log(json);
 
-                            var json = JSON.stringify(json);
+                            json = JSON.stringify(result);
 
                             res.status(200).send(json);
                         }

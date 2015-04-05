@@ -24,8 +24,6 @@ router.post('/', function(req, res, next) {
 			res.status(400).send({error: 'No device found'});
 		}
 	});
-	
-	
 });
 
 module.exports = router;
