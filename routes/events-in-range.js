@@ -43,21 +43,22 @@ router.get('/', function(req, res, next) {
                         }
                         else {
                             // code to execute on data retrieval
-                            // console.log("result from range sensor is : ", result);
-
-                            function convertTime(key, value) {
-                                if (key == "timestamp") {
-                                    return (new Date(value).getTime() / 1000);
-                                }
-                                return value;
-                            }
 
                             if(result.length <= 0)
                             {
                               result = 'no events';
                             }
 
-                            var json = JSON.stringify(result, convertTime);
+                            console.log(result);
+                            if (dev == 'egauge')
+                              var json = deltaEgauge(result);
+                            else
+                              var json = deltaSequence(result);
+                            
+                            console.log(json);
+
+                            var json = JSON.stringify(json);
+
                             res.status(200).send(json);
                         }
                     });
@@ -69,5 +70,60 @@ router.get('/', function(req, res, next) {
         });
    }
 });
+
+
+function deltaSequence(result) {
+  var time = (new Date(result[0]['timestamp']).getTime() / 1000);
+  var status = result[0]['status'];
+
+  var json = {"baseTimestamp": time,
+              "baseStatus": status,
+              "seriesData": [] };
+
+  for (var i = 1; i < result.length; i++) {
+    console.log(result[i]['timestamp']);
+    var newTime = (new Date(result[i]['timestamp']).getTime() / 1000)
+    var timeDelta =  newTime - time;
+    time = newTime;
+
+    var newStatus = result[i]['status'];
+    var statusDelta = newStatus - status;
+    status = newStatus;
+
+    var data = [timeDelta, statusDelta];
+    json["seriesData"].push(data);
+  }
+
+  return json;
+}
+
+function deltaEgauge(result) {
+  var time = (new Date(result[0]['timestamp']).getTime() / 1000);
+  var status = [result[0]['usage'], result[0]['generation']];
+
+
+
+  var json = {"baseTimestamp": time,
+              "baseStatus": status,
+              "seriesData": []};
+
+  for (var i = 1; i < result.length; i++) {
+    console.log(result[i]['timestamp']);
+    var newTime = (new Date(result[i]['timestamp']).getTime() / 1000)
+    var timeDelta =  newTime - time;
+    time = newTime;
+
+    var newStatus = [result[i]['usage'], result[i]['generation']];
+
+    var statusDelta = [newStatus[0] - status[0], 
+                       newStatus[1] = status[1]];
+    status = newStatus;
+
+    var data = [timeDelta, statusDelta];
+    json["seriesData"].push(data);
+  }
+
+  return json;
+};
 
 module.exports = router;
