@@ -1,0 +1,66 @@
+I think this project summary needs a good deal of work. I see a lack of
+continuity and cohesive vision, along with a lot of awkward phrasing and
+some big missing chunks.
+
+Starting from the top: what is the vision here? I think that the most
+cohesive thread here focuses on Central Coast living, but there are
+many blocks of text that don't seem to feed into this narrative.
+
+Specifically, I think that the paragraph "The Philosophy of the Net-Zero
+Home" sets out a bold vision, but not one that is supported by the rest
+of the document at all. This paragraph also flirts repeatedly with the
+"creepy zone"; we're getting very close to HAL's "I'm sorry Dave, I'm
+afraid I can't do that." I think this paragraph should either be removed
+completely, or else the rest of the document should be reorganized to
+support it.
+
+There's also a major problem with the "Key Technological Features"
+section--it's pretty much missing! This is definitely something that my
+team should discuss with you or perhaps actually write a draft. I think
+they may have a plausible story with respect to the "Data Collection
+System" section, but I really don't think there's much to say about the
+lighting controls; to the best of my knowledge, we're currently planning
+on having a stock Lutron system (fingers crossed).
+
+So: should I ask my team (speaking broadly here, the programmers plus
+all of the data collection/EE folks) to put together something for this
+section? Or maybe you've already done this?
+
+MINOR COMMENTS:
+
+- Section A: "divided by a mechanical bar" sounds vaguely like an
+electric fence between the two modules. This is an important piece
+of phraseology, and I don't think this is the right one.
+
+- same section: "sliding its elements into a dynamic composition" makes
+it sound like the pieces are moving.
+
+- Section B: "the philosophy of the net-zero home - that the home is a
+member of the family rather than a static commodity." That's a very
+unusual definition of "net-zero home."
+
+- B: "It protects like a parent and is interacted with like a sibling,
+but must be nurtured and tended to as a child." Sounds frightening:
+something with the power of a parent but the judgment of a child?
+Not sure I want to live there.
+
+- B: "occupants serve the home as much as the home serves the
+occupants." Really? As much as? This also sounds frightening.
+
+- B, next para.: "to be outdoors which those who stop to listen cannot
+resist." At a minimum, needs (I believe) a comma before "which".
+Also sounds a teensy bit creepy.
+
+- B, para. entitled "Keeping Water On-Site." The phrase "technically
+dead" literally made me giggle out loud. "Oh Doctor, how is my
+husband?" "Well, my dear, he's technically dead, but... doesn't
+he look lifelike?"
+
+- Section G, "Future Plans". The sentence that begins "Ideally, ..."
+  sounds very hand-wave-y. I would begin it with something like
+  "Our plan is for..." just to make it sound more definite.
+
+- same section: "making net-zero the national minimum". This is a
+problematic phrase, in that this is a metric where less is better.
+Saying that net zero will be a "national minimum" suggests that we're
+trying to ensure that energy usage is *higher* than zero.

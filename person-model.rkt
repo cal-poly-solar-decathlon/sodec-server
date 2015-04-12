@@ -3,30 +3,44 @@
 (require "generate-sensor-names.rkt")
 ;; this will be a model of a person.
 
-;; Okay, I keep changing my mind. Let's start with a simple schedule.
-;; A schedule is a list of times (of day) and activities, representing
-;; that activity, beginning at the given time and continuing until the next
-;; time.
+(require rackunit)
 
-;; a time of day is represented as a natural number in [0 .. 86400)
+;; a mapping from hour and minute to seconds
 
-;; given a time in hours & minutes, return a number of seconds:
-(: t (Natural Natural -> Natural))
-(define (t hours minutes)
-  (+ (* 3600 hours) (* 60 minutes)))
+(define (t h m)
+  (+ (* h HOUR-SECONDS)
+     (* m MINUTE-SECONDS)))
 
-;; an activity is a symbol
+(define HOUR-SECONDS 3600)
+(define MINUTE-SECONDS 60)
 
+(check-equal? (t 8 19)
+              (+ (* 8 3600) (* 19 60)))
+
+;; a simple schedule-based model for lighting.
+;; a schedule is a list of event-begins. An event
+;; is presumed to continue until the beginning
+;; of the next event
+
+;; an event-begin is a list containing an activity
+;; name and a number of seconds (since midnight)
 (define example-kid-schedule
-  `((,(t 8 30) 'breakfast)
-    (,(t 9 00) 'school)
-    (,(t 15 00) 'home)
-    (,(t 18 00) 'dinner)
-    (,(t 19 00) 'home)
-    (,(t 21 00) 'sleep)))
+  `((home ,(t 7 00))
+    (breakfast ,(t 7 15))
+    (school ,(t 7 30))
+    (home ,(3 30))
+    (dinner ,(6 00))
+    (home ,(7 00))
+    (sleep ,(8 30))))
 
-;; a light is a symbol in light-names
+;; initially, each event-begin generates
+;; a single room-move-event
 
+;; an event is a list containing time (in seconds
+;; since midnight), person name, and a list of light
+;; names currently being used
+
+(define example-event (list (t 9 45) 'alexander '(s-light-chandelier-1B)))
 
 
 ;; given an activity, return a list of lights on for that activity
@@ -39,6 +53,9 @@
            s-light-tv-light-2A))
     (dinner (s-light-chandelier-1B))
     (sleep ())))
+
+
+
 
 ;; I think we'll model a person as a priority queue of processes. Processes
 ;; can change their priorities over time. There will be a "running" process
