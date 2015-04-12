@@ -124,6 +124,29 @@
 (define (lights-on house-state)
   (apply set-union (map list->set (hash-values house-state))))
 
+;; given an elist and an initial house-state, generate
+;; a lazy stream of light-on and light-off messages
+(define (house-stream elist state)
+  (define first-event (stream-first elist))
+  (match-define (list new-state now-on now-off)
+    (update-house-state state first-event))
+  (define on-events
+    (for/list ([l (in-set now-on)])
+      (list (event-seconds first-event) l 'on)))
+  (define off-events
+    (for/list ([l (in-set now-off)])
+      (list (event-seconds first-event) l 'off)))
+  (my-stream-append
+   (append on-events off-events)
+   (lambda () (house-stream (stream-rest elist) new-state))))
+
+;; given a list, produce a stream
+(define (my-stream-append l thunk)
+  (cond [(empty? l) (thunk)]
+        [else (stream-cons (first l) (my-stream-append (rest l) thunk))]))
+
+;; TESTS 
+
 (check-equal? (update-house-state (hash 'alex (set 'l1 'l2) 'bobby (set 'l2 'l4))
                                   (event 3879 'bobby (set 'l1 'l9)))
               (list (hash 'alex (set 'l1 'l2) 'bobby (set 'l1 'l9))
@@ -131,7 +154,7 @@
                     (set 'l4)))
 
 ;; it's really weird that stream-take isn't there. Also no for/stream.
-;; Also no Stream TR type. Am I missing something
+;; Also no Stream TR type. Also no list->stream. Am I missing something
 ;; obvious?
 
 (define (stream-take stream n)
@@ -180,6 +203,19 @@
                                                  's-light-pendant-bar-lights-3C))))
 
 
+(define test-elist (elist-merge joey-estream freddy-estream))
+
+(house-stream test-elist (hash 'joey (set) 'freddy (set)))
+
+(check-equal? (stream-take (house-stream (elist-merge joey-estream freddy-estream)
+                                         (hash 'joey (set)
+                                               'freddy (set)))
+                           5)
+              (list (list (t 5 00) 's-light-kitchen-uplight-3A 'on)
+                    (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
+                    (list (t 5 10) 's-light-kitchen-uplight-3A 'off)
+                    (list (t 5 10) 's-light-pendant-bar-lights-3C 'off)
+                    (list (t 5 00) 's-light-kitchen-uplight-3A 'on)))
 
 
 
