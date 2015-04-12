@@ -1,3 +1,4 @@
+
 #lang racket
 
 (define rooms'(("lr" "living room")
@@ -10,7 +11,7 @@
 ;; generate the list of sensor names. Used to populate the
 ;; database.  This list must also match the one in ids.rkt
 
-(provide sensor-names)
+(provide sensor-names light-names)
 
 ;- `hum` : Humidity : out, bed, bath, lr
 ;- `amb` : Ambient Light: bed, mech, lr, bath
