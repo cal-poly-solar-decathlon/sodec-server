@@ -12,6 +12,14 @@ describe('/latest-event route tests', function() {
 				.expect(200, done);
 		});
 	});
+
+   describe('Nonexistent device for latest-event', function() {
+      it('should return a 400 error', function(done) {
+         request(serverString)
+            .get('/latest-event?device=nonexistent')
+            .expect(400, done);
+      })
+   })
 });
 
 
@@ -48,7 +56,7 @@ describe('/events-in-range route tests', function() {
 
 			request(serverString)
 				.get(routeText)
-				.expect(200, done);
+				.expect(400, done);
 
 		});
 	});
@@ -71,4 +79,29 @@ describe('Record Reading Route', function() {
 		});
 
 	});
+
+   describe('Sends POST for a nonexistent device.', function(){
+      it('Should return a 400 error', function(done)
+      {
+         request(serverString)
+            .post('/record-reading?device=nonexistent')
+            .expect(400, done);
+      });
+
+   });
+
+   describe('Sends POST for the s-temp-lr device without form values', function(){
+      it('Should return a 400 error', function(done)
+      {
+         var sensorReadout = {
+            "status" : 555
+         };
+
+         request(serverString)
+            .post('/record-reading?device=s-temp-lr')
+            // .send(sensorReadout)
+            .expect(400, done);
+      });
+
+   });
 });
