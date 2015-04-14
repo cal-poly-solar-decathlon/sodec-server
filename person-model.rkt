@@ -1,10 +1,14 @@
 #lang racket
 
-(require "generate-sensor-names.rkt")
-;; this will be a model of a person.
+(require "send-reading.rkt"
+         rackunit
+         racket/stream
+         racket/date)
 
-(require rackunit
-         racket/stream)
+;; this will be a model of a person, and how they
+;; turn lights on and off.
+
+(provide run-alice-barry-lights)
 
 ;; a mapping from hour and minute to seconds
 ;(: t (Natural Natural -> Natural))
@@ -36,16 +40,16 @@
   `((,(t 7 00) home)
     (,(t 7 15) breakfast)
     (,(t 7 30) school)
-    (,(t 3 30) home)
-    (,(t 6 00) dinner)
-    (,(t 7 00) home)
-    (,(t 8 30) sleep)))
+    (,(t 15 30) home)
+    (,(t 18 00) dinner)
+    (,(t 19 00) home)
+    (,(t 20 30) sleep)))
 
 ;; initially, each event-begin generates
 ;; a single room-move-event
 
 ;; an event is (make-event seconds person lights)
-;; where seconds is a natural number in 0 .. 86400,
+;; where seconds is a natural number in 0 .. DAY-SECONDS,
 ;; person is a symbol, and lights is a list of symbols.
 (struct event (seconds person lights) #:prefab)
 
@@ -61,10 +65,14 @@
   `((breakfast (s-light-kitchen-uplight-3A
                 s-light-pendant-bar-lights-3C))
     (school ())
+    (work ())
+    (sleep ())
     (home (s-light-flexspace-uplight-5A
            s-light-tv-light-2A))
-    (dinner (s-light-chandelier-1B))
-    (sleep ())))
+    (make-dinner (s-light-kitchen-uplight-3A
+                  s-light-under-counter-3B
+                  s-light-pendant-bar-lights-3C))
+    (eat-dinner (s-light-chandelier-1B))))
 
 ;; return the set of lights associated with an activity
 ;(: activity-lights (Symbol Symbol -> (Setof Symbol)))
@@ -77,7 +85,17 @@
 
 ;; an elist is a stream of events
 ;(define-type EList (Stream Event))
+
+;; note that for a stream of events, it may be totally unclear
+;; when a day has elapsed; for instance, if you have 12 events
+;; in a row with time 5:00, does that mean it happens once per
+;; day, or that all twelve happen at once?
+;;
+;; we're going to assume the latter, and check that every
+;; schedule has more than one time in it.
+
 (define (schedule->elist name schedule)
+  (check-schedule schedule)
   ;(: generator (Schedule -> EList))
   (define (generator sched)
     (cond [(empty? sched) (generator schedule)]
@@ -85,6 +103,35 @@
                 (stream-cons (event time name (activity-lights name activity))
                              (generator (rest sched)))]))
   (generator schedule))
+
+;; we imagine that sending a reading could take this long. If the
+;; next event is less than this many seconds in the past, we assume
+;; that it's just one we're late in delivering, and we send it now.
+;; if it's older than this, we assume that it's supposed to happen
+;; tomorrow.
+
+;; if this number is longer than 6 hours, things get bad with check-schedule,
+;; but that seems ... unlikely.
+(define MAX-OOPS (* 5 60))
+
+
+;; check that a schedule covers more than MAX-OOPS.
+;; actually, this is kind of surprisingly painful; in order to deal
+;; correctly with wrap-around, you have to try dividing at midnight and
+;; at noon.
+(define (check-schedule schedule)
+  (define times (remove-duplicates (map first schedule)))
+  (define cover-1 (- (apply max times) (apply min times)))
+  (define times-12 (for/list ([t times]) (modulo (+ t (* 12 HOUR-SECONDS))
+                                                 DAY-SECONDS)))
+  (define cover-2 (- (apply max times-12) (apply min times-12)))
+  (unless (and (< MAX-OOPS cover-1)
+               (< MAX-OOPS cover-2))
+    (raise-argument-error 'check-schedule
+                          (format "schedule spanning more than ~v seconds"
+                                  MAX-OOPS)
+                          0 schedule)))
+
 
 
 ;; merges two ELists. Assumes it's starting at midnight!
@@ -145,6 +192,92 @@
   (cond [(empty? l) (thunk)]
         [else (stream-cons (first l) (my-stream-append (rest l) thunk))]))
 
+;; find the number of seconds since midnight:
+(define (seconds-since-midnight)
+  (define current-date-seconds (current-seconds))
+  (define current-date (seconds->date current-date-seconds))
+  (define midnight (find-seconds 0 0 0 (date-day current-date)
+                                 (date-month current-date)
+                                 (date-year current-date)))
+  (- current-date-seconds midnight))
+
+;; given a house-stream and a host, issue readings
+(define (run-house-stream house-stream)
+  (define synced-stream (discard-events-before (seconds-since-midnight)
+                                               house-stream))
+  ;; this is going to slip, but I don't think it really matters...
+  (let loop ([house-stream synced-stream]
+             [now-time (seconds-since-midnight)])
+    (log-sodec-debug "next event: ~v" (stream-first house-stream))
+    (match-define (list time light state) (stream-first house-stream))
+    (define light-level (match state
+                          ['on 100]
+                          ['off 0]))
+    (cond [(or (<= (- now-time MAX-OOPS) time now-time)
+               (<= (- now-time MAX-OOPS) (- time DAY-SECONDS) now-time))
+           (send-reading! (symbol->string light) light-level)
+           (loop (rest house-stream) now-time)]
+          [else
+           (log-sodec-debug "sleeping for ~v seconds until ~v\n"
+                            (- time now-time) time)
+           (sleep (modulo (- time now-time) DAY-SECONDS))
+           (loop house-stream (seconds-since-midnight))])))
+
+(define (log-sodec-debug . args)
+  (log-message (current-logger)
+               'debug
+               'sodec
+               (apply format args)))
+
+
+;; discard the events that are between midnight and the given time
+(define (discard-events-before time house-stream)
+  (cond [(< time (first (stream-first house-stream)))
+         house-stream]
+        [(< (first (stream-first (stream-rest house-stream)))
+            (first (stream-first house-stream)))
+         house-stream]
+        [else (discard-events-before time (stream-rest house-stream))]))
+
+;; let's actually try it...
+
+(define alice-schedule
+  `((,(t 7 00) home)
+    (,(t 7 15) breakfast)
+    (,(t 8 00) work)
+    (,(t 16 30) home)
+    (,(t 18 00) eat-dinner)
+    (,(t 19 00) home)
+    (,(t 21 30) sleep)))
+
+(define barry-schedule
+  `((,(t 7 05) home)
+    (,(t 7 11) breakfast)
+    (,(t 7 30) home)
+    (,(t 8 45) work)
+    (,(t 16 45) home)
+    (,(t 17 00) make-dinner)
+    (,(t 18 00) eat-dinner)
+    (,(t 19 00) home)
+    (,(t 22 00) sleep)))
+
+(check-not-exn
+ (lambda ()
+   (map (lambda (activity) (activity-lights 'dannybogus activity))
+        (map second (append barry-schedule alice-schedule)))))
+
+(define (run-alice-barry-lights)
+  (thread
+   (lambda ()
+     (run-house-stream
+      (house-stream
+       (elist-merge
+        (schedule->elist 'alice alice-schedule)
+        (schedule->elist 'barry barry-schedule))
+       (hash 'alice (set)
+             'barry (set)))))))
+
+
 ;; TESTS 
 
 (check-equal? (update-house-state (hash 'alex (set 'l1 'l2) 'bobby (set 'l2 'l4))
@@ -175,7 +308,7 @@
                                                  's-light-pendant-bar-lights-3C))))
 
 (define joey-schedule
-  `((,(t 5 04) breakfast)
+  `((,(t 5 03) breakfast)
     (,(t 5 09) sleep)))
 (define joey-estream (schedule->elist 'joey joey-schedule))
 (check-equal? (stream-take (elist-merge freddy-estream
@@ -183,7 +316,7 @@
                            5)
               (list (event (t 5 00) 'freddy (set 's-light-kitchen-uplight-3A
                                                  's-light-pendant-bar-lights-3C))
-                    (event (t 5 04) 'joey (set 's-light-kitchen-uplight-3A
+                    (event (t 5 03) 'joey (set 's-light-kitchen-uplight-3A
                                                's-light-pendant-bar-lights-3C))
                     (event (t 5 09) 'joey (set))
                     (event (t 5 10) 'freddy (set))
@@ -195,7 +328,7 @@
                            5)
               (list (event (t 5 00) 'freddy (set 's-light-kitchen-uplight-3A
                                                  's-light-pendant-bar-lights-3C))
-                    (event (t 5 04) 'joey (set 's-light-kitchen-uplight-3A
+                    (event (t 5 03) 'joey (set 's-light-kitchen-uplight-3A
                                                's-light-pendant-bar-lights-3C))
                     (event (t 5 09) 'joey (set))
                     (event (t 5 10) 'freddy (set))
@@ -217,7 +350,23 @@
                     (list (t 5 10) 's-light-pendant-bar-lights-3C 'off)
                     (list (t 5 00) 's-light-kitchen-uplight-3A 'on)))
 
+(define test-house-stream
+  (let loop () (stream-cons (list (t 5 00) 'foo)
+                            (stream-cons (list (t 5 01) 'bar)
+                                         (loop)))))
+(check-pred (lambda (x) #t) (discard-events-before (t 6 00) test-house-stream))
 
+(check-exn (lambda (exn)
+             (regexp-match #px"schedule spanning more than"
+                           (exn-message exn)))
+           (lambda () (check-schedule `((,(t 5 00) foo) (,(t 5 02) bar)))))
+
+(check-exn (lambda (exn)
+             (regexp-match #px"schedule spanning more than"
+                           (exn-message exn)))
+           (lambda () (check-schedule `((,(t 0 01) foo) (,(t 23 59) bar)))))
+
+;; TOO COMPLICATED:
 
 ;; I think we'll model a person as a priority queue of processes. Processes
 ;; can change their priorities over time. There will be a "running" process
