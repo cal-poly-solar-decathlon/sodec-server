@@ -92,7 +92,7 @@
 ;; day, or that all twelve happen at once?
 ;;
 ;; we're going to assume the latter, and check that every
-;; schedule has more than one time in it.
+;; schedule has a span of more than MAX-OOPS seconds in it.
 
 (define (schedule->elist name schedule)
   (check-schedule schedule)

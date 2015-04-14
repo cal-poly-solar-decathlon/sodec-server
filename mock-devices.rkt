@@ -29,8 +29,9 @@
   (let ([t-box (box INITIAL-TEMPERATURE)])
     (lambda ()
       (set-box! t-box
-                (+ (unbox t-box)
-                   (- (random 5) 2)))
+                (max 0
+                     (+ (unbox t-box)
+                        (- (random 5) 2))))
       (unbox t-box))))
 
 ;; a humidity generator. Wanders a bit more slowly. Can't go
