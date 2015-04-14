@@ -116,6 +116,20 @@ UTC on server). [IMPLEMENTED]
                 "timestamp":1418096756
             }
 
+# Devices [/srv/list-devices]
+
+The list of devices and descriptions from the server.
+
+## Devices [GET]
+
++ Response 200 (application/json)
+
+    + Body
+    
+            {
+                "devices": [["s-temp-out", "Outside Temperature"],
+                            ["s-temp-bed", "Bedroom Temperature"]]
+            }
 
 # Device Latest Event [/srv/latest-event{?device}]
 
