@@ -37,7 +37,7 @@ router.get('/', function(req, res, next)
                             }
 
                             if(result.length <= 0) {
-                              result = 'no events';
+                                result = 'no events';
                             }
                             else {
                                 result = result[0];
