@@ -17,6 +17,7 @@ var eventsInRange = require('./routes/events-in-range');
 var recordReading = require('./routes/record-reading');
 var timestamp = require('./routes/timestamp');
 var ping = require('./routes/ping');
+var listDevices = require('./routes/list-devices');
 
 var request = require('request');
 var jquery = require('jquery');
@@ -59,6 +60,7 @@ app.use('/srv/events-in-range', eventsInRange);
 app.use('/srv/record-reading', recordReading);
 app.use('/srv/timestamp', timestamp);
 app.use('/srv/ping', ping);
+app.use('/srv/list-devices', listDevices);
 
 
 // catch 404 and forward to error handler

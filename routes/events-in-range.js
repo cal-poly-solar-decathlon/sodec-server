@@ -24,7 +24,7 @@ router.get('/', function(req, res, next) {
       startDate = startDate.toISOString();
       endDate = endDate.toISOString();
 
-      console.log('The timestamp is ' + startDate + ", " + endDate);
+      // console.log('The timestamp is ' + startDate + ", " + endDate);
       // res.send({
       //    device: dev,
       //    start: startDate,
@@ -55,6 +55,7 @@ router.get('/', function(req, res, next) {
                                 result = deltaSequence(result);
                             }
                             
+                            console.log(result);
 
                             json = JSON.stringify(result);
 

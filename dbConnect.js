@@ -190,3 +190,17 @@ exports.addEgaugeEvent = function(usage, generation) {
         });
 };
 
+exports.findAllDevices = function(callback) {
+  var query = connection.query("SELECT 'name' as 'id', " +
+                                "description FROM devices", function(err, result) {
+        if (err) {
+            console.log("error with this query: " + query.sql);
+            callback(err, null);
+        }
+        else {
+            console.log(result);
+            callback(null, result);
+        }
+    });
+}
+
