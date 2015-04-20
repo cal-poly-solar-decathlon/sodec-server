@@ -15,25 +15,19 @@ router.get('/', function(req, res, next) {
    var startDate = new Date();
    var endDate = new Date();
 
-   startDate.setTime(startSeconds);
-   endDate.setTime(endSeconds);
-
-
-   console.log(startDate.toISOString());
-   console.log(endDate.toISOString());
-
    if(dev === undefined || startDate === undefined || endDate === undefined)
    {
       res.status(400).send({error: 'Expects device, start and end'});
    }
-   else if(isNaN(startDate.getTime()) || isNaN(endDate.getTime()))
+   else if(isNaN(startSeconds) || isNaN(endSeconds))
    {
       res.status(400).send({error: 'Invalid start or end date'})
    }
    else
    {
-      startDate = startDate.toISOString();
-      endDate = endDate.toISOString();
+      startDate.setTime(startSeconds);
+      endDate.setTime(endSeconds);
+
 
       console.log('The timestamp is ' + startDate + ", " + endDate);
       // res.send({
