@@ -118,24 +118,35 @@
 
 
 ;; setting unused lights, just once...
-#;(define unused-lights
-  '(s-light-entry-bookend-1A
-    s-light-chandelier-1B
-    s-light-tv-light-2A
-    s-light-kitchen-uplight-3A
-    s-light-under-counter-3B
-    s-light-pendant-bar-lights-3C
-    s-light-mirror-4B
-    s-light-flexspace-uplight-5A
-    s-light-flexspace-cabinet-5B
-    s-light-bedroom-uplight-6A
-    s-light-bedroom-cabinet-6B
-    s-light-porch-lights-8A
-    s-light-uplights-and-pot-lights-8B))
+(define branch-circuit-devices
+    '("s-elec-used-laundry"
+  "s-elec-used-dishwasher"
+  "s-elec-used-refrigerator"
+  "s-elec-used-induction-stove"
+  "s-elec-used-ewh-solar-water-heater"
+  "s-elec-used-kitchen-receps-1"
+  "s-elec-used-kitchen-receps-2"
+  "s-elec-used-living-receps"
+  "s-elec-used-dining-receps-1"
+  "s-elec-used-dining-receps-2"
+  "s-elec-used-bathroom-receps"
+  "s-elec-used-bedroom-receps-1"
+  "s-elec-used-bedroom-receps-2"
+  "s-elec-used-mechanical-receps"
+  "s-elec-used-entry-receps"
+  "s-elec-used-exterior-receps"
+  "s-elec-used-grey-water-pump-recep"
+  "s-elec-used-black-water-pump-recep"
+  "s-elec-used-thermal-loop-pump-recep"
+  "s-elec-used-water-supply-pump-recep"
+  "s-elec-used-water-supply-booster-pump-recep"
+  "s-elec-used-vehicle-changing-recep"
+  "s-elec-used-heat-pump-recep"
+  "s-elec-used-air-handler-recep"))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:8080")])
-  (for ([device (in-list unused-lights)])
-    (send-reading! (symbol->string device) 0)))
+  (for ([device (in-list branch-circuit-devices)])
+    (send-reading! device 0)))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))

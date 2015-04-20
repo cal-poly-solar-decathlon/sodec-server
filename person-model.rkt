@@ -222,7 +222,7 @@
     (log-person-model-debug "next event: ~v" (stream-first house-stream))
     (match-define (list time light state) (stream-first house-stream))
     (define light-level (match state
-                          ['on 100]
+                          ['on 1000]
                           ['off 0]))
     (cond [(or (<= (- now-time MAX-OOPS) time now-time)
                (<= (- now-time MAX-OOPS) (- time DAY-SECONDS) now-time))
@@ -358,16 +358,18 @@
 
 (house-stream test-elist (hash 'joey (set) 'freddy (set)))
 
-(check-equal? (stream-take (house-stream (elist-merge joey-estream freddy-estream)
-                                         (hash 'joey (set)
-                                               'freddy (set)))
-                           5)
+(check-equal? (list->set
+               (stream-take (house-stream (elist-merge joey-estream freddy-estream)
+                                          (hash 'joey (set)
+                                                'freddy (set)))
+                            6))
+              (list->set
               (list (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
                     (list (t 5 00) 's-light-kitchen-uplight-3A 'on)
                     (list (t 5 10) 's-light-pendant-bar-lights-3C 'off)
                     (list (t 5 10) 's-light-kitchen-uplight-3A 'off)
                     (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
-                    (list (t 5 00) 's-light-kitchen-uplight-3A 'on)))
+                    (list (t 5 00) 's-light-kitchen-uplight-3A 'on))))
 
 (define test-house-stream
   (let loop () (stream-cons (list (t 5 00) 'foo)
