@@ -92,13 +92,21 @@ Sensors (taken from 2015/02/20 drawings):
 
 ## Representing Sensor Readings
 
-Sensor readings are encoded as 64-bit integers. For temperatures, these
+Sensor readings are encoded as 64-bit integers.
+
+For temperatures, these
 are 10ths of celsius degrees. So, for instance, the temperature -3.4 degrees
-celsius would be represented as -34. Humidities are reported in 10ths of
+celsius would be represented as -34.
+
+Humidities are reported in 10ths of
 a percent of relative humidity. So, for instance, 78.4% humidity would
-be represented as 784. Light settings are specified as tenths of a percent
+be represented as 784.
+
+Light settings are specified as tenths of a percent
 (like humidity). So, for instance, a light that's off would be represented
 as 1000, and one set at 20% would be represented as 200.
+
+Electrical usage readings are specified in CUMULATIVE watt-hours.
 
 ## Implementation
 

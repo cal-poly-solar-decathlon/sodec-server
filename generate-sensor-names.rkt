@@ -45,7 +45,7 @@ Uplights and Pot Lights (8B)")
 (define branch-circuits
   '(laundry
     dishwasher
-    refrigerator
+    refrigerator 
     induction-stove
     ewh-solar-water-heater
     kitchen-receps-1
@@ -68,9 +68,9 @@ Uplights and Pot Lights (8B)")
     heat-pump-recep
     air-handler-recep))
 
-(define egauge-devices
+(define branch-circuit-devices
   (for/list ([circuit (in-list branch-circuits)])
-    (list (~a "s-egauge-"circuit) "...")))
+    (list (~a "s-elec-used-"circuit) "...")))
 
 
 (define extra-devices
@@ -84,26 +84,25 @@ Uplights and Pot Lights (8B)")
        (~a "s-light-" (regexp-replace* #px" " (string-downcase name) "-")
            room-num index)])))
 
-(for-each
- display
-(append
- (for*/list ([pat (in-list sensor-patterns)]
-            [r (in-list (second pat))])
-  (~a "- `"(first pat)"-"r"` : "(format (third pat) (second (assoc r rooms)))"\n"))
- (for/list ([d (in-list extra-devices)])
-   (~a "- `"(first d)"` : "(second d)"\n"))
- (for/list ([l (in-list light-names)])
-   (~a "- `"l"`\n"))))
-
-;; as strings, for ids.rkt:
-(define device-strs
+(define all-devices
   (append
    (for*/list ([pat (in-list sensor-patterns)]
                [r (in-list (second pat))])
-     (~a (first pat)"-"r))
-   (for/list ([d extra-devices])
-     (first d))
-   light-names))
+     (list (~a (first pat)"-"r)
+           (format (third pat) (second (assoc r rooms)))))
+   (append branch-circuit-devices extra-devices)
+   (for/list ([l (in-list light-names)])
+     (list l "..."))))
+
+(for-each
+ display
+(append
+ (for/list ([pr (in-list all-devices)])
+   (~a "- `"(first pr)"` : "(second pr)"\n"))))
+
+;; as strings, for ids.rkt:
+(define device-strs
+  (map first all-devices))
 
 (define sensor-names
   (map string->symbol device-strs))
