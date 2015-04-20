@@ -10,8 +10,6 @@ var cors = require('cors');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-var arduino = require('./routes/arduino');
-var power = require('./routes/power');
 var latestEvent = require('./routes/latest-event');
 var eventsInRange = require('./routes/events-in-range');
 var recordReading = require('./routes/record-reading');
@@ -53,8 +51,6 @@ app.use(function(req, res, next) {
 
 app.use('/srv/', routes);
 app.use('/srv/users', users);
-app.use('/srv/arduino', arduino);
-app.use('/srv/power', power);
 app.use('/srv/latest-event', latestEvent);
 app.use('/srv/events-in-range', eventsInRange);
 app.use('/srv/record-reading', recordReading);
@@ -131,6 +127,7 @@ setInterval(function() {
 }, 60 * 1000);
 */
 
+/*
 setInterval(function() {
     var random = randomNum(50.1, 70.9);
     console.log("Adding value " + random * 1000);
@@ -149,4 +146,4 @@ function randomNum(min, max)
 {
    return (Math.random() * ( min - max) + max).toFixed(3);
 }
-
+*/
