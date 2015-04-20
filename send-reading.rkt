@@ -13,6 +13,8 @@
                [target-hosts
                 (parameter/c (cons/c string? (listof string?)))]))
 
+(define-logger send-reading)
+
 ;; these are the hosts to which the readings will be sent.
 ;; for instance, "localhost:8080". This list should not
 ;; be empty.
@@ -30,7 +32,7 @@
 (define TIMEOUT-SECONDS 3.0)
 
 ;; send a reading to one particular host
-(define (send-reading!/host host id temp)
+(define (send-reading!/host host id reading)
   (define result
     (sync/timeout
      TIMEOUT-SECONDS
@@ -40,19 +42,22 @@
             ([exn:fail?
               (lambda (exn)
                 ;; log error and continue...
-                (log-error "~a" (exn-message exn)))])
+                (log-send-reading-error "~a" (exn-message exn)))])
+          (log-send-reading-debug
+           "sending reading of ~e on device ~e to host ~e\n"
+           reading id host)
           (define result
             (remote-call/post 
              (string-append "http://" host "/srv/record-reading?device=" id)
-             (jsexpr->bytes (hash 'status temp
+             (jsexpr->bytes (hash 'status reading
                                   'secret SEKRIT))))
           (when (not (string=? result "okay"))
-            (log-error
+            (log-send-reading-error
              'record-temperature!
              "expected \"okay\" as result, got: ~v"
              result)))))))
   (cond [(eq? #f result)
-         (log-error "send-reading!: request timed out")]
+         (log-send-reading-error "send-reading!: request timed out")]
         [(thread? result) '#t]))
 
 

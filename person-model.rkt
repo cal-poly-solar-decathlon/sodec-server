@@ -5,6 +5,8 @@
          racket/stream
          racket/date)
 
+(define-logger person-model)
+
 ;; this will be a model of a person, and how they
 ;; turn lights on and off.
 
@@ -103,6 +105,15 @@
                 (stream-cons (event time name (activity-lights name activity))
                              (generator (rest sched)))]))
   (generator schedule))
+
+;; a simple elist that just turns the lights on and off every minute
+;; in the bathroom, useful for testing...
+(define bathroom-elist
+  (let loop ([cur-time 0])
+  (stream-cons (event cur-time 'bathroom-phantom (set 's-light-bathroom-ambient-4A))
+               (stream-cons
+                (event (+ cur-time 15) 'bathroom-phantom (set))
+                (loop (+ cur-time 60))))))
 
 ;; we imagine that sending a reading could take this long. If the
 ;; next event is less than this many seconds in the past, we assume
@@ -208,7 +219,7 @@
   ;; this is going to slip, but I don't think it really matters...
   (let loop ([house-stream synced-stream]
              [now-time (seconds-since-midnight)])
-    (log-sodec-debug "next event: ~v" (stream-first house-stream))
+    (log-person-model-debug "next event: ~v" (stream-first house-stream))
     (match-define (list time light state) (stream-first house-stream))
     (define light-level (match state
                           ['on 100]
@@ -216,18 +227,12 @@
     (cond [(or (<= (- now-time MAX-OOPS) time now-time)
                (<= (- now-time MAX-OOPS) (- time DAY-SECONDS) now-time))
            (send-reading! (symbol->string light) light-level)
-           (loop (rest house-stream) now-time)]
+           (loop (stream-rest house-stream) now-time)]
           [else
-           (log-sodec-debug "sleeping for ~v seconds until ~v\n"
+           (log-person-model-debug "sleeping for ~v seconds until ~v\n"
                             (- time now-time) time)
            (sleep (modulo (- time now-time) DAY-SECONDS))
            (loop house-stream (seconds-since-midnight))])))
-
-(define (log-sodec-debug . args)
-  (log-message (current-logger)
-               'debug
-               'sodec
-               (apply format args)))
 
 
 ;; discard the events that are between midnight and the given time
@@ -272,9 +277,12 @@
      (run-house-stream
       (house-stream
        (elist-merge
-        (schedule->elist 'alice alice-schedule)
-        (schedule->elist 'barry barry-schedule))
-       (hash 'alice (set)
+        bathroom-elist
+        (elist-merge
+         (schedule->elist 'alice alice-schedule)
+         (schedule->elist 'barry barry-schedule)))
+       (hash 'bathroom-phantom (set)
+             'alice (set)
              'barry (set)))))))
 
 
@@ -307,6 +315,15 @@
                     (event (t 5 00) 'freddy (set 's-light-kitchen-uplight-3A
                                                  's-light-pendant-bar-lights-3C))))
 
+
+(check-equal? (stream-take bathroom-elist 5)
+              (list (event (t 0 00) 'bathroom-phantom (set 's-light-bathroom-ambient-4A))
+                    (event (+ (t 0 00) 15) 'bathroom-phantom (set))
+                    (event (t 0 01) 'bathroom-phantom (set 's-light-bathroom-ambient-4A))
+                    (event (+ (t 0 01) 15) 'bathroom-phantom (set))
+                    (event (t 0 02) 'bathroom-phantom (set 's-light-bathroom-ambient-4A))))
+
+
 (define joey-schedule
   `((,(t 5 03) breakfast)
     (,(t 5 09) sleep)))
@@ -322,6 +339,7 @@
                     (event (t 5 10) 'freddy (set))
                     (event (t 5 00) 'freddy (set 's-light-kitchen-uplight-3A
                                                  's-light-pendant-bar-lights-3C))))
+
 ;; reverse the order of the stream arguments:
 (check-equal? (stream-take (elist-merge joey-estream
                                         freddy-estream)
@@ -344,10 +362,11 @@
                                          (hash 'joey (set)
                                                'freddy (set)))
                            5)
-              (list (list (t 5 00) 's-light-kitchen-uplight-3A 'on)
-                    (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
-                    (list (t 5 10) 's-light-kitchen-uplight-3A 'off)
+              (list (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
+                    (list (t 5 00) 's-light-kitchen-uplight-3A 'on)
                     (list (t 5 10) 's-light-pendant-bar-lights-3C 'off)
+                    (list (t 5 10) 's-light-kitchen-uplight-3A 'off)
+                    (list (t 5 00) 's-light-pendant-bar-lights-3C 'on)
                     (list (t 5 00) 's-light-kitchen-uplight-3A 'on)))
 
 (define test-house-stream
