@@ -125,11 +125,9 @@ The list of devices and descriptions from the server.
 + Response 200 (application/json)
 
     + Body
-    
-            {
-                "devices": [["s-temp-out", "Outside Temperature"],
-                            ["s-temp-bed", "Bedroom Temperature"]]
-            }
+
+            [{"device":"s-temp-out","description":"Outside Temperature"},
+             {"device":"s-temp-bed",description":"Bedroom Temperature"}]
 
 # Device Latest Event [/srv/latest-event{?device}]
 
