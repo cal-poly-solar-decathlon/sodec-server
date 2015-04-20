@@ -3,7 +3,7 @@
 (require "send-reading.rkt"
          "person-model.rkt")
 
-(target-hosts '("localhost:8080"))
+(target-hosts '("localhost:8080" "localhost:3000"))
 
 ;; the lights:
 (run-alice-barry-lights)
