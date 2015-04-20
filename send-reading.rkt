@@ -44,13 +44,21 @@
                 ;; log error and continue...
                 (log-send-reading-error "~a" (exn-message exn)))])
           (log-send-reading-debug
-           "sending reading of ~e on device ~e to host ~e\n"
+           "sending reading of ~e on device ~e to host ~e"
            reading id host)
+          (define URL-string
+            (string-append "http://" host "/srv/record-reading?device=" id))
+          (define post-bytes
+            (jsexpr->bytes (hash 'status reading
+                                 'secret SEKRIT)))
+          (log-send-reading-debug
+           "using URL string: ~s" URL-string)
+          (log-send-reading-debug
+           "... and post-bytes: ~s" post-bytes)
           (define result
-            (remote-call/post 
-             (string-append "http://" host "/srv/record-reading?device=" id)
-             (jsexpr->bytes (hash 'status reading
-                                  'secret SEKRIT))))
+            (remote-call/post
+             URL-string
+             post-bytes))
           (when (not (string=? result "okay"))
             (log-send-reading-error
              'record-temperature!
@@ -109,4 +117,25 @@
                           header-string))]))
 
 
+;; setting unused lights, just once...
+#;(define unused-lights
+  '(s-light-entry-bookend-1A
+    s-light-chandelier-1B
+    s-light-tv-light-2A
+    s-light-kitchen-uplight-3A
+    s-light-under-counter-3B
+    s-light-pendant-bar-lights-3C
+    s-light-mirror-4B
+    s-light-flexspace-uplight-5A
+    s-light-flexspace-cabinet-5B
+    s-light-bedroom-uplight-6A
+    s-light-bedroom-cabinet-6B
+    s-light-porch-lights-8A
+    s-light-uplights-and-pot-lights-8B))
 
+#;(parameterize ([target-hosts '("calpolysolardecathlon.org:8080")])
+  (for ([device (in-list unused-lights)])
+    (send-reading! (symbol->string device) 0)))
+
+#;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+  (send-reading! "s-temp-lr" 155))

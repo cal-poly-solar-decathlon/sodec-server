@@ -5,7 +5,10 @@
          rackunit
          rackunit/text-ui
          racket/date
-         json)
+         json
+         "../generate-sensor-names.rkt")
+
+(define-logger sodec-test)
 
 ;; given a URL, make a GET request and wait for a response, returning a jsexpr
 (define (remote-call/get url-string)
@@ -27,7 +30,7 @@
                           mime-type)))
          (define reply (first (regexp-match #px".*" body-port)))
          (close-input-port body-port)
-         (log-debug  (format "reply-bytes : ~v\n" reply))
+         (log-sodec-test-debug  (format "reply-bytes : ~v\n" reply))
          (bytes->jsexpr reply)]
         [else
          (fail-check
@@ -40,14 +43,14 @@
 ;; given a URL string, return the response code, the first line, the rest
 ;; of the headers, and the port for the remainder of the body
 (define (remote-call/get/core url-string)
-  (log-debug "remote-call/get/core: url-string ~a"
+  (log-sodec-test-debug "remote-call/get/core: url-string ~a"
              url-string)
   (response-port->results (get-impure-port (string->url url-string))))
 
 ;; given a URL string and a POST body, make a POST request, return the response
 ;; code, the first line, the rest of the headers, and the port for the remainder of the body.
 (define (remote-call/post/core url-string post-bytes)
-  (log-debug "remote-call/post/core: url-string ~a, post-bytes: ~a"
+  (log-sodec-test-debug "remote-call/post/core: url-string ~a, post-bytes: ~a"
              url-string post-bytes)
   (response-port->results (post-impure-port (string->url url-string)
                                             post-bytes
@@ -86,6 +89,7 @@
   #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
   "http://calpolysolardecathlon.org:8080"
+  #;"http://192.168.2.3:3000"
   #;"http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
@@ -164,6 +168,22 @@
     (hash-table ('timestamp (? number? n))
                   ('device-id "s-temp-lr")
                   ('status (? number? s)))))
+
+   ;; ignore the occupancy, temp, and ambient light devices:
+   (define (ignored-name n)
+     (or (regexp-match #px"^s-temp-" (symbol->string n))
+         (regexp-match #px"^s-amb-" (symbol->string n))
+         (regexp-match #px"^s-occ-" (symbol->string n))))
+   
+   (for ([device (in-list sensor-names)]
+         #:when (not (ignored-name device)))
+     (test-case
+      (~a "latest-event-"device)
+      (check-match
+       (call-subpath (~a "/latest-event?device=" device))
+       (hash-table ('timestamp (? number? n))
+                   ('device-id device)
+                   ('status (? number? s))))))
    
 
    (test-case
@@ -241,6 +261,8 @@
                    (string-append l-u "/srv/record-reading?device=s-temp-testing-blackhole")
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
                   "okay"))
+
+   
 )))
 
 

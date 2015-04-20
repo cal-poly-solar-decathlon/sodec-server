@@ -42,6 +42,36 @@ Bedroom Cabinet (6B)
 Porch Lights (8A)
 Uplights and Pot Lights (8B)")
 
+(define branch-circuits
+  '(laundry
+    dishwasher
+    refrigerator
+    induction-stove
+    ewh-solar-water-heater
+    kitchen-receps-1
+    kitchen-receps-2
+    living-receps
+    dining-receps-1
+    dining-receps-2
+    bathroom-receps
+    bedroom-receps-1
+    bedroom-receps-2
+    mechanical-receps
+    entry-receps
+    exterior-receps
+    grey-water-pump-recep
+    black-water-pump-recep
+    thermal-loop-pump-recep
+    water-supply-pump-recep
+    water-supply-booster-pump-recep
+    vehicle-changing-recep
+    heat-pump-recep
+    air-handler-recep))
+
+(define egauge-devices
+  (for/list ([circuit (in-list branch-circuits)])
+    (list (~a "s-egauge-"circuit) "...")))
+
 
 (define extra-devices
   '(("s-temp-testing-blackhole" "a temperature bin to test recording")
