@@ -1,0 +1,22 @@
+4.  Technological innovations. Summarize the unique or unusual technologies incorporated into your house. (1- 2 pages)
+
+Monitoring and Data Collection
+
+From Nest to Wink to Z-Wave, the "Smart Home" movement is a prominent topic
+today. One problem with many of these systems is that they must make decisions
+based on extremely limited input data.
+
+In an effort to overcome this, Solar Cal Poly has designed a house that
+is "Pre-Instrumented" with a network of built-in temperature, humidity,
+power generation, and power use sensors. This network is connected to a
+central low-power server that collects this data, and served from there
+to an App running on a tablet device.
+
+The house performs long-term data collection. This makes it possible to
+apply data-mining techniques; are certain days more power-hungry than
+others? Are there some rooms that use disproportionate amounts of energy?
+Would it be possible to lower the temperature in rooms not likely to
+be occupied in the next few hours? Long-term monitoring makes it possible
+to answer all of these questions, in a way that is tailored to one particular
+family.
+
