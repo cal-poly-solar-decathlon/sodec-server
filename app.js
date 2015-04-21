@@ -92,6 +92,32 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
+/*
+setInterval(function() {
+   console.log("Polling egauge");
+   var options = {
+      host: '192.168.2.5',
+      port: 80,
+      path: '/cgi-bin/egauge',
+      method: 'GET'
+   };
+   http.get(options, function(response) {
+      if (response.statusCode === 200) {
+         response.on('data', function(chunk) {
+            var text = chunk.toString();
+            var xmlDoc = jquery.parseXML(text);
+            $xml = $(xmlDoc);
+            console.log("Refrigerator: " + $xml.find("r[n=Refrigerator]"));
+//            console.log(text);
+         });
+      } else {
+         console.log("bad request");
+      }
+   }).on('error', function(e) {
+      console.log("error: " + e.message);
+   });
+}, 3 * 1000);
+*/
 
 // polls egauge for data every 1000ms
 /*
