@@ -4,6 +4,7 @@
          net/url
          json
          "secret.rkt"
+         "web-funs.rkt"
          racket/match
          racket/contract)
 
@@ -13,7 +14,7 @@
                [target-hosts
                 (parameter/c (cons/c string? (listof string?)))]))
 
-(define-logger send-reading)
+(define-logger sodec)
 
 ;; these are the hosts to which the readings will be sent.
 ;; for instance, "localhost:8080". This list should not
@@ -42,8 +43,8 @@
             ([exn:fail?
               (lambda (exn)
                 ;; log error and continue...
-                (log-send-reading-error "~a" (exn-message exn)))])
-          (log-send-reading-debug
+                (log-sodec-error "~a" (exn-message exn)))])
+          (log-sodec-debug
            "sending reading of ~e on device ~e to host ~e"
            reading id host)
           (define URL-string
@@ -51,71 +52,22 @@
           (define post-bytes
             (jsexpr->bytes (hash 'status reading
                                  'secret SEKRIT)))
-          (log-send-reading-debug
+          (log-sodec-debug
            "using URL string: ~s" URL-string)
-          (log-send-reading-debug
+          (log-sodec-debug
            "... and post-bytes: ~s" post-bytes)
           (define result
             (remote-call/post
              URL-string
              post-bytes))
           (when (not (string=? result "okay"))
-            (log-send-reading-error
+            (log-sodec-error
              'record-temperature!
              "expected \"okay\" as result, got: ~v"
              result)))))))
   (cond [(eq? #f result)
-         (log-send-reading-error "send-reading!: request timed out")]
+         (log-sodec-error "send-reading!: request timed out")]
         [(thread? result) '#t]))
-
-
-;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
-(define (remote-call/post url-string post-bytes)
-  (results->jsexpr (remote-call/post/core url-string post-bytes)))
-
-;; given a list of results, ensure that the return code is 200 and then parse
-;; the body as a jsexpr
-(define (results->jsexpr results)
-  (match-define (list response-code first-line headers body-port) results)
-  (cond [(= response-code 200)
-         (define mime-type (extract-field "Content-Type" headers))
-         (unless (string=? mime-type "application/json")
-           (error 'remote-call/get
-                  (format "expected mime type application/json, got ~e"
-                          mime-type)))
-         (define reply (car (regexp-match #px".*" body-port)))
-         (close-input-port body-port)
-         (bytes->jsexpr reply)]
-        [else 
-         (error 'remote-call/get
-                "response code: expected 200, got: ~v\nwith message: ~v\nand body: ~v" 
-                response-code
-                first-line
-                (regexp-match #px".*" body-port))]))
-
-;; given a URL string and a POST body, make a POST request, return the response
-;; code, the first line, the rest of the headers, and the port for the remainder of the body.
-(define (remote-call/post/core url-string post-bytes)
-  (response-port->results (post-impure-port (string->url url-string) post-bytes)))
-
-;; given an input port, return the response code, the first line, the rest of the headers,
-;; and the port for the body
-(define (response-port->results response-port)
-  (define header-string (purify-port response-port))
-  (match (regexp-match #px"^([^\n]*)\n(.*)" header-string)
-    [(list dc first-line headers)
-     (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" first-line)
-       [(list dc2 response-code-string)
-        (define reply-code (string->number response-code-string))
-        (list reply-code first-line headers response-port)]
-       [other
-        (error 'remote-call/get/core
-               "couldn't extract response code from first response line ~e"
-               first-line)])]
-    [other (error 'remote-call/get
-                  (format "expected response with at least one header line, got ~e"
-                          header-string))]))
-
 
 ;; setting unused lights, just once...
 (define branch-circuit-devices
@@ -144,9 +96,27 @@
   "s-elec-used-heat-pump-recep"
   "s-elec-used-air-handler-recep"))
 
-#;(parameterize ([target-hosts '("calpolysolardecathlon.org:8080")])
-  (for ([device (in-list branch-circuit-devices)])
-    (send-reading! device 0)))
+(define lights
+  '(s-light-entry-bookend-1A
+    s-light-chandelier-1B
+    s-light-tv-light-2A
+    s-light-kitchen-uplight-3A
+    s-light-under-counter-3B
+    s-light-pendant-bar-lights-3C
+    s-light-bathroom-ambient-4A
+    s-light-mirror-4B
+    s-light-flexspace-uplight-5A
+    s-light-flexspace-cabinet-5B
+    s-light-bedroom-uplight-6A
+    s-light-bedroom-cabinet-6B
+    s-light-porch-lights-8A
+    s-light-uplights-and-pot-lights-8B
+    ))
+
+(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+  #;(send-reading!  "s-light-entry-bookend-1A" 144)
+  (for ([device (in-list lights)])
+    (send-reading! (symbol->string device) 1)))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))

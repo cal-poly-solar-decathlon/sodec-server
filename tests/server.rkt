@@ -6,91 +6,32 @@
          rackunit/text-ui
          racket/date
          json
-         "../generate-sensor-names.rkt")
+         "../generate-sensor-names.rkt"
+         "../web-funs.rkt")
 
-(define-logger sodec-test)
+(define-logger sodec)
 
 ;; given a URL, make a GET request and wait for a response, returning a jsexpr
 (define (remote-call/get url-string)
   (results->jsexpr (remote-call/get/core url-string)))
 
-;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
-(define (remote-call/post url-string post-bytes)
-  (results->jsexpr (remote-call/post/core url-string post-bytes)))
-
-;; given a list of results, ensure that the return code is 200 and then parse
-;; the body as a jsexpr
-(define (results->jsexpr results)
-  (match-define (list response-code first-line headers body-port) results)
-  (cond [(= response-code 200)
-         (define mime-type (extract-field "Content-Type" headers))
-         (unless (regexp-match #px"^application/json(;.*)?$" mime-type)
-           (error 'remote-call/get
-                  (format "expected mime type application/json, got ~e"
-                          mime-type)))
-         (define reply (first (regexp-match #px".*" body-port)))
-         (close-input-port body-port)
-         (log-sodec-test-debug  (format "reply-bytes : ~v\n" reply))
-         (bytes->jsexpr reply)]
-        [else
-         (fail-check
-          (format
-           "response code: expected 200, got: ~v\nwith message: ~v\nand body: ~v" 
-           response-code
-           first-line
-           (regexp-match #px".*" body-port)))]))
 
 ;; given a URL string, return the response code, the first line, the rest
 ;; of the headers, and the port for the remainder of the body
 (define (remote-call/get/core url-string)
-  (log-sodec-test-debug "remote-call/get/core: url-string ~a"
+  (log-sodec-debug "remote-call/get/core: url-string ~a"
              url-string)
   (response-port->results (get-impure-port (string->url url-string))))
 
-;; given a URL string and a POST body, make a POST request, return the response
-;; code, the first line, the rest of the headers, and the port for the remainder of the body.
-(define (remote-call/post/core url-string post-bytes)
-  (log-sodec-test-debug "remote-call/post/core: url-string ~a, post-bytes: ~a"
-             url-string post-bytes)
-  (response-port->results (post-impure-port (string->url url-string)
-                                            post-bytes
-                                            (list
-                                             "Content-Type: application/json"))))
-
-;; given an input port, return the response code, the first line, the rest of the headers,
-;; and the port for the body
-(define (response-port->results response-port)
-  ;; what about timeouts?
-  (define header-string (purify-port response-port))
-  ;; strange... why do our servers always come back with text/html as 
-  ;; a mime type?
-  (match (regexp-match #px"^([^\n]*)\n(.*)" header-string)
-    [(list dc first-line headers)
-     (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" first-line)
-       [(list dc2 response-code-string)
-        (define reply-code (string->number response-code-string))
-        (unless (regexp-match #px"Access-Control-Allow-Origin: \\*"
-                              headers)
-          (error 'response-port->results
-                 "didn't find expected CORS header in headers: ~e\n"
-                 headers))
-        (list reply-code first-line headers response-port)]
-       [other
-        (error 'remote-call/get/core
-               "couldn't extract response code from first response line ~e"
-               first-line)])]
-    [other (error 'remote-call/get
-                  (format "expected response with at least one header line, got ~e"
-                          header-string))]))
 
 
 (define l-u 
   ;; test locally:
   #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "http://calpolysolardecathlon.org:8080"
+  #;"http://calpolysolardecathlon.org:8080"
   #;"http://192.168.2.3:3000"
-  #;"http://calpolysolardecathlon.org:3000")
+  "http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
   (string-append l-u str))
@@ -260,6 +201,14 @@
     (check-equal? (remote-call/post
                    (string-append l-u "/srv/record-reading?device=s-temp-testing-blackhole")
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+                  "okay"))
+
+      (test-case
+    "record-reading"
+    (check-equal? (remote-call/post
+                   (string-append l-u
+                                  "/srv/record-reading?device=s-temp-lr")
+                   #"{\"status\":1234,\"secret\":\"$a8Es#crB469\"}")
                   "okay"))
 
    
