@@ -113,10 +113,10 @@
     s-light-uplights-and-pot-lights-8B
     ))
 
-(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
-  #;(send-reading!  "s-light-entry-bookend-1A" 144)
-  (for ([device (in-list lights)])
-    (send-reading! (symbol->string device) 1)))
+#;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+  (send-reading!  "s-temp-lr" 0)
+  #;(for ([device (in-list branch-circuit-devices)])
+    (send-reading! device 1)))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))
