@@ -86,7 +86,7 @@ CREATE TABLE `controleventresultcodes` (
 
 CREATE TABLE `devices` (
   `name` varchar(64) NOT NULL,
-  `name` varchar(256) NOT NULL,
+  `description` varchar(256) NOT NULL
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
