@@ -26,9 +26,9 @@ exports.endConnection = function() {
 }
 
 // insert device
-exports.addNewDevice = function(device) {
+exports.addNewDevice = function(device, description) {
     var query = connection.query("INSERT INTO devices " +
-                     "VALUES (?)", device, function(err, result) {
+                     "VALUES (?, ?)", [device, description], function(err, result) {
             if(err) {
               console.log("error with this query: " + query.sql);
               console.log(err);  
@@ -61,6 +61,7 @@ exports.addResultCode = function(resultCode) {
 
 // insert control events
 exports.addControlEvent = function(device, setting) {
+  if (!isNaN(reading)) {
     var query = connection.query("INSERT INTO controlevents" +
                      " (device, setting)" +
                      " VALUES (?,?)", [device, setting], function(err, result) {
@@ -71,10 +72,15 @@ exports.addControlEvent = function(device, setting) {
                 console.log(err);
             }
         });
+    return true;
+  }
+  else
+    return false;
 };
 
 // insert sensor events
 exports.addSensorEvent = function(device, reading) {
+  if (!isNaN(reading)) {
     connection.query("INSERT INTO sensorevents" +
                  " (device, reading)" +
                  " VALUES (?, ?)", [device, reading], function(err, result) {
@@ -85,6 +91,11 @@ exports.addSensorEvent = function(device, reading) {
             throw err;
         }
     });
+    return true;
+  }
+  else
+    return false;
+    
 }
 
 // get last event
@@ -178,6 +189,7 @@ exports.findDevice = function(device, callback) {
 };
 
 exports.addEgaugeEvent = function(usage, generation) {
+  if (!isNaN(usage) && !isNaN(generation)) {
     var query = connection.query("INSERT INTO egauge" +
                      " (`usage`, `generation`)" +
                      " VALUES (?, ?)", [usage, generation], function(err, result) {
@@ -188,10 +200,14 @@ exports.addEgaugeEvent = function(usage, generation) {
                 throw err;
             }
         });
+    return true;
+  }
+  else
+    return false;
 };
 
 exports.findAllDevices = function(callback) {
-  var query = connection.query("SELECT name as id, " +
+  var query = connection.query("SELECT name, " +
                                 "description FROM devices", function(err, result) {
         if (err) {
             console.log("error with this query: " + query.sql);
