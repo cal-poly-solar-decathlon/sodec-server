@@ -10,8 +10,6 @@ var cors = require('cors');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-var arduino = require('./routes/arduino');
-var power = require('./routes/power');
 var latestEvent = require('./routes/latest-event');
 var eventsInRange = require('./routes/events-in-range');
 var recordReading = require('./routes/record-reading');
@@ -53,8 +51,6 @@ app.use(function(req, res, next) {
 
 app.use('/srv/', routes);
 app.use('/srv/users', users);
-app.use('/srv/arduino', arduino);
-app.use('/srv/power', power);
 app.use('/srv/latest-event', latestEvent);
 app.use('/srv/events-in-range', eventsInRange);
 app.use('/srv/record-reading', recordReading);
@@ -96,6 +92,32 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
+/*
+setInterval(function() {
+   console.log("Polling egauge");
+   var options = {
+      host: '192.168.2.5',
+      port: 80,
+      path: '/cgi-bin/egauge',
+      method: 'GET'
+   };
+   http.get(options, function(response) {
+      if (response.statusCode === 200) {
+         response.on('data', function(chunk) {
+            var text = chunk.toString();
+            var xmlDoc = jquery.parseXML(text);
+            $xml = $(xmlDoc);
+            console.log("Refrigerator: " + $xml.find("r[n=Refrigerator]"));
+//            console.log(text);
+         });
+      } else {
+         console.log("bad request");
+      }
+   }).on('error', function(e) {
+      console.log("error: " + e.message);
+   });
+}, 3 * 1000);
+*/
 
 // polls egauge for data every 1000ms
 /*
@@ -131,6 +153,7 @@ setInterval(function() {
 }, 60 * 1000);
 */
 
+/*
 setInterval(function() {
     var random = randomNum(50.1, 70.9);
     console.log("Adding value " + random * 1000);
@@ -149,4 +172,4 @@ function randomNum(min, max)
 {
    return (Math.random() * ( min - max) + max).toFixed(3);
 }
-
+*/

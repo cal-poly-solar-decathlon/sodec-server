@@ -8,23 +8,28 @@ var db      = require('../dbConnect.js');
 
 router.get('/', function(req, res, next) {
    var dev = req.query.device;
-   var startDate = new Date(Date.parse(req.query.start));
-   var endDate = new Date(Date.parse(req.query.end));
+
+   var startSeconds = parseInt(req.query.start, 10) * 1000;
+   var endSeconds = parseInt(req.query.end, 10) * 1000;
+
+   var startDate = new Date();
+   var endDate = new Date();
 
    if(dev === undefined || startDate === undefined || endDate === undefined)
    {
       res.status(400).send({error: 'Expects device, start and end'});
    }
-   else if(isNaN(startDate.getTime()) || isNaN(endDate.getTime()))
+   else if(isNaN(startSeconds) || isNaN(endSeconds))
    {
       res.status(400).send({error: 'Invalid start or end date'})
    }
    else
    {
-      startDate = startDate.toISOString();
-      endDate = endDate.toISOString();
+      startDate.setTime(startSeconds);
+      endDate.setTime(endSeconds);
 
-      // console.log('The timestamp is ' + startDate + ", " + endDate);
+
+      console.log('The timestamp is ' + startDate + ", " + endDate);
       // res.send({
       //    device: dev,
       //    start: startDate,
@@ -54,7 +59,7 @@ router.get('/', function(req, res, next) {
                               else
                                 result = deltaSequence(result);
                             }
-                            
+
                             console.log(result);
 
                             json = JSON.stringify(result);
@@ -115,7 +120,7 @@ function deltaEgauge(result) {
 
     var newStatus = [result[i]['usage'], result[i]['generation']];
 
-    var statusDelta = [newStatus[0] - status[0], 
+    var statusDelta = [newStatus[0] - status[0],
                        newStatus[1] = status[1]];
     status = newStatus;
 
