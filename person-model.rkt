@@ -144,6 +144,8 @@
                           0 schedule)))
 
 
+;; oh dear... all of this merging stuff is stupid; I should just use a thread
+;; for each schedule. sigh...
 
 ;; merges two ELists. Assumes it's starting at midnight!
 ;(: elist-merge (EList EList -> EList))
