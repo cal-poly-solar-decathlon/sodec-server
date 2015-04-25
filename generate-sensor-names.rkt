@@ -19,8 +19,8 @@
 
 
 (define sensor-patterns
-  '(("s-temp" ("out" "bed" "bath" "lr") "the temperature in the ~a")
-    ("s-hum" ("out" "bed" "bath" "lr") "the humidity in the ~a")
+  '(("s-temp" ("out" "bed" "bath" "lr" "kit") "the temperature in the ~a")
+    ("s-hum" ("out" "bed" "bath" "lr" "kit") "the humidity in the ~a")
     ("s-occ" ("bed" "mech" "lr" "bath") "whether the ~a is occupied")
     ("s-amb" ("bed" "mech" "lr" "bath") "the ambient light level in the ~a")
     #;("c-light" ("bed" "mech" "lr" "bath" "kit") "control of the lights in the ~a")
