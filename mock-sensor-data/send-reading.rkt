@@ -3,10 +3,10 @@
 (require net/head
          net/url
          json
-         "secret.rkt"
-         "web-funs.rkt"
          racket/match
-         racket/contract)
+         racket/contract
+         "../secret.rkt"
+         "../web-funs.rkt")
 
 (provide
  (contract-out [send-reading!
