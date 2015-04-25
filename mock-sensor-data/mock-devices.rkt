@@ -1,12 +1,7 @@
 #lang racket/base
 
-(require "send-reading.rkt"
-         "person-model.rkt")
+(require "send-reading.rkt")
 
-(target-hosts '("localhost:8080" "localhost:3000"))
-
-;; the lights:
-(run-alice-barry-lights)
 
 ;; the temperature and humidity:
 
@@ -57,7 +52,7 @@
 
 ;; start temperature threads:
 (for ([id (in-list temperature-ids)])
-  (run-mock-device id 5 (make-temperature-generator)))
+  (run-mock-device id 60 (make-temperature-generator)))
 
 (define humidity-ids
   '("s-hum-bed"
@@ -67,7 +62,7 @@
 
 ;; start humidity threads:
 (for ([id (in-list humidity-ids)])
-  (run-mock-device id 5 (make-humidity-generator)))
+  (run-mock-device id 60 (make-humidity-generator)))
 
 
 ;; don't die, just run forever...

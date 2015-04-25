@@ -15,7 +15,7 @@
                      )))))
 
 (define (populate-db)
-  (for ([device-name sensor-names])
+  (for ([device-name device-names])
     (with-handlers ([(lambda (exn)
                        (and (exn:fail? exn)
                             (regexp-match #px"^query-exec: Duplicate entry "

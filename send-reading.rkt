@@ -12,7 +12,9 @@
  (contract-out [send-reading!
                 (-> string? natural? void?)]
                [target-hosts
-                (parameter/c (cons/c string? (listof string?)))]))
+                (parameter/c (cons/c string? (listof string?)))]
+               [send-reading!/core
+                (-> string? string? natural? string?)]))
 
 (define-logger sodec)
 
@@ -44,22 +46,7 @@
               (lambda (exn)
                 ;; log error and continue...
                 (log-sodec-error "~a" (exn-message exn)))])
-          (log-sodec-debug
-           "sending reading of ~e on device ~e to host ~e"
-           reading id host)
-          (define URL-string
-            (string-append "http://" host "/srv/record-reading?device=" id))
-          (define post-bytes
-            (jsexpr->bytes (hash 'status reading
-                                 'secret SEKRIT)))
-          (log-sodec-debug
-           "using URL string: ~s" URL-string)
-          (log-sodec-debug
-           "... and post-bytes: ~s" post-bytes)
-          (define result
-            (remote-call/post
-             URL-string
-             post-bytes))
+          (define result (send-reading!/core host id reading))
           (when (not (string=? result "okay"))
             (log-sodec-error
              'record-temperature!
@@ -68,6 +55,24 @@
   (cond [(eq? #f result)
          (log-sodec-error "send-reading!: request timed out")]
         [(thread? result) '#t]))
+
+;; the core reading-sender. Not behind a thread, no timeout, etc.
+(define (send-reading!/core host id reading)
+  (log-sodec-debug
+   "sending reading of ~e on device ~e to host ~e"
+   reading id host)
+  (define URL-string
+    (string-append "http://" host "/srv/record-reading?device=" id))
+  (define post-bytes
+    (jsexpr->bytes (hash 'status reading
+                         'secret SEKRIT)))
+  (log-sodec-debug
+   "using URL string: ~s" URL-string)
+  (log-sodec-debug
+   "... and post-bytes: ~s" post-bytes)
+  (remote-call/post
+   URL-string
+   post-bytes))
 
 ;; setting unused lights, just once...
 (define branch-circuit-devices

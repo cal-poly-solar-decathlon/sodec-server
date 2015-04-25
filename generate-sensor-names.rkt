@@ -11,7 +11,7 @@
 ;; generate the list of sensor names. Used to populate the
 ;; database.  This list must also match the one in ids.rkt
 
-(provide sensor-names light-names)
+(provide device-names device-strs light-names)
 
 ;- `hum` : Humidity : out, bed, bath, lr
 ;- `amb` : Ambient Light: bed, mech, lr, bath
@@ -94,15 +94,18 @@ Uplights and Pot Lights (8B)")
    (for/list ([l (in-list light-names)])
      (list l "..."))))
 
-(for-each
- display
-(append
- (for/list ([pr (in-list all-devices)])
-   (~a "- `"(first pr)"` : "(second pr)"\n"))))
+(define (print-sensor-spec)
+  (for-each
+   display
+   (append
+    (for/list ([pr (in-list all-devices)])
+      (~a "- `"(first pr)"` : "(second pr)"\n")))))
+
+;(print-sensor-spec)
 
 ;; as strings, for ids.rkt:
 (define device-strs
   (map first all-devices))
 
-(define sensor-names
+(define device-names
   (map string->symbol device-strs))
