@@ -10,11 +10,19 @@
 
 (provide
  (contract-out [send-reading!
-                (-> string? natural? void?)]
+                (-> string? reading? void?)]
                [target-hosts
                 (parameter/c (cons/c string? (listof string?)))]
                [send-reading!/core
                 (-> string? string? natural? string?)]))
+
+;; a number that can be sent to the database
+(define (reading? r)
+  (and (exact-integer? r)
+       (<= MIN-READING r MAX-READING)))
+
+(define MIN-READING (- (expt 2 63)))
+(define MAX-READING (sub1 (expt 2 63)))
 
 (define-logger sodec)
 
@@ -27,9 +35,9 @@
 (define natural? exact-nonnegative-integer?)
 
 ;; send the reading to all current hosts
-(define (send-reading! id temp)
+(define (send-reading! id reading)
   (for ([host (target-hosts)])
-    (send-reading!/host host id temp)))
+    (send-reading!/host host id reading)))
 
 ;; after this many seconds, give up on the POST
 (define TIMEOUT-SECONDS 3.0)

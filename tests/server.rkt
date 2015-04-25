@@ -29,9 +29,9 @@
   ;; test locally:
   #;"http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  #;"http://calpolysolardecathlon.org:8080"
+  "http://calpolysolardecathlon.org:8080"
   #;"http://192.168.2.3:3000"
-  "http://calpolysolardecathlon.org:3000")
+  #;"http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
   (string-append l-u str))
@@ -116,7 +116,7 @@
          (regexp-match #px"^s-amb-" (symbol->string n))
          (regexp-match #px"^s-occ-" (symbol->string n))))
    
-   (for ([device (in-list sensor-names)]
+   (for ([device (in-list device-names)]
          #:when (not (ignored-name device)))
      (test-case
       (~a "latest-event-"device)

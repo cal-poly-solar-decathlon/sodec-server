@@ -9,3 +9,12 @@
 
 ;; the lights:
 (run-alice-barry-lights)
+
+;; everything else
+(run-mock-temp-hum-elec)
+
+
+;; don't die, just run forever...
+(let loop ()
+  (sleep 60)
+  (loop))

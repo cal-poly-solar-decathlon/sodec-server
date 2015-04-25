@@ -106,7 +106,10 @@ Light settings are specified as tenths of a percent
 (like humidity). So, for instance, a light that's off would be represented
 as 1000, and one set at 20% would be represented as 200.
 
-Electrical usage readings are specified in CUMULATIVE watt-hours.
+Electrical usage readings are specified in CUMULATIVE milliwatt-hours.
+PLEASE NOTE: under some circumstances, this counter may get reset. Display
+modules should be cognizant of this, and do the best they can if this
+value is seen to drop.
 
 ## Implementation
 
