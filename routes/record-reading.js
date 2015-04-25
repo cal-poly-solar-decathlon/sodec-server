@@ -8,7 +8,7 @@ router.post('/', function(req, res, next) {
 	var okStatus = JSON.stringify('okay');
 
 	db.findDevice(dev, function(err, result) {
-    	if (result != 0) {
+    	if (result !== 0) {
         	if(value)
 			{
 				db.addSensorEvent(dev, value);
@@ -16,7 +16,7 @@ router.post('/', function(req, res, next) {
 			}
 			else
 			{
-				console.log('Failed for device ' + dev);	
+				console.log('Failed for device ' + dev);
 				res.status(400).send({error: 'No value was defined for the device'});
 			}
 		}
