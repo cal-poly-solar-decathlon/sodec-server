@@ -48,7 +48,7 @@ INSERT INTO devices (name, description) VALUES
 ('s-temp-testing-empty', 'a temperature bin that\'s always empty'),
 ('s-light-entry-bookend-1A', ''),
 ('s-light-chandelier-1B', ''),
-('s-light-tv-light-2A', '')
+('s-light-tv-light-2A', ''),
 ('s-light-kitchen-uplight-2A', ''),
 ('s-light-under-counter-3B', ''),
 ('s-light-pendant-bar-lights-3C', ''),
@@ -59,4 +59,6 @@ INSERT INTO devices (name, description) VALUES
 ('s-light-bedroom-uplight-6A', ''),
 ('s-light-bedroom-uplight-6B', ''),
 ('s-light-porch-lights-8A', ''),
-('s-light-uplights-and-pot-lights-8B', '');
+('s-light-uplights-and-pot-lights-8B', '')
+ON DUPLICATE KEY UPDATE 
+   description=VALUES(description);
