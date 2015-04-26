@@ -19,6 +19,7 @@ var listDevices = require('./routes/list-devices');
 
 var request = require('request');
 var jquery = require('jquery');
+var parseString = require('xml2js').parseString;
 
 var app = express();
 
@@ -92,7 +93,7 @@ app.use(function(err, req, res, next) {
 
 
 module.exports = app;
-/*
+
 setInterval(function() {
    console.log("Polling egauge");
    var options = {
@@ -104,11 +105,53 @@ setInterval(function() {
    http.get(options, function(response) {
       if (response.statusCode === 200) {
          response.on('data', function(chunk) {
-            var text = chunk.toString();
-            var xmlDoc = jquery.parseXML(text);
-            $xml = $(xmlDoc);
-            console.log("Refrigerator: " + $xml.find("r[n=Refrigerator]"));
-//            console.log(text);
+            var xml = chunk.toString();
+            parseString(xml, function(err, result) {
+               if (err) {
+                  console.log("error getting s-elec-used data from egauge");
+                  callback(err, null);
+               }
+
+               var output = result['data']['r'];
+               for (var i = 0; i < output.length; i++) {
+                  var deviceOutput = output[i]['$']['n'];
+                  if (deviceOutput === 'Grid') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Solar') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Dryer/Washer') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Dishwasher') {
+                     console.log(output[i]['v']);
+                     //db.addSensorEvent('s-elec-used-dishwasher', output[i]['v']);
+                  } else if (deviceOutput === 'Refrigerator') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Induction Stove') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Water Heater') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Kitchen Receps1') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Kitchen Receps2') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Mechanical Room') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Entry Receps') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Exterior Receps') {
+                     console.log(output[i]['v']);
+                  } else if (deviceOutput === 'Water Pump') {
+                     console.log(output[i]['v']);
+                  } else {
+                     console.log(output[i]['v']);
+                  }
+               };
+            });
+
+            //var text = chunk.toString();
+            //var xmlDoc = jquery.parseXML(text);
+            //$xml = $(xmlDoc);
+            //console.log("Refrigerator: " + $xml.find("r[n=Refrigerator]"));
          });
       } else {
          console.log("bad request");
@@ -117,7 +160,6 @@ setInterval(function() {
       console.log("error: " + e.message);
    });
 }, 3 * 1000);
-*/
 
 // polls egauge for data every 1000ms
 /*
