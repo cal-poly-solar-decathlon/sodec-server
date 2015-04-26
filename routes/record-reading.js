@@ -4,12 +4,12 @@ var db = require('../dbConnect');
 
 router.post('/', function(req, res, next) {
 	var dev = req.query.device;
-	var value = req.body.status + '';
+	var value = parseInt(req.body.status);
 	var okStatus = JSON.stringify('okay');
 
 	db.findDevice(dev, function(err, result) {
     	if (result !== 0) {
-        	if(value)
+        	if(!isNaN(value))
 			{
 				db.addSensorEvent(dev, value);
 				res.status(200).send(okStatus);
