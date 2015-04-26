@@ -44,7 +44,7 @@
      "s-elec-used-thermal-loop-pump-recep"
      "s-elec-used-water-supply-pump-recep"
      "s-elec-used-water-supply-booster-pump-recep"
-     "s-elec-used-vehicle-changing-recep"
+     "s-elec-used-vehicle-charging-recep"
      "s-elec-used-heat-pump-recep"
      "s-elec-used-air-handler-recep"
      "s-temp-testing-blackhole"

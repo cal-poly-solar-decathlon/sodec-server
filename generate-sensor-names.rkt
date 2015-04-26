@@ -64,7 +64,7 @@ Uplights and Pot Lights (8B)")
     thermal-loop-pump-recep
     water-supply-pump-recep
     water-supply-booster-pump-recep
-    vehicle-changing-recep
+    vehicle-charging-recep
     heat-pump-recep
     air-handler-recep))
 
