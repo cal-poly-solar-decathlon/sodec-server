@@ -126,10 +126,11 @@
     s-light-uplights-and-pot-lights-8B
     ))
 
-#;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
-  (send-reading!  "s-temp-lr" 0)
-  #;(for ([device (in-list branch-circuit-devices)])
-    (send-reading! device 1)))
+(define (reset-some)
+  (parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+    #;(send-reading!  "s-temp-lr" 0)
+    (for ([device (in-list lights #;branch-circuit-devices)])
+      (send-reading! (symbol->string device) 0))))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))
