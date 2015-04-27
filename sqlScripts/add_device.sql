@@ -1,6 +1,3 @@
-ALTER TABLE devices 
-	ADD description VARCHAR(256) DEFAULT NULL;
-
 UPDATE devices
 	SET description = 
 		(case 
@@ -41,8 +38,4 @@ UPDATE devices
 			when name = 's-light-bedroom-cabinet-6B' then 'Bedroom Cabinet Light'
 			when name = 's-light-porch-lights-8A' then 'Porch Lights'
 			when name = 's-light-uplights-and-pot-lights-8B' then 'Uplights/Pot Lights'
-			when name = 'egauge' then 'Egauge'
 		end);
-
-ALTER TABLE devices 
-	MODIFY description VARCHAR(256) NOT NULL;
