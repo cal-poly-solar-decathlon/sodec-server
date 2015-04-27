@@ -106,6 +106,10 @@
 ;; ping check returns wrong result
 ;; no events wrong in both places
 
+(define (string-or-null? s)
+  (or (eq? s 'null)
+      (string? s)))
+
 (run-tests
 (test-suite
  "racket evaluator tests"
@@ -158,7 +162,21 @@
                        (for/and ([ht (in-list devlist)])
                          (match ht
                            [(hash-table ('device (? string? dev))
-                                        ('description (? string? descn))) #t]
+                                        ('description (? string-or-null? descn)))
+                            #t]
+                           [other #f]))))
+                (remote-call/get (sodec-url "list-devices" #f))))
+
+   (test-case
+    "list-devices-right-description"
+    ;; LIST DEVICES
+    (check-pred (lambda (devlist)
+                  (and (list? devlist)
+                       (for/or ([ht (in-list devlist)])
+                         (match ht
+                           [(hash-table ('device "s-temp-out")
+                                        ('description "Outside Temperature"))
+                            #t]
                            [other #f]))))
                 (remote-call/get (sodec-url "list-devices" #f))))
    
@@ -287,6 +305,8 @@
    
 )))
 
+(remote-call/get
+ (sodec-url "list-devices" #f))
 
 (define ts (get-timestamp))
 

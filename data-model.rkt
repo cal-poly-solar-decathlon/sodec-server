@@ -210,7 +210,7 @@ CREATE TABLE `test_sensorevents` (
     (query-rows
      conn 
      (string-append
-      "SELECT name FROM devices;")))
+      "SELECT name,description FROM devices;")))
   (map device-row->jsexpr db-hits))
 
 ;;;;;;
@@ -266,13 +266,14 @@ CREATE TABLE `test_sensorevents` (
 (: device-row->jsexpr ((Vectorof Any) -> (HashTable Symbol Any)))
 (define (device-row->jsexpr row)
   (match row
-    [(vector (? string? device-name))
+    [(vector (? string? device-name)
+             (? string? device-description))
      (make-immutable-hash
       (list (cons 'device device-name)
-            (cons 'description "BOGUS")))]
+            (cons 'description device-description)))]
     [other
      (raise-argument-error 'row->event
-                           "vector containing string"
+                           "vector containing string, string"
                            0
                            row)]))
 ;;;;;

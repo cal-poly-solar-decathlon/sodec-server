@@ -106,7 +106,7 @@
                       (for/and ([ht (in-list devlist)])
                         (match ht
                           [(hash-table ('device (? string? dev))
-                                       ('description (? string-or-null? descn))) #t]
+                                       ('description (? string? descn))) #t]
                           [other #f]))
                       (< 10 (length devlist))))
                (devices-list)))

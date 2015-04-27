@@ -84,7 +84,7 @@
 
 ;; handle a device list request
 (define (handle-device-list-request)
-  (response/json "foo"))
+  (response/json (devices-list)))
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)
