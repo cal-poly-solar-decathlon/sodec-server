@@ -1,7 +1,7 @@
 #lang racket/base
 
-(require "generate-sensor-names.rkt"
-         "mysql-socket.rkt"
+(require "../generate-sensor-names.rkt"
+         "../mysql-socket.rkt"
          db)
 
 (define conn
