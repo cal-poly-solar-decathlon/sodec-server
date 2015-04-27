@@ -3,3 +3,4 @@ compiled
 sodec.db
 server.log
 mysql-socket
+supervise/
