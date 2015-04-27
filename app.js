@@ -123,7 +123,7 @@ setInterval(function() {
                      console.log(output[i]['v']);
                   } else if (deviceOutput === 'Dishwasher') {
                      console.log(output[i]['v']);
-                     //db.addSensorEvent('s-elec-used-dishwasher', output[i]['v']);
+                     db.addSensorEvent('s-elec-used-dishwasher', output[i]['v']);
                   } else if (deviceOutput === 'Refrigerator') {
                      console.log(output[i]['v']);
                   } else if (deviceOutput === 'Induction Stove') {
@@ -159,7 +159,7 @@ setInterval(function() {
    }).on('error', function(e) {
       console.log("error: " + e.message);
    });
-}, 3 * 1000);
+}, 15 * 1000);
 
 // polls egauge for data every 1000ms
 /*
