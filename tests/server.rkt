@@ -27,11 +27,11 @@
 
 (define l-u 
   ;; test locally:
-  #;"http://localhost:8080"
+  "http://localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
   #;"http://calpolysolardecathlon.org:8080"
   #;"http://192.168.2.3:3000"
-  "http://calpolysolardecathlon.org:3000")
+  #;"http://calpolysolardecathlon.org:3000")
 
 (define (rel-url str)
   (string-append l-u str))
@@ -89,10 +89,13 @@
 (check-equal? (sodec-url "latest-event" #f)
               (string-append l-u "/srv/latest-event"))
 
+(define (get-timestamp)
+  (hash-ref (remote-call/get (sodec-url "timestamp" #f)) 'timestamp))
+
 
 ;; events in last hour on the "s-temp-bed" device
 (define (events-in-last-hour)
-  (define ts (hash-ref (remote-call/get (sodec-url "timestamp" #f)) 'timestamp))
+  (define ts (get-timestamp))
   ;; this is getting a bit nasty in the string-append region...
   (remote-call/get
    (sodec-url "events-in-range" `(("device" "s-temp-bed")
@@ -123,6 +126,7 @@
    (define ((port-containing str) port)
      (regexp-match (regexp-quote str) port))
 
+   ;; bogus endpoint
    (test-case
     "404s"
     ;; simple 404:
@@ -133,6 +137,8 @@
                        _3
                        ;; sigh...
                        #;(? (port-containing "blothints") _3)))
+
+    ;; latest event
     
     ;; near miss on the device name:
     (check-match (remote-call/get/core (sodec-url "latest-event"
@@ -143,6 +149,18 @@
                        _3
                        ;; sigh...
                        #;(? (port-containing "uhnoth") _3))))
+
+   (test-case
+    "list-devices"
+    ;; LIST DEVICES
+    (check-pred (lambda (devlist)
+                  (and (list? devlist)
+                       (for/and ([ht (in-list devlist)])
+                         (match ht
+                           [(hash-table ('device (? string? dev))
+                                        ('description (? string? descn))) #t]
+                           [other #f]))))
+                (remote-call/get (sodec-url "list-devices" #f))))
    
    
    (test-equal? "empty-latest-events"
@@ -220,7 +238,7 @@
       (and (<= a n) (< n b)))
     
     (check-pred (number-in-range 10 722)
-                (let ([ts (hash-ref (call-subpath "/timestamp") 'timestamp)])
+                (let ([ts (get-timestamp)])
                 (remote-call/get
                  (sodec-url "count-events-in-range" `((device s-temp-lr)
                                                       (start ,(- ts 3600))
@@ -270,7 +288,7 @@
 )))
 
 
-(define ts (hash-ref (call-subpath "/timestamp") 'timestamp))
+(define ts (get-timestamp))
 
 ;; this is getting a bit nasty in the string-append region...
 (define last-hour-jsexpr
@@ -299,7 +317,7 @@
                                                       'seriesData)))))
 
 (define last-reading
-  (call-subpath "/latest-event?device=s-temp-bed"))
+  (remote-call/get (sodec-url "latest-event" '((device s-temp-bed)))))
 
 (define last-reading-time (hash-ref last-reading 'timestamp))
 

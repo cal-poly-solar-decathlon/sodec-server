@@ -9,6 +9,11 @@
 ;; safe to do this every time...
 (reset-database-test-tables!)
 
+
+(define (string-or-null? s)
+  (or (string? s)
+      (equal? s 'null)))
+
 (run-tests
 (test-suite
  "data model tests"
@@ -91,5 +96,19 @@
                ('baseStatus 229)
                ('seriesData 
                 (list (list (? number? n1) -1) (list (? number? n2) -4)))))
-  
+
+
+  ;; list-devices
+  (test-case
+   "devices-list"
+   (check-pred (lambda (devlist)
+                 (and (list? devlist)
+                      (for/and ([ht (in-list devlist)])
+                        (match ht
+                          [(hash-table ('device (? string? dev))
+                                       ('description (? string-or-null? descn))) #t]
+                          [other #f]))
+                      (< 10 (length devlist))))
+               (devices-list)))
+
   )))

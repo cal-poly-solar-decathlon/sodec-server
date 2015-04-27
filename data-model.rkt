@@ -36,6 +36,7 @@
 
 
 (provide current-timestamp
+         devices-list
          sensor-events
          sensor-latest-event
          sensor-events-in-range
@@ -201,6 +202,17 @@ CREATE TABLE `test_sensorevents` (
      (error 'sensor-latest-event 
             "internal error: limit 1 query returned >1 result")]))
 
+
+;; return the list of devices
+(: devices-list (-> (Listof (HashTable Symbol Any))))
+(define (devices-list)
+  (define db-hits
+    (query-rows
+     conn 
+     (string-append
+      "SELECT name FROM devices;")))
+  (map device-row->jsexpr db-hits))
+
 ;;;;;;
 ;;
 ;; JSON
@@ -250,6 +262,19 @@ CREATE TABLE `test_sensorevents` (
                  (cons 'seriesData diffs))
            (Listof (Pairof Symbol Any))))]))
 
+;; convert a row to a device jsexpr
+(: device-row->jsexpr ((Vectorof Any) -> (HashTable Symbol Any)))
+(define (device-row->jsexpr row)
+  (match row
+    [(vector (? string? device-name))
+     (make-immutable-hash
+      (list (cons 'device device-name)
+            (cons 'description "BOGUS")))]
+    [other
+     (raise-argument-error 'row->event
+                           "vector containing string"
+                           0
+                           row)]))
 ;;;;;
 ;;
 ;; TIME

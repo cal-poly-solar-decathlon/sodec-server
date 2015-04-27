@@ -105,11 +105,12 @@
   "s-elec-used-thermal-loop-pump-recep"
   "s-elec-used-water-supply-pump-recep"
   "s-elec-used-water-supply-booster-pump-recep"
-  "s-elec-used-vehicle-changing-recep"
+  "s-elec-used-vehicle-charging-recep"
   "s-elec-used-heat-pump-recep"
   "s-elec-used-air-handler-recep"))
 
 (define lights
+  (map symbol->string
   '(s-light-entry-bookend-1A
     s-light-chandelier-1B
     s-light-tv-light-2A
@@ -124,13 +125,13 @@
     s-light-bedroom-cabinet-6B
     s-light-porch-lights-8A
     s-light-uplights-and-pot-lights-8B
-    ))
+    )))
 
 (define (reset-some)
-  (parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+  (parameterize ([target-hosts '("localhost:8080"  #;"calpolysolardecathlon.org:3000")])
     #;(send-reading!  "s-temp-lr" 0)
     (for ([device (in-list lights #;branch-circuit-devices)])
-      (send-reading! (symbol->string device) 0))))
+      (send-reading! device 0))))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))

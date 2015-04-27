@@ -47,6 +47,10 @@
                  (struct path/param ("count-events-in-range" (list))))
            (handle-device-count-events-in-range-request
             (url-query uri))]
+          ;; a list of all devices
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("list-devices" (list))))
+           (handle-device-list-request)]
           ;; timestamp of the server
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("timestamp" (list))))
@@ -77,6 +81,10 @@
 ;; handle a timestamp request
 (define (handle-timestamp-request)
   (hash 'timestamp (date->seconds (current-timestamp))))
+
+;; handle a device list request
+(define (handle-device-list-request)
+  (response/json "foo"))
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)
