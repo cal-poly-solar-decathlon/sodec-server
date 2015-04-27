@@ -207,7 +207,7 @@ exports.addEgaugeEvent = function(usage, generation) {
 };
 
 exports.findAllDevices = function(callback) {
-  var query = connection.query("SELECT name, " +
+  var query = connection.query("SELECT name as device, " +
                                 "description FROM devices", function(err, result) {
         if (err) {
             console.log("error with this query: " + query.sql);
