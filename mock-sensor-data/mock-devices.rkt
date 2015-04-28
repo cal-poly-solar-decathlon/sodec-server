@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require "send-reading.rkt"
+(require "device-readings.rkt"
          "../generate-sensor-names.rkt")
 
 (provide run-mock-temp-hum-elec)
@@ -45,8 +45,8 @@
 
 ;; an electrical use generator. only goes up.
 
-(define (make-electrical-use-generator)
-  (let ([saved (box 0)])
+(define (make-electrical-use-generator init)
+  (let ([saved (box init)])
     (lambda ()
       (set-box! saved
                 (+ (unbox saved)
@@ -60,6 +60,25 @@
 ;; and just pick a random number from 1 to 5000.
 
 (define ELEC-USE-CEILING 5000)
+
+;; an electrical generator generator. only goes up:
+
+(define (make-electrical-generation-generator init)
+  (let ([saved (box init)])
+    (lambda ()
+      (set-box! saved
+                (+ (unbox saved)
+                   (random ELEC-GEN-CEILING)))
+      (unbox saved))))
+
+;; a big array could generate 5 kW, or 5e6 mWh per hour.
+(define ELEC-GEN-CEILING
+  (let* ([kW 5]
+         [mW (* kW 1000000)]
+         [mWh-per-h mW]
+         [mWh-per-m (/ mWh-per-h 60)]
+         [mWh-per-15s (/ mWh-per-m 4)])
+    mWh-per-15s))
 
 ;; in tenths of a percent
 (define INITIAL-HUMIDITY 664)
@@ -96,7 +115,8 @@
     (run-mock-device id 60 (make-humidity-generator)))
 
   (for ([id (in-list electrical-use-ids)])
-    (run-mock-device id 15 (make-electrical-use-generator))))
+    (let ([init (fetch-reading id)])
+      (run-mock-device id 15 (make-electrical-use-generator id)))))
 
 
 

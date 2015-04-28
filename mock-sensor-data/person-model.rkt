@@ -1,6 +1,6 @@
 #lang racket
 
-(require "send-reading.rkt"
+(require "device-readings.rkt"
          rackunit
          racket/stream
          racket/date)

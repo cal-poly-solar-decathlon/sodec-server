@@ -2,7 +2,9 @@
 
 (require "person-model.rkt"
          "mock-devices.rkt"
-         "send-reading.rkt")
+         "device-readings.rkt")
+
+;; this is the loop that actually sends mock data to the existing servers
 
 (target-hosts '("localhost:8080" "localhost:3000"))
 

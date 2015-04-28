@@ -5,15 +5,63 @@
 (require net/url
          net/head
          json
-         racket/match)
+         racket/match
+         (only-in racket/list add-between))
 
 (provide remote-call/post
          remote-call/post/core
+         remote-call/get
+         remote-call/get/core
          results->jsexpr
-         response-port->results)
+         response-port->results
+         sodec-url)
 
 (define-logger sodec)
 
+;; map query associations to a string
+(define (query->string assoc)
+  (apply
+   string-append
+   (add-between
+    (for/list ([pr (in-list assoc)])
+      (match pr
+        [(list (? clean-string? from) (? clean-string? to))
+         (format "~a=~a" from to)]))
+    SEP-STR)))
+
+(define SEP-STR "&")
+
+;; a string with only alphanum and hyphens OR an exact integer OR a symbol
+;; whose corresponding string is alphanum & hyphens
+(define (clean-string? str)
+  (or (and (string? str)
+           (regexp-match #px"^[A-Za-z0-9-]*$" str)
+           #t)
+      (exact-integer? str)
+      (and (symbol? str)
+           (clean-string? (symbol->string str)))))
+
+
+;; formulate a request URL
+(define (sodec-url host endpoint query)
+  (string-append "http://" host "/srv/" endpoint
+                 (cond [query (string-append QUERY-START (query->string query))]
+                       [else ""])))
+
+(define QUERY-START "?")
+
+
+;; given a URL, make a GET request and wait for a response, returning a jsexpr
+(define (remote-call/get url-string)
+  (results->jsexpr (remote-call/get/core url-string)))
+
+
+;; given a URL string, return the response code, the first line, the rest
+;; of the headers, and the port for the remainder of the body
+(define (remote-call/get/core url-string)
+  (log-sodec-debug "remote-call/get/core: url-string ~a"
+             url-string)
+  (response-port->results (get-impure-port (string->url url-string))))
 
 ;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
 (define (remote-call/post url-string post-bytes)
@@ -69,3 +117,23 @@
     [other (error 'remote-call/get
                   (format "expected response with at least one header line, got ~e"
                           header-string))]))
+
+
+(module+ test
+  (require rackunit)
+
+  (check-equal? (clean-string? "hth-t987") #t)
+  (check-equal? (clean-string? "hth-t98.7") #f)
+  
+  (check-equal? (query->string '(("device" "s-temp-bed")
+                                 ("start" 273)
+                                 ("end" "29")))
+                "device=s-temp-bed&start=273&end=29")
+
+  
+  (define HOST "http://bogushost:8872")
+  (check-equal? (sodec-url HOST "latest-event"
+                           `((device s-temp-bed)))
+                "http://bogushost:8872/srv/latest-event?device=s-temp-bed")
+  (check-equal? (sodec-url HOST "latest-event" #f)
+                (string-append HOST "/srv/latest-event")))

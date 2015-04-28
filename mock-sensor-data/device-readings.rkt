@@ -13,6 +13,8 @@
                 (-> string? reading? void?)]
                [target-hosts
                 (parameter/c (cons/c string? (listof string?)))]
+               [fetch-reading
+                (-> string? reading?)]
                [send-reading!/core
                 (-> string? string? natural? string?)]))
 
@@ -82,6 +84,14 @@
    URL-string
    post-bytes))
 
+;; fetch the latest reading from a device using the first target host. signal an error if no readings
+(define (fetch-reading device)
+  (match (remote-call/get (sodec-url (car (target-hosts))
+                                     "latest-event" `((device ,device))))
+    ["no events" (error 'fetch-reading "no events present for device: ~e" device)]
+    [(? hash? ht) (hash-ref ht 'status)]
+    [other (error 'fetch-reading "unexpected value from latest-event call: ~e" other)]))
+
 ;; setting unused lights, just once...
 (define branch-circuit-devices
     '("s-elec-used-laundry"
@@ -132,6 +142,10 @@
     #;(send-reading!  "s-temp-lr" 0)
     (for ([device (in-list lights #;branch-circuit-devices)])
       (send-reading! device 0))))
+
+(define (turn-on)
+  (parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
+    (send-reading!  "s-light-entry-bookend-1A" 1000)))
 
 #;(parameterize ([target-hosts '("calpolysolardecathlon.org:3000")])
   (send-reading! "s-temp-lr" 155))

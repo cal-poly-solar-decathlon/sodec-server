@@ -1,7 +1,9 @@
 #lang racket/base
 
-(require "send-reading.rkt"
+(require "device-readings.rkt"
          "person-model.rkt")
+
+;; this file is just for testing the person-model by itself
 
 (target-hosts '("calpolysolardecathlon.org:8080"))
 
