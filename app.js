@@ -108,7 +108,7 @@ setInterval(function() {
             var xml = chunk.toString();
             parseString(xml, function(err, result) {
                if (err) {
-                  console.log("error getting s-elec-used data from egauge");
+                  console.log("error getting s-elec data from egauge");
                   callback(err, null);
                }
 
@@ -116,42 +116,35 @@ setInterval(function() {
                for (var i = 0; i < output.length; i++) {
                   var deviceOutput = output[i]['$']['n'];
                   if (deviceOutput === 'Grid') {
-                     console.log(output[i]['v']);
                   } else if (deviceOutput === 'Solar') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-gen-top-array', output[i]['v']);
                   } else if (deviceOutput === 'Dryer/Washer') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-laundry', output[i]['v']);
                   } else if (deviceOutput === 'Dishwasher') {
-                     console.log(output[i]['v']);
                      db.addSensorEvent('s-elec-used-dishwasher', output[i]['v']);
                   } else if (deviceOutput === 'Refrigerator') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-refrigerator', output[i]['v']);
                   } else if (deviceOutput === 'Induction Stove') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-induction-stove', output[i]['v']);
                   } else if (deviceOutput === 'Water Heater') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-ewh-solar-water-heater', output[i]['v']);
                   } else if (deviceOutput === 'Kitchen Receps1') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-kitchen-receps-1', output[i]['v']);
                   } else if (deviceOutput === 'Kitchen Receps2') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-kitchen-receps-2', output[i]['v']);
                   } else if (deviceOutput === 'Mechanical Room') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-mechanical-receps', output[i]['v']);
                   } else if (deviceOutput === 'Entry Receps') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-entry-receps', output[i]['v']);
                   } else if (deviceOutput === 'Exterior Receps') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-exterior-receps', output[i]['v']);
                   } else if (deviceOutput === 'Water Pump') {
-                     console.log(output[i]['v']);
+                     db.addSensorEvent('s-elec-used-water-supply-pump-recep', output[i]['v']);
                   } else {
                      console.log(output[i]['v']);
                   }
                };
             });
-
-            //var text = chunk.toString();
-            //var xmlDoc = jquery.parseXML(text);
-            //$xml = $(xmlDoc);
-            //console.log("Refrigerator: " + $xml.find("r[n=Refrigerator]"));
          });
       } else {
          console.log("bad request");
@@ -160,40 +153,6 @@ setInterval(function() {
       console.log("error: " + e.message);
    });
 }, 15 * 1000);
-
-// polls egauge for data every 1000ms
-/*
-setInterval(function() {
-    console.log("Polling egauge");
-    var options = {
-      // host: 'egauge15668',
-      host: '192.168.2.2',
-      port: 80,
-      path: '/cgi-bin/egauge-show?c&n=5',
-      method: 'GET'
-    };
-      http.get(options, function(response) {
-
-         if (response.statusCode === 200) {
-            response.on('data', function(chunk) {
-               var text = chunk.toString().split('\n');
-               elements = text[1];
-               for (var i = 1; i < 2; i++) {
-                  elements = text[i].toString().split(',');
-                  console.log("log: " + elements[0]);
-                  db.addEgaugeEvent(parseInt(elements[1]) * 1000, parseInt(elements[2]) * 1000);
-               }
-            });
-        } else {
-            console.log("ERROR: ");
-            console.log(response.statusCode);
-        }
-   }).on('error', function(e){
-      console.log("Error: " + e.message);
-      console.log( e.stack );
-   });
-}, 60 * 1000);
-*/
 
 /*
 setInterval(function() {
