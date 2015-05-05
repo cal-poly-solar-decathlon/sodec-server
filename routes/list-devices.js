@@ -1,6 +1,6 @@
 var express = require('express');
 var router  = express.Router();
-var db      = require('../dbConnect.js');
+var db      = require('../modules/dbConnect.js');
 
 
 router.get('/', function(req, res, next)
