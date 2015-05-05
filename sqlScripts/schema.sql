@@ -12,6 +12,16 @@ and flexibility (different sensors can encode their readings in different
 ways).*/
 
 --
+-- Table structure for table `devices`
+--
+
+CREATE TABLE `devices` (
+  `name` varchar(64) NOT NULL,
+  `description` varchar(256) NOT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
 -- Table structure for table `sensorevents`
 --
 
@@ -40,6 +50,15 @@ CREATE TABLE `controlevents` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
+-- Table structure for table `controleventresultcodes`
+--
+
+CREATE TABLE `controleventresultcodes` (
+  `id` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
 -- Table structure for table `controleventresults`
 --
 
@@ -63,25 +82,4 @@ CREATE TABLE `egauge` (
   `usage` bigint(20) NOT NULL,
   `generation` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `controleventresultcodes`
---
-
-CREATE TABLE `controleventresultcodes` (
-  `id` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
---
--- Table structure for table `devices`
---
-
-CREATE TABLE `devices` (
-  `name` varchar(64) NOT NULL,
-  `description` varchar(256) NOT NULL
-  PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
