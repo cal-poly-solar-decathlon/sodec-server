@@ -1,7 +1,5 @@
 var mysql     = require('mysql');
 
-
-
 // Establishes connections.
 var express   = require("express");
 var app       = express();
