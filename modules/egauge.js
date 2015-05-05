@@ -1,4 +1,4 @@
-var db = require('dbConnect.js');
+var db = require('../modules/dbConnect.js');
 var http = require('http');
 var parseString = require('xml2js').parseString;
 
@@ -34,7 +34,7 @@ var insertReading = function(deviceName, deviceReading) {
 };
 
 setInterval(function() {
-   // console.log("Polling egauge");
+   console.log("Polling egauge");
    var options = {
       host: '192.168.2.5',
       port: 80,
