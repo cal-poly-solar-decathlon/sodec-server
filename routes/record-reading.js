@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var db = require('../dbConnect');
+var db = require('../modules/dbConnect');
 
 router.post('/', function(req, res, next) {
 	var dev = req.query.device;

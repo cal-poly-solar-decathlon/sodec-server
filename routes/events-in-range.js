@@ -1,6 +1,6 @@
 var express = require('express');
 var router  = express.Router();
-var db      = require('../dbConnect.js');
+var db      = require('../modules/dbConnect.js');
 
 // Format of time is given as ISO 8601 format: YYYY-MM-DDTHH:MM:SS
 // Example: 2015-03-07T12:00:12
