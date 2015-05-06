@@ -1,9 +1,6 @@
 #lang racket
 
-(require #;"../generate-sensor-names.rkt"
-         #;"../mysql-socket.rkt"
-         #;db
-         racket/runtime-path)
+(require racket/runtime-path)
 
 
 (provide (contract-out [dd-pairs (listof (list/c string? string?))]))
@@ -20,7 +17,7 @@
                      )))))
 
 (define-runtime-path here ".")
-(define API-string (file->string (build-path here ".." "apiary.apib")))
+(define API-string (file->string (build-path here "apiary.apib")))
 (define API-paragraphs (regexp-split #px"\n\n" API-string))
 (unless (string=? (list-ref API-paragraphs 7)
                   "### List of IDs")

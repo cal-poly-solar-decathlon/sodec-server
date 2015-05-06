@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require "device-descriptions.rkt"
+(require "../device-descriptions.rkt"
          "../mysql-socket.rkt"
          db)
 

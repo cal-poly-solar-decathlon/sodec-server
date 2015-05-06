@@ -6,10 +6,12 @@
          rackunit/text-ui
          racket/date
          json
-         "../generate-sensor-names.rkt"
+         "../device-descriptions.rkt"
          "../web-funs.rkt")
 
 (define-logger sodec)
+
+(define device-strs (map first dd-pairs))
 
 (define l-u 
   ;; test locally:
@@ -129,11 +131,11 @@
 
    ;; ignore the occupancy, temp, and ambient light devices:
    (define (ignored-name n)
-     (or (regexp-match #px"^s-temp-testing-" (symbol->string n))
-         (regexp-match #px"^s-amb-" (symbol->string n))
-         (regexp-match #px"^s-occ-" (symbol->string n))))
+     (or (regexp-match #px"^s-temp-testing-" n)
+         (regexp-match #px"^s-amb-" n)
+         (regexp-match #px"^s-occ-" n)))
    
-   (for ([device (in-list device-names)]
+   (for ([device (in-list device-strs)]
          #:when (not (ignored-name device)))
      (test-case
       (~a "latest-event-"device)

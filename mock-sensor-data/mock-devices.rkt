@@ -1,9 +1,11 @@
 #lang racket/base
 
 (require "device-readings.rkt"
-         "../generate-sensor-names.rkt")
+         "../device-descriptions.rkt")
 
 (provide run-mock-temp-hum-elec)
+
+(define device-strs (map car dd-pairs))
 
 ;; the temperature and humidity:
 
