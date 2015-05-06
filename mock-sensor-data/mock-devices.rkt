@@ -5,8 +5,6 @@
 
 (provide run-mock-temp-hum-elec)
 
-(define device-strs (map car dd-pairs))
-
 ;; the temperature and humidity:
 
 (define TEMP-QUANTA 10)
@@ -80,15 +78,11 @@
          [mWh-per-h mW]
          [mWh-per-m (/ mWh-per-h 60)]
          [mWh-per-15s (/ mWh-per-m 4)])
-    mWh-per-15s))
+    (round mWh-per-15s)))
 
 ;; in tenths of a percent
 (define INITIAL-HUMIDITY 664)
 
-(define (some-devices regexp)
-  (for/list ([dn (in-list device-strs)]
-             #:when (regexp-match regexp dn))
-    dn))
 
 ;; the ids of the temperature sensors
 
@@ -102,21 +96,36 @@
   ;; turning off the kitchen for now...
   (some-devices #px"^s-hum-"))
 
+;; generate a reading every so many seconds
+(define TEMP-READING-SECONDS 60)
+
 (define electrical-use-ids
   (some-devices #px"s-elec-used-"))
+
+(define electrical-generation-ids
+  (some-devices #px"s-elec-gen-"))
+
+;; generate a reading every so many seconds
+(define ELEC-READING-SECONDS 15)
 
 (define (run-mock-temp-hum-elec)
   ;; start temperature threads:
   (for ([id (in-list temperature-ids)])
-    (run-mock-device id 60 (make-temperature-generator)))
+    (run-mock-device id TEMP-READING-SECONDS (make-temperature-generator)))
   
   ;; start humidity threads:
   (for ([id (in-list humidity-ids)])
-    (run-mock-device id 60 (make-humidity-generator)))
+    (run-mock-device id TEMP-READING-SECONDS (make-humidity-generator)))
 
+  ;; start electrical use threads:
   (for ([id (in-list electrical-use-ids)])
     (let ([init (fetch-reading id)])
-      (run-mock-device id 15 (make-electrical-use-generator id)))))
+      (run-mock-device id ELEC-READING-SECONDS (make-electrical-use-generator init))))
+
+  ;; start electrical generation threads
+  (for ([id (in-list electrical-generation-ids)])
+    (let ([init (fetch-reading id)])
+      (run-mock-device id ELEC-READING-SECONDS (make-electrical-generation-generator init)))))
 
 
 

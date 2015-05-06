@@ -48,7 +48,7 @@
      "s-elec-used-heat-pump-recep"
      "s-elec-used-air-handler-recep"
      "s-elec-gen-main-array"
-     "s-elec-gen-bifacial"
+     "s-elec-gen-bifacial-array"
      "s-temp-testing-blackhole"
      "s-temp-testing-empty"
      "s-light-entry-bookend-1A"

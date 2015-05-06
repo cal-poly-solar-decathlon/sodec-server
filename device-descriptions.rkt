@@ -3,7 +3,9 @@
 (require racket/runtime-path)
 
 
-(provide (contract-out [dd-pairs (listof (list/c string? string?))]))
+(provide (contract-out [dd-pairs (listof (list/c string? string?))]
+                       [device-strs (listof string?)]
+                       [some-devices (-> regexp? (listof string?))]))
 
 
 #;(define conn
@@ -34,6 +36,12 @@
                   "parse failure for line: ~e"
                   l)])))
 
+(define device-strs (map first dd-pairs))
+
+(define (some-devices regexp)
+  (for/list ([device-name (in-list device-strs)]
+             #:when (regexp-match regexp device-name))
+    device-name))
 
 
 

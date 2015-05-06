@@ -11,8 +11,6 @@
 
 (define-logger sodec)
 
-(define device-strs (map first dd-pairs))
-
 (define l-u 
   ;; test locally:
   "localhost:8080"
