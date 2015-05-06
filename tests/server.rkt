@@ -13,9 +13,9 @@
 
 (define l-u 
   ;; test locally:
-  #;"localhost:8080"
+  "localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  "calpolysolardecathlon.org:8080"
+  #;"calpolysolardecathlon.org:8080"
   #;"192.168.2.3:3000"
   #;"calpolysolardecathlon.org:3000")
 
@@ -228,14 +228,6 @@
     (check-equal? (remote-call/post
                    (test-url "record-reading" '((device s-temp-testing-blackhole)))
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
-                  "okay"))
-
-      (test-case
-    "record-reading"
-    (check-equal? (remote-call/post
-                   (string-append l-u
-                                  "/srv/record-reading?device=s-temp-lr")
-                   #"{\"status\":1234,\"secret\":\"$a8Es#crB469\"}")
                   "okay"))
 
    

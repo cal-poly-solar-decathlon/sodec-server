@@ -91,16 +91,14 @@
 ;; the ids of the temperature sensors
 
 (define temperature-ids
-  ;; all but the testing... (and the kitchen, for now)
-  (remove* (list "s-temp-kit")
+  ;; all but the testing...
   (remove*
    (some-devices #px"^s-temp-testing-")
-   (some-devices #px"^s-temp-"))))
+   (some-devices #px"^s-temp-")))
 
 (define humidity-ids
   ;; turning off the kitchen for now...
-  (remove* (list "s-hum-kit")
-  (some-devices #px"^s-hum-")))
+  (some-devices #px"^s-hum-"))
 
 (define electrical-use-ids
   (some-devices #px"s-elec-used-"))

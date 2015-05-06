@@ -47,6 +47,8 @@
      "s-elec-used-vehicle-charging-recep"
      "s-elec-used-heat-pump-recep"
      "s-elec-used-air-handler-recep"
+     "s-elec-gen-main-array"
+     "s-elec-gen-bifacial"
      "s-temp-testing-blackhole"
      "s-temp-testing-empty"
      "s-light-entry-bookend-1A"

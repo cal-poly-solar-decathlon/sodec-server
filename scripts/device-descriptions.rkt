@@ -1,12 +1,15 @@
 #lang racket
 
-(require "../generate-sensor-names.rkt"
-         "../mysql-socket.rkt"
-         db
+(require #;"../generate-sensor-names.rkt"
+         #;"../mysql-socket.rkt"
+         #;db
          racket/runtime-path)
 
 
-(define conn
+(provide (contract-out [dd-pairs (listof (list/c string? string?))]))
+
+
+#;(define conn
   (virtual-connection
    (connection-pool
     (lambda ()
@@ -34,9 +37,6 @@
                   "parse failure for line: ~e"
                   l)])))
 
-(for ([dd-pair (in-list dd-pairs)])
-  (match-define (list device description) dd-pair)
-  (query-exec conn
-              "UPDATE devices SET description=? WHERE name=?;"
-              description
-              device))
+
+
+
