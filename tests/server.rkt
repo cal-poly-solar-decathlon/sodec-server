@@ -13,9 +13,9 @@
 
 (define l-u 
   ;; test locally:
-  "localhost:8080"
+  #;"localhost:8080"
   ;; test brinckerhoff.org (whatever it points to)
-  #;"calpolysolardecathlon.org:8080"
+  "calpolysolardecathlon.org:8080"
   #;"192.168.2.3:3000"
   #;"calpolysolardecathlon.org:3000")
 
@@ -42,6 +42,8 @@
 (define (string-or-null? s)
   (or (eq? s 'null)
       (string? s)))
+
+
 
 (run-tests
 (test-suite
@@ -100,18 +102,24 @@
                            [other #f]))))
                 (remote-call/get (test-url "list-devices" #f))))
 
+   (remote-call/get (test-url "list-devices" #f))
+
+   (define listed-devices
+     (map (lambda (ht)
+            (list (hash-ref ht 'device)
+                  (hash-ref ht 'description)))
+          (remote-call/get (test-url "list-devices" #f))))
+
    (test-case
-    "list-devices-right-description"
-    ;; LIST DEVICES
-    (check-pred (lambda (devlist)
-                  (and (list? devlist)
-                       (for/or ([ht (in-list devlist)])
-                         (match ht
-                           [(hash-table ('device "s-temp-out")
-                                        ('description "Outside Temperature"))
-                            #t]
-                           [other #f]))))
-                (remote-call/get (test-url "list-devices" #f))))
+    "list-devices-descriptions"
+   ;; check that all of the listed devices are present:
+   (for ([dd-pair (in-list dd-pairs)])
+     (define device-name (first dd-pair))
+     (check-not-exn (lambda ()
+                      (dict-ref listed-devices device-name)))
+     (check-equal? (dict-ref listed-devices device-name)
+                   (list (second dd-pair)))))
+
    
    
    (test-equal? "empty-latest-events"
@@ -131,7 +139,8 @@
    (define (ignored-name n)
      (or (regexp-match #px"^s-temp-testing-" n)
          (regexp-match #px"^s-amb-" n)
-         (regexp-match #px"^s-occ-" n)))
+         (regexp-match #px"^s-occ-" n)
+         (regexp-match #px"^c-light-" n)))
    
    (for ([device (in-list device-strs)]
          #:when (not (ignored-name device)))
@@ -232,9 +241,6 @@
 
    
 )))
-
-#;(remote-call/get
- (sodec-url "list-devices" #f))
 
 (define ts (get-timestamp))
 
