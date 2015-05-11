@@ -6,16 +6,6 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var webSocketServer = require('./webSockets/webSocketServer');
 var cors = require('cors');
-//var mySqlDemo = require('./mysql_demo');
-
-var routes = require('./routes/index');
-var users = require('./routes/users');
-var latestEvent = require('./routes/latest-event');
-var eventsInRange = require('./routes/events-in-range');
-var recordReading = require('./routes/record-reading');
-var timestamp = require('./routes/timestamp');
-var ping = require('./routes/ping');
-var listDevices = require('./routes/list-devices');
 
 var db  = require('./modules/dbConnect.js');
 var egauge = require('./modules/egauge.js');
@@ -46,15 +36,14 @@ app.use(function(req, res, next) {
 });
 
 
-app.use('/srv/', routes);
-app.use('/srv/users', users);
-app.use('/srv/latest-event', latestEvent);
-app.use('/srv/events-in-range', eventsInRange);
-app.use('/srv/record-reading', recordReading);
-app.use('/srv/timestamp', timestamp);
-app.use('/srv/ping', ping);
-app.use('/srv/list-devices', listDevices);
-
+// Used to import all of the routes in the routes directory
+var routesPath = require('path').join(__dirname, '/routes');
+// Reads each file in one by one, adds it to express
+require('fs').readdirSync(routesPath).forEach(function(file) {
+    var route = require('./routes/' + file);
+    console.log('/routes/' + file);
+    app.use('/srv', route);
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

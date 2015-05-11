@@ -3,7 +3,7 @@ var router  = express.Router();
 var db      = require('../modules/dbConnect.js');
 
 
-router.get('/', function(req, res, next)
+router.get('/list-devices/', function(req, res, next)
 {
     console.log("list devices");
 

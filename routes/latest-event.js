@@ -3,7 +3,7 @@ var router  = express.Router();
 var db      = require('../modules/dbConnect.js');
 
 
-router.get('/', function(req, res, next)
+router.get('/latest-event/', function(req, res, next)
 {
    var dev = req.query.device;
    if(dev === undefined)

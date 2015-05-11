@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var db = require('../modules/dbConnect');
 
-router.post('/', function(req, res, next) {
+router.post('/record-reading/', function(req, res, next) {
 	var dev = req.query.device;
 	var value = parseInt(req.body.status);
 	var okStatus = JSON.stringify('okay');
