@@ -4,6 +4,7 @@
 
 (require net/url
          net/head
+         net/http-client
          json
          racket/match
          (only-in racket/list add-between))
@@ -11,7 +12,10 @@
 (provide remote-call/post
          remote-call/post/core
          remote-call/get
-         remote-call/get/core
+         http-sendrecv-jsexpr
+         #;(contract-out
+          [remote-call/get/core (-> string? number? string?
+                                    )])
          results->jsexpr
          response-port->results
          sodec-url)
@@ -50,12 +54,15 @@
 
 (define QUERY-START "?")
 
-
+;; given a host, port, and URI, make a GET request and return the
+;; result as a jsexpr
 ;; given a URL, make a GET request and wait for a response, returning a jsexpr
-(define (remote-call/get url-string)
-  (results->jsexpr (remote-call/get/core url-string)))
+(define (http-sendrecv/jsexpr host port uri)
+  (call-with-values
+   (lambda () (http-sendrecv host uri #:port port))
+   results->jsexpr))
 
-
+;; DEAD:
 ;; given a URL string, return the response code, the first line, the rest
 ;; of the headers, and the port for the remainder of the body
 (define (remote-call/get/core url-string)
@@ -63,26 +70,43 @@
              url-string)
   (response-port->results (get-impure-port (string->url url-string))))
 
+;; DEAD:
+;; given a URL string...
+(define (remote-call/get/foo host port uri)
+  (define-values (first-line headers response-port)
+    )
+  (match (regexp-match #px"^HTTP/[^ ]* ([0-9]+)" first-line)
+    [(list dc2 response-code-string)
+     (define reply-code (string->number response-code-string))
+     (list reply-code first-line headers response-port)]
+    [other
+     (error 'remote-call/get/core
+            "couldn't extract response code from first response line ~e"
+            first-line)]))
+
+;; extract the response code from a http response line:
+(define (response-code))
+
 ;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
 (define (remote-call/post url-string post-bytes)
   (results->jsexpr (remote-call/post/core url-string post-bytes)))
 
 ;; given a list of results, ensure that the return code is 200 and then parse
 ;; the body as a jsexpr
-(define (results->jsexpr results)
-  (match-define (list response-code first-line headers body-port) results)
+(define (results->jsexpr first-line headers response-port)
+  (define response-code (extract-response-code first-line))
   (cond [(= response-code 200)
-         (define mime-type (extract-field "Content-Type" headers))
-         (unless (regexp-match #px"^application/json(;.*)?$" mime-type)
-           (error 'remote-call/get
+         (define mime-type (find-field #"Content-Type" headers))
+         (unless (regexp-match #px#"^application/json(;.*)?$" mime-type)
+           (error 'results->jsexpr
                   (format "expected mime type application/json, got ~e"
                           mime-type)))
          (define reply (car (regexp-match #px".*" body-port)))
          (close-input-port body-port)
-         (log-sodec-debug  (format "reply-bytes : ~v\n" reply))
+         (log-sodec-debug (format "reply-bytes : ~v\n" reply))
          (bytes->jsexpr reply)]
         [else
-         (error 'remote-call/get
+         (error 'results->jsexpr
                 "response code: expected 200, got: ~v\nwith message: ~v\nand body: ~v" 
                 response-code
                 first-line
@@ -131,9 +155,14 @@
                 "device=s-temp-bed&start=273&end=29")
 
   
-  (define HOST "http://bogushost:8872")
+  (define HOST "bogushost:8872")
   (check-equal? (sodec-url HOST "latest-event"
                            `((device s-temp-bed)))
                 "http://bogushost:8872/srv/latest-event?device=s-temp-bed")
   (check-equal? (sodec-url HOST "latest-event" #f)
-                (string-append HOST "/srv/latest-event")))
+                (string-append "http://" HOST "/srv/latest-event"))
+
+  
+  (remote-call/get/foo "example.com" 80 "/")
+  (remote-call/get/foo "calpolysolardecathlon.org" 8080 "/srv/ping")
+  )
