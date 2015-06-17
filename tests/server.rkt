@@ -11,29 +11,29 @@
 
 (define-logger sodec)
 
-(define l-u 
+(define HOST 
   ;; test locally:
-  #;"localhost:8080"
-  ;; test brinckerhoff.org (whatever it points to)
-  "calpolysolardecathlon.org:8080"
-  #;"192.168.2.3:3000"
-  #;"calpolysolardecathlon.org:3000")
+  #;"localhost"
+  "calpolysolardecathlon.org"
+  #;"192.168.2.3")
 
-(define (test-url . args)
-  (apply sodec-url (cons l-u args)))
+(define PORT
+  8080
+  #;3000)
+
+(define (gett . args)
+  (remote-call/get HOST PORT (apply sodec-url args)))
 
 (define (get-timestamp)
-  (hash-ref (remote-call/get (test-url "timestamp" #f)) 'timestamp))
+  (hash-ref (gett "timestamp" #f) 'timestamp))
 
 
 ;; events in last hour on the "s-temp-bed" device
 (define (events-in-last-hour)
   (define ts (get-timestamp))
-  ;; this is getting a bit nasty in the string-append region...
-  (remote-call/get
-   (test-url "events-in-range" `(("device" "s-temp-bed")
-                                  ("start" ,(- ts 3600))
-                                  ("end" ,ts)))))
+  (gett "events-in-range" `((device "s-temp-bed")
+                            (start ,(- ts 3600))
+                            (end ,ts))))
 
 
 ;; ping check returns wrong result
@@ -51,11 +51,11 @@
  (let ()
 
 
-   (test-equal? "ping" (remote-call/get (test-url "ping" #f)) "alive")
+   (test-equal? "ping" (gett "ping" #f) "alive")
 
    (test-case
     "timestamp"
-    (match (remote-call/get (test-url "timestamp" #f))
+    (match (gett "timestamp" #f)
       [(hash-table ('timestamp (? number? n)))
        (check > n (find-seconds 0 0 0 1 1 2014))
        (check < n (find-seconds 0 0 0 1 1 2016))]
@@ -69,25 +69,19 @@
    (test-case
     "404s"
     ;; simple 404:
-    (check-match (remote-call/get/core (test-url "blothints" #f))
-                 (list 404
+    (check-match (remote-call/get/core HOST PORT (sodec-url "blothints" #f))
+                 (list (regexp #"^HTTP/1.1 404")
                        _1
-                       _2
-                       _3
-                       ;; sigh...
-                       #;(? (port-containing "blothints") _3)))
+                       (? (port-containing "blothints") _3)))
 
     ;; latest event
     
     ;; near miss on the device name:
-    (check-match (remote-call/get/core (test-url "latest-event"
-                                                  `((device uhnoth))))
-                 (list (or 404 400)
-                       (regexp #px"^HTTP/1.1 40[04]")
-                       _2
-                       _3
-                       ;; sigh...
-                       #;(? (port-containing "uhnoth") _3))))
+    (check-match (remote-call/get/core HOST PORT (sodec-url "latest-event"
+                                                            `((device uhnoth))))
+                 (list (regexp #px"^HTTP/1.1 40[04]")
+                       _1
+                       (? (port-containing "uhnoth") _3))))
 
    (test-case
     "list-devices"
@@ -100,15 +94,15 @@
                                         ('description (? string-or-null? descn)))
                             #t]
                            [other #f]))))
-                (remote-call/get (test-url "list-devices" #f))))
+                (gett "list-devices" #f)))
 
-   (remote-call/get (test-url "list-devices" #f))
+   (gett "list-devices" #f)
 
    (define listed-devices
      (map (lambda (ht)
             (list (hash-ref ht 'device)
                   (hash-ref ht 'description)))
-          (remote-call/get (test-url "list-devices" #f))))
+          (gett "list-devices" #f)))
 
    (test-case
     "list-devices-descriptions"
@@ -123,14 +117,13 @@
    
    
    (test-equal? "empty-latest-events"
-                (remote-call/get (test-url "latest-event"
-                                            '((device s-temp-testing-empty))))
+                (gett "latest-event" '((device s-temp-testing-empty)))
                 "no events")
 
    (test-case
     "latest-living-room-event"
    (check-match
-    (remote-call/get (test-url "latest-event" '((device s-temp-lr))))
+    (gett "latest-event" '((device s-temp-lr)))
     (hash-table ('timestamp (? number? n))
                   ('device-id "s-temp-lr")
                   ('status (? number? s)))))
@@ -147,7 +140,7 @@
      (test-case
       (~a "latest-event-"device)
       (check-match
-       (remote-call/get (test-url "latest-event" `((device ,device))))
+       (gett "latest-event" `((device ,device)))
        (hash-table ('timestamp (? number? n))
                    ('device-id device)
                    ('status (? number? s))))))
@@ -156,10 +149,10 @@
    (test-case
     "events-in-empty-range"
     (check-equal?
-     (remote-call/get (test-url "events-in-range"
-                                 '((device s-temp-bed)
-                                   (start 0)
-                                   (end 0))))
+     (gett "events-in-range"
+           '((device s-temp-bed)
+             (start 0)
+             (end 0)))
      "no events"))
    
    (test-case
@@ -171,28 +164,28 @@
     
     ;; more than a day of data:
     (check-match (remote-call/get/core
-                  (test-url "events-in-range"
+                  HOST PORT
+                  (sodec-url "events-in-range"
                              `((device s-temp-bed)
                                (start 0)
                                (end 100000))))
-                 (list 400
-                       "HTTP/1.1 400 range too long\r"
+                 (list #"HTTP/1.1 400 range too long"
                        _2
                        _3)))
 
    (test-case
     "count-events-in-range bad args"
     (check-match (remote-call/get/core
-                  (test-url "count-events-in-range" #f))
-                 (list 404
-                       "HTTP/1.1 404 wrong query fields\r" _2 _3))
+                  HOST PORT
+                  (sodec-url "count-events-in-range" #f))
+                 (list #"HTTP/1.1 404 wrong query fields" _2 _3))
     
     (check-match (remote-call/get/core
-                  (test-url "count-events-in-range" '((device foo)
+                  HOST PORT
+                  (sodec-url "count-events-in-range" '((device foo)
                                                        (start 0)
                                                        (end 1))))
-                 (list 404
-                       "HTTP/1.1 404 wrong query fields\r"  _2 _3)))
+                 (list #"HTTP/1.1 404 wrong query fields"  _2 _3)))
    
    (test-case
     "count-events-in-range"
@@ -202,40 +195,39 @@
     
     (check-pred (number-in-range 10 722)
                 (let ([ts (get-timestamp)])
-                (remote-call/get
-                 (test-url "count-events-in-range" `((device s-temp-lr)
-                                                      (start ,(- ts 3600))
-                                                      (end ,ts)))))))
+                  (gett
+                   "count-events-in-range" `((device s-temp-lr)
+                                             (start ,(- ts 3600))
+                                             (end ,ts))))))
 
    ;; RECORDING READINGS
 
    (test-case
     "record-reading-404"
     (check-match (remote-call/post/core
-                  (test-url "record-reading" `((device uhnoth)))
+                  HOST PORT
+                  (sodec-url "record-reading" `((device uhnoth)))
                   #"1234")
-                 (list (or 404 400)
-                       (regexp #px"^HTTP/1.1 40[04]")
-                       _2
-                       _3
-                       ;; sigh...
-                       #;(? (port-containing "uhnoth") _3))))
+                 (list (regexp #px#"^HTTP/1.1 404")
+                       _1
+                       (? (port-containing "uhnoth") _3))))
 
    (test-case
     "record-reading-bad-json"
     
     (check-match (remote-call/post/core
-                  (test-url "record-reading" '((device s-temp-lr)))
+                  HOST PORT
+                  (sodec-url "record-reading" '((device s-temp-lr)))
                   #"abcd")
-                 (list 400
-                       "HTTP/1.1 400 bad JSON in POST\r"
+                 (list #"HTTP/1.1 400 bad JSON in POST"
                        _2
                        _3)))
    
    (test-case
     "record-reading"
     (check-equal? (remote-call/post
-                   (test-url "record-reading" '((device s-temp-testing-blackhole)))
+                   HOST PORT
+                   (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
                   "okay"))
 
@@ -246,20 +238,18 @@
 
 ;; this is getting a bit nasty in the string-append region...
 (define last-hour-jsexpr
-  (remote-call/get
-   (test-url "events-in-range" `((device s-temp-bed)
-                                  (start ,(- ts 3600))
-                                  (end ,ts)))))
+  (gett "events-in-range" `((device s-temp-bed)
+                            (start ,(- ts 3600))
+                            (end ,ts))))
 
 (printf "number of readings in the last hour: ~v\n"
         (add1 (length (hash-ref last-hour-jsexpr 'seriesData))))
 
 (printf "number of readings in the last hour: ~v\n"
-        (remote-call/get
-         (test-url "count-events-in-range"
-                    `((device s-temp-bed)
-                                  (start ,(- ts 3600))
-                                  (end ,ts)))))
+        (gett "count-events-in-range"
+              `((device s-temp-bed)
+                (start ,(- ts 3600))
+                (end ,ts))))
 
 (define jsexpr-len
   (bytes-length
@@ -271,7 +261,7 @@
                                                       'seriesData)))))
 
 (define last-reading
-  (remote-call/get (test-url "latest-event" '((device s-temp-bed)))))
+  (gett "latest-event" '((device s-temp-bed))))
 
 (define last-reading-time (hash-ref last-reading 'timestamp))
 

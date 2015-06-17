@@ -1,8 +1,6 @@
 #lang racket/base
 
-(require net/head
-         net/url
-         json
+(require json
          racket/match
          racket/contract
          "../secret.rkt"
@@ -12,11 +10,11 @@
  (contract-out [send-reading!
                 (-> string? reading? void?)]
                [target-hosts
-                (parameter/c (cons/c string? (listof string?)))]
+                (parameter/c (cons/c (list/c string? number?) (listof (list/c string? number?))))]
                [fetch-reading
                 (-> string? reading?)]
                [send-reading!/core
-                (-> string? string? natural? string?)]))
+                (-> string? number? string? natural? string?)]))
 
 ;; a number that can be sent to the database
 (define (reading? r)
@@ -32,20 +30,20 @@
 ;; for instance, "localhost:8080". This list should not
 ;; be empty.
 (define target-hosts
-  (make-parameter '("localhost:8080")))
+  (make-parameter '(("localhost" 8080))))
 
 (define natural? exact-nonnegative-integer?)
 
 ;; send the reading to all current hosts
 (define (send-reading! id reading)
   (for ([host (target-hosts)])
-    (send-reading!/host host id reading)))
+    (send-reading!/host (car host) (cadr host) reading)))
 
 ;; after this many seconds, give up on the POST
 (define TIMEOUT-SECONDS 3.0)
 
 ;; send a reading to one particular host
-(define (send-reading!/host host id reading)
+(define (send-reading!/host host port id reading)
   (define result
     (sync/timeout
      TIMEOUT-SECONDS
@@ -56,7 +54,7 @@
               (lambda (exn)
                 ;; log error and continue...
                 (log-sodec-error "~a" (exn-message exn)))])
-          (define result (send-reading!/core host id reading))
+          (define result (send-reading!/core host port id reading))
           (when (not (string=? result "okay"))
             (log-sodec-error
              'record-temperature!
@@ -67,27 +65,26 @@
         [(thread? result) '#t]))
 
 ;; the core reading-sender. Not behind a thread, no timeout, etc.
-(define (send-reading!/core host id reading)
+(define (send-reading!/core host port id reading)
   (log-sodec-debug
    "sending reading of ~e on device ~e to host ~e"
    reading id host)
-  (define URL-string
-    (string-append "http://" host "/srv/record-reading?device=" id))
+  (define uri
+    (sodec-url "record-reading" `((device ,id))))
   (define post-bytes
     (jsexpr->bytes (hash 'status reading
                          'secret SEKRIT)))
   (log-sodec-debug
-   "using URL string: ~s" URL-string)
+   "using URL args: ~a" (list host port id))
   (log-sodec-debug
    "... and post-bytes: ~s" post-bytes)
-  (remote-call/post
-   URL-string
-   post-bytes))
+  (remote-call/post host port uri post-bytes))
 
 ;; fetch the latest reading from a device using the first target host. signal an error if no readings
 (define (fetch-reading device)
-  (match (remote-call/get (sodec-url (car (target-hosts))
-                                     "latest-event" `((device ,device))))
+  (match (remote-call/get (caar (target-hosts))
+                          (cadar (target-hosts))
+                          (sodec-url "latest-event" `((device ,device))))
     ["no events" (error 'fetch-reading "no events present for device: ~e" device)]
     [(? hash? ht) (hash-ref ht 'status)]
     [other (error 'fetch-reading "unexpected value from latest-event call: ~e" other)]))
