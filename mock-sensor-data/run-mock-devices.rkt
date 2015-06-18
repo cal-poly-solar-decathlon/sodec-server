@@ -6,7 +6,7 @@
 
 ;; this is the loop that actually sends mock data to the existing servers
 
-(target-hosts '("localhost:8080" "localhost:3000"))
+(target-hosts '(("localhost" 8080) ("localhost" 3000)))
 
 
 ;; the lights:

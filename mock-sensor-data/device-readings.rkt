@@ -37,7 +37,7 @@
 ;; send the reading to all current hosts
 (define (send-reading! id reading)
   (for ([host (target-hosts)])
-    (send-reading!/host (car host) (cadr host) reading)))
+    (send-reading!/host (car host) (cadr host) id reading)))
 
 ;; after this many seconds, give up on the POST
 (define TIMEOUT-SECONDS 3.0)

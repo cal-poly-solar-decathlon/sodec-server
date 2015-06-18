@@ -5,7 +5,7 @@
 
 ;; this file is just for testing the person-model by itself
 
-(target-hosts '("calpolysolardecathlon.org:8080"))
+(target-hosts '(("calpolysolardecathlon.org" 8080)))
 
 ;; the lights:
 (run-alice-barry-lights)
