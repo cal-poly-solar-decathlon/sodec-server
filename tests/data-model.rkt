@@ -77,14 +77,14 @@
   (record-sensor-status! "s-temp-bed" 224)
   
   (check-match (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
-                (list (struct SensorEvent ["s-temp-bed"
+               (list (struct SensorEvent ["s-temp-bed"
                                            (? date? ts1)
                                            229])
                       (struct SensorEvent ["s-temp-bed"
                                            (? date? ts2)
                                            228])
                       (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts2)
+                                           (? date? ts3)
                                            224])))
 
   (check-equal? (count-sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
