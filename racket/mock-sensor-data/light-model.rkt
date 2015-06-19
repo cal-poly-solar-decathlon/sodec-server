@@ -1,5 +1,7 @@
 #lang racket
 
+;; THIS OLD MODEL IS NOT BEING USED
+
 (require math/distributions)
 
 ;; modeling light usage.
