@@ -4,5 +4,5 @@ sodec.db
 server.log
 mysql-socket
 supervise/
-/node_modules/
+/node/node_modules/
 npm-debug.log
