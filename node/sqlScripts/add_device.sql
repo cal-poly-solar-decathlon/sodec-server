@@ -1,3 +1,5 @@
+USE sodec;
+
 UPDATE devices
 	SET description = 
 		(case 
