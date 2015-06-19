@@ -1,0 +1,42 @@
+{
+  "name": "soldecserver",
+  "version": "0.0.0",
+  "description": "Basic NodeJS web-server for the Solar Decathlon Project",
+  "author": {
+    "name": "Gabe Villalobos",
+    "email": "gabe.villalobos@gmail.com"
+  },
+  "repository": "gabevillalobos/soldecserver",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "cli.js"
+  ],
+  "keywords": [
+    "soldecserver",
+    "Node.js",
+    "Server",
+    "Web-Sockets"
+  ],
+  "dependencies": {
+    "express": "^4.11.0",
+    "meow": "^2.0.0",
+    "socket.io": "^1.2.1"
+  },
+  "devDependencies": {
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-nodeunit": "^0.4.1",
+    "grunt-contrib-watch": "^0.6.1",
+    "load-grunt-tasks": "^1.0.0",
+    "time-grunt": "^1.0.0",
+    "grunt-mocha-cli": "^1.11.0",
+    "jshint-stylish": "^1.0.0"
+  },
+  "scripts": {
+    "test": "grunt"
+  },
+  "bin": {
+    "soldecserver": "cli.js"
+  }
+}
