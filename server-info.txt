@@ -1,0 +1,18 @@
+IP address of router: 129.65.26.2
+name of router: sodec.ee.calpoly.edu
+
+pinholes:
+
+34122
+34123
+34124
+
+request for pinholes ticket number: 194140
+
+
+138.226
+
+broadcast: 129.65.138.255
+router: 129.65.138.250
+netmask: 255.255.255.0
+dns: 129.65.16.254
