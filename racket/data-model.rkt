@@ -204,7 +204,7 @@ CREATE TABLE `test_sensorevents` (
 
 
 ;; return the list of devices
-(: devices-list (-> (Listof (HashTable Symbol Any))))
+(: devices-list (-> (Listof (HashTable Symbol String))))
 (define (devices-list)
   (define db-hits
     (query-rows
@@ -263,7 +263,7 @@ CREATE TABLE `test_sensorevents` (
            (Listof (Pairof Symbol Any))))]))
 
 ;; convert a row to a device jsexpr
-(: device-row->jsexpr ((Vectorof Any) -> (HashTable Symbol Any)))
+(: device-row->jsexpr ((Vectorof Any) -> (HashTable Symbol String)))
 (define (device-row->jsexpr row)
   (match row
     [(vector (? string? device-name)
