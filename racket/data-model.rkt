@@ -147,7 +147,7 @@ CREATE TABLE `test_sensorevents` (
   (map row->event 
        (query-rows 
         conn 
-        (string-append "SELECT * FROM "(event-table)" WHERE device=? ORDER BY timestamp")
+        (string-append "SELECT * FROM "(event-table)" WHERE device=? ORDER BY id")
         id)))
 
 ;; return sensor statuses in some time range (one sensor)
@@ -160,7 +160,7 @@ CREATE TABLE `test_sensorevents` (
          "SELECT * FROM "(event-table)" WHERE device=? "
          "AND timestamp >= ? "
          "AND timestamp < ? "
-         "ORDER BY timestamp")
+         "ORDER BY id")
         id
         (date->timestamp start)
         (date->timestamp end))))
@@ -192,7 +192,7 @@ CREATE TABLE `test_sensorevents` (
      conn 
      (string-append
       "SELECT * FROM "(event-table)" WHERE DEVICE=? " 
-      "ORDER BY timestamp DESC " 
+      "ORDER BY id DESC "
       "LIMIT 1;")
      id))
   (match db-hits
