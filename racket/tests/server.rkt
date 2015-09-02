@@ -13,13 +13,13 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
-  "calpolysolardecathlon.org"
+  "localhost"
+  #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
-  8080
-  #;3000)
+  #;8080
+  3000)
 
 (define (gett . args)
   (remote-call/get HOST PORT (apply sodec-url args)))
@@ -156,7 +156,7 @@
      "no events"))
    
    (test-case
-    "events-in-range"
+    "events-in-range (last hour)"
     (check-match (events-in-last-hour)
                  (hash-table ('baseTimestamp (? number? _1))
                              ('baseStatus (? values _2))
