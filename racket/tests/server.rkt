@@ -18,8 +18,8 @@
   #;"192.168.2.3")
 
 (define PORT
-  #;8080
-  3000)
+  8080
+  #;3000)
 
 (define (gett . args)
   (remote-call/get HOST PORT (apply sodec-url args)))
@@ -29,7 +29,7 @@
 
 
 ;; events in last hour on the "s-temp-bed" device
-(define (events-in-last-hour)
+(define (bed-events-in-last-hour)
   (define ts (get-timestamp))
   (gett "events-in-range" `((device "s-temp-bed")
                             (start ,(- ts 3600))
@@ -47,7 +47,7 @@
 
 (run-tests
 (test-suite
- "racket evaluator tests"
+ "racket server"
  (let ()
 
 
@@ -121,32 +121,6 @@
                 "no events")
 
    (test-case
-    "latest-living-room-event"
-   (check-match
-    (gett "latest-event" '((device s-temp-lr)))
-    (hash-table ('timestamp (? number? n))
-                  ('device-id "s-temp-lr")
-                  ('status (? number? s)))))
-
-   ;; ignore the occupancy, temp, and ambient light devices:
-   (define (ignored-name n)
-     (or (regexp-match #px"^s-temp-testing-" n)
-         (regexp-match #px"^s-amb-" n)
-         (regexp-match #px"^s-occ-" n)
-         (regexp-match #px"^c-light-" n)))
-   
-   (for ([device (in-list device-strs)]
-         #:when (not (ignored-name device)))
-     (test-case
-      (~a "latest-event-"device)
-      (check-match
-       (gett "latest-event" `((device ,device)))
-       (hash-table ('timestamp (? number? n))
-                   ('device-id device)
-                   ('status (? number? s))))))
-   
-
-   (test-case
     "events-in-empty-range"
     (check-equal?
      (gett "events-in-range"
@@ -154,13 +128,10 @@
              (start 0)
              (end 0)))
      "no events"))
+
    
    (test-case
-    "events-in-range (last hour)"
-    (check-match (events-in-last-hour)
-                 (hash-table ('baseTimestamp (? number? _1))
-                             ('baseStatus (? values _2))
-                             ('seriesData (? values _3))))
+    "too long range for events-in-range"  
     
     ;; more than a day of data:
     (check-match (remote-call/get/core
@@ -186,19 +157,6 @@
                                                        (start 0)
                                                        (end 1))))
                  (list #"HTTP/1.1 404 wrong query fields"  _2 _3)))
-   
-   (test-case
-    "count-events-in-range"
-    
-    (define ((number-in-range a b) n)
-      (and (<= a n) (< n b)))
-    
-    (check-pred (number-in-range 10 722)
-                (let ([ts (get-timestamp)])
-                  (gett
-                   "count-events-in-range" `((device s-temp-lr)
-                                             (start ,(- ts 3600))
-                                             (end ,ts))))))
 
    ;; RECORDING READINGS
 
@@ -230,6 +188,116 @@
                    (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
                   "okay"))
+
+   ;; test sending with urlencoding
+
+   (test-case
+    "record-reading with form-urlencoded"
+    (check-equal?
+     (remote-call/post
+      HOST PORT
+      (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
+      #"status=261&secret=$a8Es#crB469"
+      #:content-type #"application/x-www-form-urlencoded")
+     "okay"))
+
+   (test-case
+    "record-reading with form-urlencoded negative #"
+    (check-equal?
+     (remote-call/post
+      HOST PORT
+      (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
+      #"status=-261&secret=$a8Es#crB469"
+      #:content-type #"application/x-www-form-urlencoded")
+     "okay"))
+
+   (test-case
+    "record-reading with form-urlencoded bad number"
+    (check-match
+     (remote-call/post/core
+      HOST PORT
+      (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
+      #"status=26eee1&secret=$a8Es#crB469"
+      #:content-type #"application/x-www-form-urlencoded")
+     (list (regexp #"^HTTP/1.1 400 ")
+           _2 _3)))
+
+   (test-case
+    "record-reading with form-urlencoded bad alist"
+    (check-match
+     (remote-call/post/core
+      HOST PORT
+      (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
+      #"status=21&=secret=$a8Es#crB469"
+      #:content-type #"application/x-www-form-urlencoded")
+     (list (regexp #"^HTTP/1.1 400 ")
+           _2 _3)))
+   
+)))
+
+;; this test suite ensures that the server is receiving
+;; data in the expected way from downstream sensors
+(run-tests
+(test-suite
+ "racket server recording data"
+ (let ()
+   
+   (define ((port-containing str) port)
+     (regexp-match (regexp-quote str) port))
+
+
+   (define listed-devices
+     (map (lambda (ht)
+            (list (hash-ref ht 'device)
+                  (hash-ref ht 'description)))
+          (gett "list-devices" #f)))
+
+
+   (test-case
+    "latest-living-room-event"
+   (check-match
+    (gett "latest-event" '((device s-temp-lr)))
+    (hash-table ('timestamp (? number? n))
+                  ('device-id "s-temp-lr")
+                  ('status (? number? s)))))
+
+   ;; ignore the occupancy, temp, and ambient light devices:
+   (define (ignored-name n)
+     (or (regexp-match #px"^s-temp-testing-" n)
+         (regexp-match #px"^s-amb-" n)
+         (regexp-match #px"^s-occ-" n)
+         (regexp-match #px"^c-light-" n)))
+   
+   (for ([device (in-list device-strs)]
+         #:when (not (ignored-name device)))
+     (test-case
+      (~a "latest-event-"device)
+      (check-match
+       (gett "latest-event" `((device ,device)))
+       (hash-table ('timestamp (? number? n))
+                   ('device-id device)
+                   ('status (? number? s))))))
+
+   (test-case
+    "bed events in last hour not empty"
+    (check-match (bed-events-in-last-hour)
+                 (hash-table ('baseTimestamp (? number? _1))
+                             ('baseStatus (? values _2))
+                             ('seriesData (? values _3)))))
+
+   
+   (test-case
+    "count-events-in-range between 10 and 722 lr readings in last hour"
+    
+    (define ((number-in-range a b) n)
+      (and (<= a n) (< n b)))
+    
+    (check-pred (number-in-range 10 722)
+                (let ([ts (get-timestamp)])
+                  (gett
+                   "count-events-in-range" `((device s-temp-lr)
+                                             (start ,(- ts 3600))
+                                             (end ,ts))))))
 
    
 )))

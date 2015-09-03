@@ -48,10 +48,13 @@
 
 (define june-one (find-seconds 0 0 0 1 6 2015))
 
+(printf "june-one: ~v\n" june-one)
+(printf "one hour later: ~v\n" (+ 3600 june-one))
+
 (time
  (gett "count-events-in-range"
        `((device s-temp-bed)
-         (start ,(- june-one 3600))
+         (start ,(+ june-one 3600))
          (end ,june-one))))
 
 ;; took 35 seconds on existing setup (rpi2, mysql, db with 7M entries)

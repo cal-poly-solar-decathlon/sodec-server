@@ -2,15 +2,20 @@
 
 (require racket/match
          web-server/servlet
+         net/uri-codec
          json
          racket/date
+         racket/contract
          "data-model.rkt"
          "ids.rkt"
          "secret.rkt"
          xml)
 
-(provide start)
+(provide start
+         (contract-out
+          [log-client-errors! (-> path-string? void?)]))
 
+(define-logger client)
 
 ;; handle a request. "front door" of the server
 (define (start req)
@@ -64,15 +69,18 @@
                  (struct path/param ("divbyzero" (list))))
            (/ 1 0)]
           [other
+           (define message
+             (format "GET url ~v doesn't match known pattern" (url->string uri)))
+           (log-warning message)
            (404-response
             #"unknown server path"
-            (format "GET url ~v doesn't match known pattern" (url->string uri)))])]
+            message)])]
        [#"POST"
         (match (url-path uri)
           ;; record a new reading
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("record-reading" (list))))
-           (handle-new-reading (url-query uri) post-data/raw)]
+           (handle-new-reading (url-query uri) headers/raw post-data/raw)]
           [other
            (404-response
             #"unknown server path"
@@ -168,7 +176,7 @@
               query))]))
 
 ;; handle an incoming reading
-(define (handle-new-reading query post-data)
+(define (handle-new-reading query headers post-data)
   (match query
     [(list (cons 'device (? ID? id)))
      (with-handlers ([(lambda (exn)
@@ -180,24 +188,62 @@
                          #"bad JSON in POST"
                          (format "expected POST bytes parseable as JSON, got: ~e"
                                  post-data)))])
-       (define jsexpr (bytes->jsexpr post-data))
-       (match jsexpr
-         [(hash-table ('status (? integer? reading))
-                      ('secret (? string? secret)))
-          (cond [(string=? secret SEKRIT)
-                 (record-sensor-status! id (inexact->exact reading))
-                 (response/json "okay")]
-                [else 
-                 (fail-response
-                  403
-                  #"wrong secret"
-                  "request didn't come with the right secret")])]
-         [else 
+       (match
+           (ormap (λ (h) (and (equal? (header-field h) #"Content-Type")
+                              (header-value h)))
+                  headers)
+         [#"application/json"
+          (define jsexpr (bytes->jsexpr post-data))
+          (match jsexpr
+            [(hash-table ('status (? integer? reading))
+                         ('secret (? string? secret)))
+             (cond [(string=? secret SEKRIT)
+                    (record-sensor-status! id (inexact->exact reading))
+                    (response/json "okay")]
+                   [else 
+                    (fail-response
+                     403
+                     #"wrong secret"
+                     "request didn't come with the right secret")])]
+            [else 
+             (fail-response
+              400
+              #"wrong JSON in POST"
+              (format "expected JSON data matching spec, got: ~e"
+                      jsexpr))])]
+         [#"application/x-www-form-urlencoded"
+          (match (form-urlencoded->alist (bytes->string/utf-8 post-data))
+            [(list-no-order
+              (cons 'status (? string? (regexp #px"^(-)?[[:digit:]]+$"
+                                               (list reading dc))))
+              (cons 'secret (? string? secret)))
+             (cond [(string=? secret SEKRIT)
+                    (record-sensor-status! id (inexact->exact
+                                               (string->number reading)))
+                    (response/json "okay")]
+                   [else 
+                    (fail-response
+                     403
+                     #"wrong secret"
+                     "request didn't come with the right secret")])]
+            [other (fail-response
+                    400
+                    #"wrong fields"
+                    (format
+                     "expected well-formatted post bytes, got: ~e"
+                     post-data))])]
+         [(? bytes? otherbytes)
           (fail-response
            400
-           #"wrong JSON in POST"
-           (format "expected JSON data matching spec, got: ~e"
-                   jsexpr))]))]
+           #"unknown content type"
+           (format "expected Content-Type: application/json or application/x-www-form-urlencoded, got: ~a"
+                   otherbytes))]
+         [#f
+          (fail-response
+           400
+           #"no content-type specified"
+           (format "expected request with Content-Type header"))])
+       )]
     [(list (cons 'device bad-device))
      (404-response
       #"unknown device name"
@@ -222,6 +268,11 @@
 
 ;; issue a failure response
 (define (fail-response code header-msg body-msg)
+  (log-client-error
+   (format "[~a] [~a] ~a"
+           (date->string (seconds->date (current-seconds)) #t)
+           code
+           body-msg))
   (response/full
    code
    header-msg
@@ -252,10 +303,33 @@
    (list (jsexpr->bytes jsexpr))))
 
 
+;; find a member of the list matching the regexp
+(define (regexp-member rx l)
+  (ormap (λ (h) (regexp-match rx h)) l))
+
+;; create a log-receiver for client errors, pipe them to a file
+(define (log-client-errors! logfile)
+  (define log-receiver (make-log-receiver
+                        (current-logger)
+                        'info
+                        'client))
+  (define errorlog-port
+    (open-output-file logfile #:exists 'append))
+  (thread
+   (λ ()
+     (let loop ()
+       (match (sync log-receiver)
+         [(vector level msg data topic)
+          (fprintf errorlog-port "~a\n" msg)
+          (flush-output errorlog-port)])
+       (loop))))
+  (void))
+
 (module+ test
   (require rackunit)
   
   (check-match (jsexpr->bytes (handle-timestamp-request))
                (regexp #px#"^\\{\"timestamp\":[[:digit:]]+\\}$"))
-  
-  (check-equal? 3 3))
+
+  (check-equal? (regexp-member #px"ad*e" (list "ab" "adddde" "aq"))
+                '("adddde")))

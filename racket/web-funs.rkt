@@ -14,8 +14,14 @@
 (provide (contract-out
           [remote-call/get (-> string? number? string? jsexpr?)]
           [remote-call/get/core (-> string? number? string? (list/c bytes? (listof bytes?) input-port?))]
-          [remote-call/post (-> string? number? string? bytes? jsexpr?)]
-          [remote-call/post/core (-> string? number? string? bytes? (list/c bytes? (listof bytes?) input-port?))])
+          [remote-call/post
+           (->* (string? number? string? bytes?)
+                (#:content-type bytes?)
+                jsexpr?)]
+          [remote-call/post/core
+           (->* (string? number? string? bytes?)
+                (#:content-type bytes?)
+                (list/c bytes? (listof bytes?) input-port?))])
          results->jsexpr
          sodec-url)
 
@@ -56,24 +62,25 @@
   (apply results->jsexpr (remote-call/get/core host port uri)))
 
 ;; given a URL, make a POST request and wait for a succesful response, returning a jsexpr
-(define (remote-call/post host port uri post-bytes)
-  (apply results->jsexpr (remote-call/post/core host port uri post-bytes)))
+(define (remote-call/post host port uri post-bytes #:content-type [content-type #"application/json"])
+  (apply results->jsexpr (remote-call/post/core host port uri post-bytes
+                                                #:content-type content-type)))
 
 
 
-;; given a URL, make a GET request and wait for a response, returning a jsexpr
+;; given a URL, make a GET request and wait for a response
 (define (remote-call/get/core host port uri)
   (log-sodec-debug "remote-call/get/core: args: ~a"
              (list host port uri))
   (call-with-values (lambda () (http-sendrecv host uri #:port port)) list))
 
 
-(define (remote-call/post/core host port uri post-bytes)
+(define (remote-call/post/core host port uri post-bytes #:content-type [content-type #"application/json"])
   (log-sodec-debug "remote-call/post/core: args: ~a" 
                    (list host port uri post-bytes))
   (call-with-values
    (lambda () (http-sendrecv host uri #:port port #:method 'POST
-                             #:headers (list #"Content-Type: application/json")
+                             #:headers (list (bytes-append #"Content-Type: "content-type))
                              #:data post-bytes))
    list))
 

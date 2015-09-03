@@ -7,6 +7,8 @@
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
+(log-client-errors! (build-path here "error.log"))
+
 (serve/servlet start
                ;; I see... changing server root path means you need
                ;; your own configuration files....

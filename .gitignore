@@ -6,3 +6,4 @@ mysql-socket
 supervise/
 /node/node_modules/
 npm-debug.log
+error.log
