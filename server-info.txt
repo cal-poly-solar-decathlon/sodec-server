@@ -10,7 +10,7 @@ pinholes:
 request for pinholes ticket number: 194140
 
 
-138.226
+address currently given to router by Cal Poly DHCP: 129.65.138.226
 
 broadcast: 129.65.138.255
 router: 129.65.138.250
