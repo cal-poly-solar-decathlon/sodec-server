@@ -7,6 +7,42 @@ tablets and the central home automation server.
 
 ## Devices
 
+REWRITE FOR INFLUXDB STARTS HERE...
+
+## Measurements
+
+All recorded measurements must fall into one of these measurement categories:
+
+- `temperature`
+- `humidity`
+- `electricity_used`
+- `electricity_generated`
+- `light_level`
+- `occupied`
+
+## Devices
+
+Device names specify locations. Each measurement has its own set of legal
+device names.
+
+### Temperature and Humidity Devices
+
+- `living_room`
+- `bedroom`
+- `kitchen`
+- `outside`
+- `bathroom`
+- `testing_blackhole`
+
+Note that the last of these is for testing only.
+
+living_room
+bedroom
+kitchen
+outside
+bathroom
+testing_blackhole
+
 Devices are named by IDs, which are strings. These strings are essentially
 hard-coded; it's easier that way. There are two kinds of IDs: "sensor IDs"
 and "control IDs". I think it will be easier just to have a convention

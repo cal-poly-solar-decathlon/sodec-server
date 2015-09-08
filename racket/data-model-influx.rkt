@@ -6,7 +6,7 @@
          racket/date
          racket/match
          net/url
-         "ids.rkt"
+         "influx-ids.rkt"
          "testing-param.rkt")
 
 ;; represents a sensor event
@@ -16,29 +16,37 @@
                      [reading : Integer])
   #:transparent)
 
-;; express a query as a URL
-(define (query->url query)
+(testing? #t)
+
+(define TESTING-DB "sodec_test")
+(define REGULAR-DB "sodec")
+
+;; when testing, use the testing events table
+(define DATABASE
+  (cond [(testing?) TESTING-DB]
+        [else REGULAR-DB]))
+
+;; construct a URL to communicate with influxdb
+(define (build-url endpoint extra-query-fields)
   (url
    "http"
-   #f
+   #f ;; user
    "localhost"
    8086
-   #t
-   (list (path/param "query" '()))
-   `((db . ,DATABASE)
-     (q . ,query))
-   #f))
-
-(define query
-  "SHOW DATABASES")
+   #t ;; absolute
+   (list (path/param endpoint '()))
+   (cons `(db . ,DATABASE)
+         extra-query-fields)
+   #f ;;fragment
+   ))
 
 (define (regexp-member rx l)
   (ormap (λ (h) (regexp-match rx h)) l))
 
 ;; perform the query, return the result as a jsexpr
-(define (perform-query query)  
+(define (perform-query query)
   (define-values (status-line headers port)
-    (http-sendrecv/url (query->url query)))
+    (http-sendrecv/url (build-url "query" `((q . ,query)))))
   (unless (regexp-match #px"^HTTP/1.1 200" status-line)
     (error 'perform-query
            "expected '200 OK' status line, got: ~v"
@@ -49,10 +57,66 @@
            headers))
   (read-json port))
 
-;; when testing, use the testing events table
-(define DATABASE
-  (cond [(testing?) "sodec_testing"]
-        [else "sodec"]))
+(define MEASUREMENT-NAMES (map car measurement-devices))
+
+;; given a measurement and a location and a reading, write them to
+;; the database
+(define (perform-write measurement location reading)
+  (unless (member measurement MEASUREMENT-NAMES)
+    (raise-argument-error 'perform-write "legal measurement name"
+                          0 measurement location reading))
+  (define devices (cadr (assoc measurement measurement-devices)))
+  (unless (member location devices)
+    (raise-argument-error 'perform-write "legal location for measurement"
+                          1 measurement location reading))
+  (unless (64-bit-int? reading)
+    (raise-argument-error 'perform-write "64-bit integer"
+                          2 measurement location reading))
+  (define point-line
+    (format "~a,device=~a reading=~ai ~a"
+            measurement location reading
+            (inexact->exact (round (current-inexact-milliseconds)))))
+  (define-values (status-line headers port)
+    (http-sendrecv/url
+     (build-url "write" `((precision . "m")))
+     #:method #"POST"
+     (string->bytes/utf-8 point-line)))
+  (unless (regexp-match #px"^HTTP/1.1 240" status-line)
+    (error 'perform-query
+           "expected '240 No Content' status line, got: ~v"
+           status-line)))
+
+
+;; can a number be represented as a 64-bit int?
+;(: 64-bit-int? (Integer -> Boolean))
+(define (64-bit-int? x)
+  (<= MIN64INT x MAX64INT))
+(define MAX64INT #x7fffffffffffffff)
+(define MIN64INT (- #x8000000000000000))
+
+
+(perform-query "SHOW DATABASES")
+(perform-query (format "DROP DATABASE ~a" TESTING-DB))
+(perform-query (format "CREATE DATABASE ~a" TESTING-DB))
+(parameterize ([testing? #t])
+  (check-exn #px"expected: legal measurement name"
+             (lambda () (perform-write "shmoovy" "blaggo" 9)))
+  (check-exn #px"expected: legal location for measurement"
+             (lambda () (perform-write "electricity_used" "blaggo" 9)))
+  (check-not-exn (lambda () (perform-write "temperature" "outside" 9))))
+
+
+;; record a sensor reading
+;(: record-sensor-status! (String Integer -> Void))
+#;(define (record-sensor-status! id status)
+  (unless (64-bit-int? status)
+    (raise-argument-error 'record-sensor-status!
+                          "integer representable in 64 bits"
+                          1 id status))
+  (query-exec conn
+              (string-append "INSERT INTO " (event-table) " VALUES (DEFAULT,?,DEFAULT,?)")
+              id status))
+
 
 
 #;((provide current-timestamp
@@ -122,23 +186,7 @@ CREATE TABLE `test_sensorevents` (
                "exact nonnegative integer"
                0 val)]))
 
-;; record a sensor reading
-(: record-sensor-status! (String Integer -> Void))
-(define (record-sensor-status! id status)
-  (unless (64-bit-int? status)
-    (raise-argument-error 'record-sensor-status!
-                          "integer representable in 64 bits"
-                          1 id status))
-  (query-exec conn
-              (string-append "INSERT INTO " (event-table) " VALUES (DEFAULT,?,DEFAULT,?)")
-              id status))
 
-;; can a number be represented as a 64-bit int?
-(: 64-bit-int? (Integer -> Boolean))
-(define (64-bit-int? x)
-  (<= MIN64INT x MAX64INT))
-(define MAX64INT #x7fffffffffffffff)
-(define MIN64INT (- #x8000000000000000))
 
 ;; return all sensor statuses (from all times, one sensor)
 (: sensor-events (String -> (Listof SensorEvent)))
