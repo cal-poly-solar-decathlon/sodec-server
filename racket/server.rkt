@@ -24,7 +24,8 @@
       ([(lambda (exn) #t)
         (lambda (exn)
           (log-error (exn-message exn))
-          server-fail-response)])
+          (fail-response 500 #"server exception"
+                 "Server-side exception. Check logs for more detail."))])
   (match req
     [(struct request
        (method
@@ -300,11 +301,6 @@
     (string->bytes/utf-8
      (xexpr->string
       `(html (body (p ,body-msg))))))))
-
-;; a generic server exception 500:
-(define server-fail-response
-  (fail-response 500 #"server exception"
-                 "Server-side exception. Check logs for more detail."))
 
 
 ;; a successful json response
