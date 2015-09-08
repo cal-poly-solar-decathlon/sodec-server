@@ -43,7 +43,7 @@
            (handle-device-latest-event-request
             (url-query uri))]
           ;; events in a range for a sensor
-          [(list (struct path/param ("srv" (list)))
+          #;[(list (struct path/param ("srv" (list)))
                  (struct path/param ("events-in-range" (list))))
            (handle-device-events-in-range-request
             (url-query uri))]
@@ -53,7 +53,8 @@
            (handle-device-count-events-in-range-request
             (url-query uri))]
           ;; a list of all devices
-          [(list (struct path/param ("srv" (list)))
+          ;; removed for now
+          #;[(list (struct path/param ("srv" (list)))
                  (struct path/param ("list-devices" (list))))
            (handle-device-list-request)]
           ;; timestamp of the server
@@ -91,19 +92,17 @@
   (hash 'timestamp (date->seconds (current-timestamp))))
 
 ;; handle a device list request
-(define (handle-device-list-request)
+;; removed for now...
+#;(define (handle-device-list-request)
   (response/json (devices-list)))
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)
   (match query
-    [(list (cons 'device (? ID? id)))
+    [(list-no-order (cons 'measurement (? string? measurement))
+                    (cons 'device (? string? device)))
      (response/json
-      (maybe-event->jsexpr (sensor-latest-event id)))]
-    [(list (cons 'device bad-device))
-     (404-response
-      #"unknown device name"
-      (format "device ~v unknown" bad-device))]
+      (maybe-event->jsexpr (sensor-latest-event measurement device)))]
     [else
      (404-response
       #"wrong query fields"
@@ -111,7 +110,7 @@
               query))]))
 
 ;; handle a device time range reading request
-(define (handle-device-events-in-range-request query)
+#;(define (handle-device-events-in-range-request query)
   (match query
     ;; could give more fine-grained error messages here...
     [(list-no-order
@@ -151,7 +150,8 @@
   (match query
     ;; could give more fine-grained error messages here...
     [(list-no-order
-      (cons 'device (? ID? id))
+      (cons 'measurement (? string? measurement))
+      (cons 'device (? string? device))
       (cons 'start (regexp NUM-REGEXP (list start-str)))
       (cons 'end (regexp NUM-REGEXP (list end-str))))
      (define start (string->number start-str))
@@ -164,9 +164,10 @@
            [else
             (response/json
              (count-sensor-events-in-range
-              id 
-              (seconds->date start)
-              (seconds->date end)))])]
+              measurement
+              device
+              start
+              end))])]
     [else
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...
@@ -178,7 +179,12 @@
 ;; handle an incoming reading
 (define (handle-new-reading query headers post-data)
   (match query
+    [(list-no-order (cons 'measurement (? string? measurement))
+                    (cons 'device (? string? device)))
+     (handle-new-reading/md measurement device headers post-data)]
     [(list (cons 'device (? ID? id)))
+     ;; HANDLING FOR LEGACY DEVICE ID SCHEME:
+     (define-values (measurement device) (unfold-device-id id))
      (with-handlers ([(lambda (exn)
                         (and (exn:fail? exn)
                              (regexp-match #px"bytes->jsexpr" (exn-message exn))))

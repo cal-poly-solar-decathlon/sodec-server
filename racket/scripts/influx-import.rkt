@@ -4,7 +4,7 @@
          rackunit
          racket/date)
 
-(define SQLDUMP "/tmp/sodecdump.sql")
+(define SQLDUMP "/Users/clements/sodecdump.sql")
 (define measurements
   '(temperature humidity electricity_used
                 electricity_generated
@@ -89,6 +89,12 @@
 
 (define start-time (current-seconds))
 
+
+;; ignore sequential device readings that occur within this many seconds:
+(define MIN-INTERVAL 60)
+
+(define last-reading (make-hash))
+
 (let loop ([last-index #f])
   (when (and (number? last-index)
              (= (modulo last-index 10000) 0))
@@ -104,25 +110,30 @@
   (match (regexp-match RECORD-REGEXP port)
     [#f (list 'done-1 last-index)]
     [(list dc index sensor-name date reading)
-     (match (parse-device-name sensor-name)
-       [(list measurement device)
-        (fprintf
-         (match (assoc
-                 (string->symbol
-                  measurement)
-                 output-port-table)
-           [#f (error 'parsing "no match for measurement ~v"
-                      measurement)]
-           [other (cadr other)])
-         "~a,device=~a reading=~ai ~a\n"
-         measurement
-         device
-         reading
-         (sql-date->seconds date))])
+     (define date-sec (sql-date->seconds date))
+     (define last-device-reading (hash-ref last-reading sensor-name #f))
+     (cond [(or (not last-device-reading) (> (- date-sec last-device-reading) MIN-INTERVAL))
+            (match (parse-device-name sensor-name)
+              [(list measurement device)
+               (fprintf
+                (match (assoc
+                        (string->symbol
+                         measurement)
+                        output-port-table)
+                  [#f (error 'parsing "no match for measurement ~v"
+                             measurement)]
+                  [other (cadr other)])
+                "~a,device=~a reading=~ai ~a\n"
+                measurement
+                device
+                reading
+                date-sec)])
+            (hash-set! last-reading sensor-name date-sec)]
+           [else ;; not long enough since last reading, ignore it
+            last-reading])
      (match (regexp-match BETWEEN-RECORDS-REGEXP port)
        [#f (list 'done-2 last-index)]
-       [other (loop (string->number (bytes->string/utf-8 index)))])
-     ]))
+       [other (loop (string->number (bytes->string/utf-8 index)))])]))
 
 
 ;(1,'s-temp-lr','2015-05-11 05:08:25',0)

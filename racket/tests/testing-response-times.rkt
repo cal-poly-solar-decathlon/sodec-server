@@ -54,8 +54,8 @@
 (time
  (gett "count-events-in-range"
        `((device s-temp-bed)
-         (start ,(+ june-one 3600))
-         (end ,june-one))))
+         (start ,june-one)
+         (end ,(+ june-one 3600)))))
 
 ;; took 35 seconds on existing setup (rpi2, mysql, db with 7M entries)
 

@@ -1,6 +1,11 @@
 #lang racket/base
 
+;; I hate to say it, but InfluxDB seems to suffer from poor
+;; json encoding design in places. EG: on no results, there's
+;; no 'series' list. The empty list is a list, you know....
+
 (require #;racket/runtime-path
+         racket/contract
          rackunit
          json
          racket/date
@@ -9,6 +14,27 @@
          "influx-ids.rkt"
          "testing-param.rkt")
 
+(provide #;current-timestamp
+         #;devices-list
+         #;sensor-events
+         
+         #;sensor-events-in-range
+         (contract-out
+          [sensor-latest-reading
+           (-> string? string? (or/c false? integer?))]
+          [count-sensor-events-in-range
+           (-> string? string? integer? integer? integer?)]
+          [record-sensor-status!
+           (-> string? string? integer? void?)])
+         (struct-out sensor-event)
+         maybe-reading->jsexpr
+         #;events->jsexpr
+         #;events->jsexpr/short
+         testing?
+         reset-database-test-tables!)
+
+(define (false? x) (eq? x #false))
+
 ;; represents a sensor event
 (struct sensor-event (device timestamp reading) #:transparent)
 #;(struct SensorEvent ([device : ID]
@@ -16,15 +42,114 @@
                      [reading : Integer])
   #:transparent)
 
-(testing? #t)
-
 (define TESTING-DB "sodec_test")
 (define REGULAR-DB "sodec")
 
 ;; when testing, use the testing events table
-(define DATABASE
+(define (DATABASE)
   (cond [(testing?) TESTING-DB]
         [else REGULAR-DB]))
+
+
+
+
+;; return the latest sensor reading from one sensor.
+;; choose arbitrarily in case of tie.
+(define (sensor-latest-reading measurement device)
+  (unless (member measurement MEASUREMENT-NAMES)
+    (raise-argument-error 'perform-write "legal measurement name"
+                          0 measurement device))
+  (define devices (cadr (assoc measurement measurement-devices)))
+  (unless (member device devices)
+    (raise-argument-error 'perform-write "legal location for measurement"
+                          1 measurement device))
+  (define response
+    (perform-query (format
+                    "SELECT LAST(reading) FROM ~a WHERE device='~a'"
+                    measurement device)))
+  (match (query-response->series response)
+    [(list (? series-hash? series))
+     (define series-name (hash-ref series 'name))
+     (unless (string=? series-name measurement)
+       (error 'sensor-latest-event
+              "inferred constraint failed. Expected measurement name ~e, got ~e"
+              measurement series-name))
+     (define a-list (single-entry-series->alist series))
+     (match (assoc "last" a-list)
+       [(list dc reading) reading]
+       [other (error 'sensor-latest-event
+                     "inferred constraint failed, no column named 'last'.")])]
+    [#f ;; query successful, no results
+     #f]
+    [other (error 'sensor-latest-event
+                  "inferref constraint failed, expected exactly one series in ~e"
+                  other)]))
+
+(define (series-hash? s)
+  (match s
+    [(hash-table ('name dc1) ('values dc2) ('columns dc3)) #t]
+    [else #f]))
+
+;; given a single-entry series (a hash table with keys name, value, and columns), return
+;; the association list representing the table itself.
+(define (single-entry-series->alist series)
+  (match series
+    [(hash-table ('name name)
+                 ('values (list values))
+                 ('columns columns))
+     (unless (and (list? values) (list? columns)
+                  (= (length values) (length columns)))
+       (error 'single-entry-series->alist
+              "inferred constraint failed for values and columns: ~e, ~e"
+              values columns))
+     (map list columns values)]
+    [other (error 'single-entry-series->alist
+                  "inferred constraint failed, expected single-entry series in ~e"
+                  other)]))
+
+(define EVENTS-IN-RANGE-QUERY
+  "SELECT COUNT(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
+
+;; return sensor statuses in some time range (one sensor),
+;; times in seconds
+#;(: count-sensor-events-in-range (String date date -> Natural))
+(define (count-sensor-events-in-range measurement device start end)
+  (define start-ns (* start (expt 10 9)))
+  (define end-ns (* end (expt 10 9)))
+  (define response
+    (perform-query
+     (format EVENTS-IN-RANGE-QUERY measurement start-ns end-ns device)))
+  (match (query-response->series response)
+    [#f 0]
+    [(list (? series-hash? series))
+     (match (assoc "count" (single-entry-series->alist series))
+       [(list "count" (? integer? n)) n]
+       [other (error 'count-sensor-events-in-range
+                     "inferred constraint failed, expected count, got ~e"
+                     other)])]
+    [other (error 'count-sensor-events-in-range
+                  "inferred constraint failed, expected #f or one series in ~e"
+                  other)]))
+
+;; given query results, return the series as a list or #f if no results
+(define (query-response->series results)
+  (match results
+    [(hash-table ('results (list result)))
+     (match result
+       [(hash-table ('series series-list)) series-list]
+       [(hash-table) #f]
+       [other (error 'query-response->series
+                     "inferred constraint failed, results had unexpected form: ~e"
+                     other)])]
+    [other (error 'query-response->series
+                  "inferred constraint failed, JSON had unexpected form: ~e"
+                  other)]))
+
+
+;; find the latest event of a sensor
+;; THIS IS HORRIBLE...InfluxDB REALLY should be doing this
+;; for us. Perform a binary search to find the ...
+#;(define )
 
 ;; construct a URL to communicate with influxdb
 (define (build-url endpoint extra-query-fields)
@@ -35,7 +160,7 @@
    8086
    #t ;; absolute
    (list (path/param endpoint '()))
-   (cons `(db . ,DATABASE)
+   (cons `(db . ,(DATABASE))
          extra-query-fields)
    #f ;;fragment
    ))
@@ -49,8 +174,10 @@
     (http-sendrecv/url (build-url "query" `((q . ,query)))))
   (unless (regexp-match #px"^HTTP/1.1 200" status-line)
     (error 'perform-query
-           "expected '200 OK' status line, got: ~v"
-           status-line))
+           "expected '200 OK' status line, got: ~v with response port content: ~e"
+           
+           status-line
+           (regexp-match #px".*" port)))
   (unless (regexp-member #px#"(?i:Content-Type: +application/json)" headers)
     (error 'perform-query
            "expected content-type application/json, got these headers: ~v"
@@ -59,31 +186,31 @@
 
 (define MEASUREMENT-NAMES (map car measurement-devices))
 
-;; given a measurement and a location and a reading, write them to
+;; given a measurement and a location/device and a reading, write them to
 ;; the database
-(define (perform-write measurement location reading)
+(define (record-sensor-status! measurement device reading)
   (unless (member measurement MEASUREMENT-NAMES)
     (raise-argument-error 'perform-write "legal measurement name"
-                          0 measurement location reading))
+                          0 measurement device reading))
   (define devices (cadr (assoc measurement measurement-devices)))
-  (unless (member location devices)
+  (unless (member device devices)
     (raise-argument-error 'perform-write "legal location for measurement"
-                          1 measurement location reading))
+                          1 measurement device reading))
   (unless (64-bit-int? reading)
     (raise-argument-error 'perform-write "64-bit integer"
-                          2 measurement location reading))
+                          2 measurement device reading))
   (define point-line
     (format "~a,device=~a reading=~ai ~a"
-            measurement location reading
+            measurement device reading
             (inexact->exact (round (current-inexact-milliseconds)))))
   (define-values (status-line headers port)
     (http-sendrecv/url
-     (build-url "write" `((precision . "m")))
+     (build-url "write" `((precision . "ms")))
      #:method #"POST"
-     (string->bytes/utf-8 point-line)))
-  (unless (regexp-match #px"^HTTP/1.1 240" status-line)
+     #:data (string->bytes/utf-8 point-line)))
+  (unless (regexp-match #px"^HTTP/1.1 204" status-line)
     (error 'perform-query
-           "expected '240 No Content' status line, got: ~v"
+           "expected '204 No Content' status line, got: ~v"
            status-line)))
 
 
@@ -94,17 +221,16 @@
 (define MAX64INT #x7fffffffffffffff)
 (define MIN64INT (- #x8000000000000000))
 
-
-(perform-query "SHOW DATABASES")
-(perform-query (format "DROP DATABASE ~a" TESTING-DB))
-(perform-query (format "CREATE DATABASE ~a" TESTING-DB))
-(parameterize ([testing? #t])
-  (check-exn #px"expected: legal measurement name"
-             (lambda () (perform-write "shmoovy" "blaggo" 9)))
-  (check-exn #px"expected: legal location for measurement"
-             (lambda () (perform-write "electricity_used" "blaggo" 9)))
-  (check-not-exn (lambda () (perform-write "temperature" "outside" 9))))
-
+;; create temporary tables for testing
+(define (reset-database-test-tables!)
+  ;; ignore a possible error here (db may not exist):
+  (perform-query (format "DROP DATABASE ~a" TESTING-DB))
+  (match (perform-query (format "CREATE DATABASE ~a" TESTING-DB))
+    [(hash-table ('results (list (hash-table)))) (void)]
+    [other
+     (error 'reset-database-test-tables!
+            "unexpected response from table creation: ~e"
+            other)]))
 
 ;; record a sensor reading
 ;(: record-sensor-status! (String Integer -> Void))
@@ -118,65 +244,19 @@
               id status))
 
 
+;;;;;;
+;;
+;; JSON
+;;
+;;;;;;
 
-#;((provide current-timestamp
-         devices-list
-         sensor-events
-         sensor-latest-event
-         sensor-events-in-range
-         count-sensor-events-in-range
-         record-sensor-status!
-         (struct-out SensorEvent)
-         maybe-event->jsexpr
-         events->jsexpr
-         events->jsexpr/short
-         testing?
-         reset-database-test-tables!)
+;; convert an Event to a jsexpr
+;; convert a temperature event to a jsexpr
+(define (maybe-reading->jsexpr reading)
+  (cond [(integer? reading) reading]
+        [else "no events"]))
 
-
-(define-runtime-path here ".")
-
-;; NB: this table can't be temporary--if it is, we can't refer to it twice
-;; in the same query.
-#;(define test-table-sql-stmt
-  #<<|
-CREATE TABLE `test_sensorevents` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `device` varchar(64) NOT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `reading` bigint(20) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `device` (`device`),
-  INDEX (`timestamp`) USING BTREE,
-  CONSTRAINT `temp_sensorevents_ibfk_11234` FOREIGN KEY (`device`) REFERENCES `devices` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-|
-  )
-
-;; create temporary tables for testing
-(define (reset-database-test-tables!)
-  (with-handlers ([exn:fail?
-                  (lambda (exn)
-                    (fprintf (current-error-port)
-                             "drop table failed. Proceeding...\n"))])
-    (query-exec conn "DROP TABLE test_sensorevents;"))
-  (query-exec conn test-table-sql-stmt))
-
-
-;; type stuff: convert a vector of values to an SensorEvent
-(: row->event ((Vectorof Any) -> SensorEvent))
-(define (row->event row)
-  (match row
-    [(vector (? exact-nonnegative-integer? event-id)
-             (? ID? id)
-             (? sql-timestamp? timestamp)
-             (? exact-integer? reading))
-     (SensorEvent id (timestamp->date timestamp) reading)]
-    [other
-     (raise-argument-error 'row->event
-                           "vector containing nat, string, string, integer"
-                           0
-                           row)]))
+#;(
 
 (: ensure-nat (Any -> Natural))
 (define (ensure-nat val)
@@ -185,7 +265,6 @@ CREATE TABLE `test_sensorevents` (
                'ensure-nat
                "exact nonnegative integer"
                0 val)]))
-
 
 
 ;; return all sensor statuses (from all times, one sensor)
@@ -226,28 +305,7 @@ CREATE TABLE `test_sensorevents` (
     (date->timestamp start)
     (date->timestamp end))))
 
-;; return the latest sensor status from one sensor.
-;; choose arbitrarily in case of tie.
-(: sensor-latest-event (String -> (U False SensorEvent)))
-(define (sensor-latest-event id)
-  (unless (ID? id)
-    (raise-argument-error 'sensor-latest-event
-                          "known device ID"
-                          0 id))
-  (define db-hits
-    (query-rows 
-     conn 
-     (string-append
-      "SELECT * FROM "(event-table)" WHERE DEVICE=? " 
-      "ORDER BY id DESC "
-      "LIMIT 1;")
-     id))
-  (match db-hits
-    [(list) #f]
-    [(list only-hit) (row->event only-hit)]
-    [(cons first-hit others)
-     (error 'sensor-latest-event 
-            "internal error: limit 1 query returned >1 result")]))
+
 
 
 ;; return the list of devices
@@ -260,33 +318,13 @@ CREATE TABLE `test_sensorevents` (
       "SELECT name,description FROM devices;")))
   (map device-row->jsexpr db-hits))
 
-;;;;;;
-;;
-;; JSON
-;;
-;;;;;;
 
-;; convert an Event to a jsexpr
-;; convert a temperature event to a jsexpr
-(: maybe-event->jsexpr ((U SensorEvent False) -> (U (HashTable Symbol Any) String)))
-(define (maybe-event->jsexpr event)
-  (cond [(SensorEvent? event)
-         (event->jsexpr event)]
-        [else "no events"]))
 
 ;; convert a list of events to a jsexpr
 ;; convert a temperature event to a jsexpr
 (: events->jsexpr ((Listof SensorEvent) -> (Listof (HashTable Symbol Any))))
 (define (events->jsexpr events)
   (map event->jsexpr events))
-
-;; convert an Event to a jsexpr
-(: event->jsexpr (SensorEvent -> (HashTable Symbol Any)))
-(define (event->jsexpr event)
-  (make-immutable-hash
-   (list (cons 'device-id (SensorEvent-device event))
-         (cons 'timestamp (date->seconds (SensorEvent-timestamp event)))
-         (cons 'status (SensorEvent-reading event)))))
 
 ;; convert a list of events to a jsexpr
 ;; convert a temperature event to a jsexpr
