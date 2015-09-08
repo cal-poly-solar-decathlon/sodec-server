@@ -6,9 +6,10 @@
          json
          racket/date
          racket/contract
-         "data-model.rkt"
-         "ids.rkt"
+         "data-model-influx.rkt"
+         #;"ids.rkt"
          "secret.rkt"
+         "id-to-measurement-and-device.rkt"
          xml)
 
 (provide start
@@ -89,7 +90,7 @@
 
 ;; handle a timestamp request
 (define (handle-timestamp-request)
-  (hash 'timestamp (date->seconds (current-timestamp))))
+  (hash 'timestamp (current-timestamp)))
 
 ;; handle a device list request
 ;; removed for now...
@@ -101,8 +102,15 @@
   (match query
     [(list-no-order (cons 'measurement (? string? measurement))
                     (cons 'device (? string? device)))
-     (response/json
-      (maybe-event->jsexpr (sensor-latest-event measurement device)))]
+     (with-handlers ([(lambda (exn)
+                        (regexp-match #px"expected: " (exn-message exn)))
+                      (lambda (exn)
+                        (fail-response
+                         404
+                         #"bad arguments"
+                         (exn-message exn)))])
+       (response/json
+        (maybe-reading->jsexpr (sensor-latest-reading measurement device))))]
     [else
      (404-response
       #"wrong query fields"
@@ -182,78 +190,10 @@
     [(list-no-order (cons 'measurement (? string? measurement))
                     (cons 'device (? string? device)))
      (handle-new-reading/md measurement device headers post-data)]
-    [(list (cons 'device (? ID? id)))
+    [(list (cons 'device (? string? id)))
      ;; HANDLING FOR LEGACY DEVICE ID SCHEME:
-     (define-values (measurement device) (unfold-device-id id))
-     (with-handlers ([(lambda (exn)
-                        (and (exn:fail? exn)
-                             (regexp-match #px"bytes->jsexpr" (exn-message exn))))
-                      (lambda (exn)
-                        (fail-response
-                         400
-                         #"bad JSON in POST"
-                         (format "expected POST bytes parseable as JSON, got: ~e"
-                                 post-data)))])
-       (match
-           (ormap (λ (h) (and (equal? (header-field h) #"Content-Type")
-                              (header-value h)))
-                  headers)
-         [#"application/json"
-          (define jsexpr (bytes->jsexpr post-data))
-          (match jsexpr
-            [(hash-table ('status (? integer? reading))
-                         ('secret (? string? secret)))
-             (cond [(string=? secret SEKRIT)
-                    (record-sensor-status! id (inexact->exact reading))
-                    (response/json "okay")]
-                   [else 
-                    (fail-response
-                     403
-                     #"wrong secret"
-                     "request didn't come with the right secret")])]
-            [else 
-             (fail-response
-              400
-              #"wrong JSON in POST"
-              (format "expected JSON data matching spec, got: ~e"
-                      jsexpr))])]
-         [#"application/x-www-form-urlencoded"
-          (match (form-urlencoded->alist (bytes->string/utf-8 post-data))
-            [(list-no-order
-              (cons 'status (? string? (regexp #px"^(-)?[[:digit:]]+$"
-                                               (list reading dc))))
-              (cons 'secret (? string? secret)))
-             (cond [(string=? secret SEKRIT)
-                    (record-sensor-status! id (inexact->exact
-                                               (string->number reading)))
-                    (response/json "okay")]
-                   [else 
-                    (fail-response
-                     403
-                     #"wrong secret"
-                     "request didn't come with the right secret")])]
-            [other (fail-response
-                    400
-                    #"wrong fields"
-                    (format
-                     "expected well-formatted post bytes, got: ~e"
-                     post-data))])]
-         [(? bytes? otherbytes)
-          (fail-response
-           400
-           #"unknown content type"
-           (format "expected Content-Type: application/json or application/x-www-form-urlencoded, got: ~a"
-                   otherbytes))]
-         [#f
-          (fail-response
-           400
-           #"no content-type specified"
-           (format "expected request with Content-Type header"))])
-       )]
-    [(list (cons 'device bad-device))
-     (404-response
-      #"unknown device name"
-      (format "device ~v unknown" bad-device))]
+     (define-values (measurement device) (parse-device-name id))
+     (handle-new-reading/md measurement device headers post-data)]
     [other
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...
@@ -261,6 +201,76 @@
       #"wrong query fields"
       (format "expected a query with fields matching spec, got: ~e"
               query))]))
+
+(define (handle-new-reading/md measurement device headers post-data)
+  (with-handlers ([(lambda (exn)
+                     (and (exn:fail? exn)
+                          (regexp-match #px"bytes->jsexpr" (exn-message exn))))
+                   (lambda (exn)
+                     (fail-response
+                      400
+                      #"bad JSON in POST"
+                      (format "expected POST bytes parseable as JSON, got: ~e"
+                              post-data)))])
+    (match
+        (ormap (λ (h) (and (equal? (header-field h) #"Content-Type")
+                           (header-value h)))
+               headers)
+      [#"application/json"
+       (define jsexpr (bytes->jsexpr post-data))
+       (match jsexpr
+         [(hash-table ('status (? integer? reading))
+                      ('secret (? string? secret)))
+          (handle-new-reading/mdss measurement device reading secret)]
+         [else 
+          (fail-response
+           400
+           #"wrong JSON in POST"
+           (format "expected JSON data matching spec, got: ~e"
+                   jsexpr))])]
+      [#"application/x-www-form-urlencoded"
+       (match (form-urlencoded->alist (bytes->string/utf-8 post-data))
+         [(list-no-order
+           (cons 'status (? string? (regexp #px"^(-)?[[:digit:]]+$"
+                                            (list reading dc))))
+           (cons 'secret (? string? secret)))
+          (handle-new-reading/mdss measurement device (string->number reading) secret)]
+         [other (fail-response
+                 400
+                 #"wrong fields"
+                 (format
+                  "expected well-formatted post bytes, got: ~e"
+                  post-data))])]
+      [(? bytes? otherbytes)
+       (fail-response
+        400
+        #"unknown content type"
+        (format "expected Content-Type: application/json or application/x-www-form-urlencoded, got: ~a"
+                otherbytes))]
+      [#f
+       (fail-response
+        400
+        #"no content-type specified"
+        (format "expected request with Content-Type header"))])
+    ))
+
+;; given a measurement, a device, a reading, and a secret, record the reading
+(define (handle-new-reading/mdss measurement device reading secret)
+  (cond [(string=? secret SEKRIT)
+         (with-handlers ([(lambda (exn)
+                            (regexp-match #px"expected: " (exn-message exn)))
+                          (lambda (exn)
+                            (fail-response
+                             404
+                             #"bad arguments"
+                             (exn-message exn)))])
+           (record-sensor-status! measurement device (inexact->exact reading))
+           (response/json "okay"))]
+        [else 
+         (fail-response
+          403
+          #"wrong secret"
+          "request didn't come with the right secret")]))
 
 (define NUM-REGEXP #px"^[[:digit:]]+$")
 

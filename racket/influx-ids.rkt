@@ -9,7 +9,8 @@
          kitchen
          outside
          bathroom
-         testing_blackhole)))
+         testing_blackhole
+         testing_empty)))
 
 (define measurement-devices
   `(("temperature"

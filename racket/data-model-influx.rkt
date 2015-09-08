@@ -14,20 +14,22 @@
          "influx-ids.rkt"
          "testing-param.rkt")
 
-(provide #;current-timestamp
+(provide 
          #;devices-list
          #;sensor-events
          
          #;sensor-events-in-range
          (contract-out
           [sensor-latest-reading
-           (-> string? string? (or/c false? integer?))]
+           (-> string? string? (or/c false? exact-integer?))]
           [count-sensor-events-in-range
-           (-> string? string? integer? integer? integer?)]
+           (-> string? string? integer? integer? exact-integer?)]
           [record-sensor-status!
-           (-> string? string? integer? void?)])
-         (struct-out sensor-event)
-         maybe-reading->jsexpr
+           (-> string? string? integer? void?)]
+          [maybe-reading->jsexpr
+           (-> (or/c false? integer?) jsexpr?)]
+          [current-timestamp
+           (-> exact-integer?)])
          #;events->jsexpr
          #;events->jsexpr/short
          testing?
@@ -35,12 +37,12 @@
 
 (define (false? x) (eq? x #false))
 
-;; represents a sensor event
-(struct sensor-event (device timestamp reading) #:transparent)
-#;(struct SensorEvent ([device : ID]
-                     [timestamp : date]
-                     [reading : Integer])
-  #:transparent)
+
+
+;; return the current time
+(define (current-timestamp)
+  (current-seconds))
+
 
 (define TESTING-DB "sodec_test")
 (define REGULAR-DB "sodec")
@@ -305,21 +307,6 @@
     (date->timestamp start)
     (date->timestamp end))))
 
-
-
-
-;; return the list of devices
-(: devices-list (-> (Listof (HashTable Symbol String))))
-(define (devices-list)
-  (define db-hits
-    (query-rows
-     conn 
-     (string-append
-      "SELECT name,description FROM devices;")))
-  (map device-row->jsexpr db-hits))
-
-
-
 ;; convert a list of events to a jsexpr
 ;; convert a temperature event to a jsexpr
 (: events->jsexpr ((Listof SensorEvent) -> (Listof (HashTable Symbol Any))))
@@ -367,14 +354,6 @@
 ;;
 ;;;;;
 
-;; get the current timestamp from the mysql server
-(: current-timestamp (-> date))
-(define (current-timestamp)
-  (define server-timestamp 
-    (query-value conn "SELECT CURRENT_TIMESTAMP;"))
-  (cond [(sql-timestamp? server-timestamp) (timestamp->date server-timestamp)]
-        [else (error 'get-timestamp
-                     "expected string from server, got: ~v\n" server-timestamp)]))
 
 ;; convert a mysql timestamp string to a racket date
 (: timestamp->date (sql-timestamp -> date))

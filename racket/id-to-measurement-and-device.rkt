@@ -6,7 +6,9 @@
          (only-in racket/list add-between))
 
 (provide (contract-out (parse-device-name
-                        [->* (string?) (string? string?)])))
+                        [->* (string?) (string? string?)])
+                       (id-lookup-table
+                        [hash/c string? (list/c string? string?)])))
 
 (define measurements
   '(temperature humidity electricity_used
@@ -22,6 +24,17 @@
     (bath bathroom)
     (testing-blackhole testing_blackhole)))
 
+(define id-lookup-table
+  (make-immutable-hash
+   (map (lambda (pr) (cons (car pr) (map symbol->string (cdr pr))))
+        (append
+         (for/list ([device temp-lookup])
+           (cons (string-append "s-temp-"(symbol->string (car device)))
+                 `(temperature ,(cadr device))))
+         (for/list ([device temp-lookup])
+           (cons (string-append "s-hum-" (symbol->string (car device)))
+                 `(humidity ,(cadr device))))))))
+
 ;; given an existing device name, return measurement and new device name
 (define (parse-device-name name)
   (match (regexp-split #px"-" name)
@@ -34,8 +47,7 @@
                    temp-lookup)
        [(list dc new-name)
         (list "temperature" (symbol->string new-name))]
-       [#f (error 'parse-device-name
-                  "no match in table for ~v" temp-name)])]
+       [#f (error 'parse-device-name "no match in table for ~v" temp-name)])]
     [(list #"s" #"hum" hum-name)
      (match (assoc (string->symbol
                     (bytes->string/utf-8
