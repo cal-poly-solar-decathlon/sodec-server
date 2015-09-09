@@ -86,7 +86,7 @@
                           (cadar (target-hosts))
                           (sodec-url "latest-event" `((device ,device))))
     ["no events" (error 'fetch-reading "no events present for device: ~e" device)]
-    [(? hash? ht) (hash-ref ht 'status)]
+    [(? exact-integer? n) n]
     [other (error 'fetch-reading "unexpected value from latest-event call: ~e" other)]))
 
 ;; setting unused lights, just once...
