@@ -161,6 +161,16 @@
 
                   "okay"))
 
+   ;; try with electrical ones
+   (test-case
+    "record-reading"
+    (check-equal? (remote-call/post
+                   HOST PORT
+                   (sodec-url "record-reading" '((device s-elec-used-air-handler-recep)))
+                   #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+
+                  "okay"))
+
    
 
    ;; test sending with urlencoding

@@ -93,7 +93,7 @@
 (with-output-to-file (build-path here "device-table.rktd")
   #:exists 'truncate
   (lambda ()
-    (pretty-display devices-table)))
+    (pretty-write devices-table)))
 
 ;; given an existing device name, return measurement and new device name
 (define (parse-device-name name)

@@ -9,7 +9,7 @@
          "data-model-influx.rkt"
          #;"ids.rkt"
          "secret.rkt"
-         "id-to-measurement-and-device.rkt"
+         "device-table.rkt"
          xml)
 
 (provide start
