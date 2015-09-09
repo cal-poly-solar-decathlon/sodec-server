@@ -166,6 +166,19 @@ UTC on server).
             }
 
 
+# List of Devices [/srv/list-old-device-ids]
+
+List the old-style device ids
+
+## List of Devices [GET]
+
++ Response 200 (application/json)
+
+    + Body
+            [{string},...]
+
+
+
 # Device Latest Event [/srv/latest-event{?measurement,device}]
 
 The last event of the given device.
@@ -173,6 +186,7 @@ The last event of the given device.
 + Parameters
     + measurement (string) ... the kind of measurement (temperature, etc.)
     + device (string) ... the id of the selected device
+
 
 ## Latest Event [GET]
 

@@ -13,13 +13,14 @@
 
 (define HOST 
   ;; test locally:
-  "localhost"
+  #;"localhost"
+  "129.65.138.226"
   #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
-  8080
-  #;3000)
+  #;8080
+  3000)
 
 (define (gett . args)
   (remote-call/get HOST PORT (apply sodec-url args)))
@@ -250,6 +251,7 @@
     ;; ignore the occupancy, temp, and ambient light devices:
     (define (ignored-name n)
       (or (regexp-match #px"^s-temp-testing-" n)
+          (regexp-match #px"^s-hum-testing-" n)
           (regexp-match #px"^s-amb-" n)
           (regexp-match #px"^s-occ-" n)
           (regexp-match #px"^c-light-" n)))
