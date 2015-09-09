@@ -25,11 +25,6 @@
 (test-suite
  "data model tests"
 (parameterize ([testing? #t])
-  
-  (define (se->dr e)
-    (cond [(eq? #f e) (error 'se->dr "test fail")]
-          [else (list (sensor-event-device e)
-                      (sensor-event-reading e))]))
 
   (check-exn #px"expected: legal measurement name"
              (lambda () (record-sensor-status! "shmoovy" "blaggo" 9)))

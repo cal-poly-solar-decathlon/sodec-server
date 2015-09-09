@@ -11,7 +11,7 @@
          racket/date
          racket/match
          net/url
-         "influx-ids.rkt"
+         "device-table.rkt"
          "testing-param.rkt")
 
 (provide 
@@ -58,10 +58,10 @@
 ;; return the latest sensor reading from one sensor.
 ;; choose arbitrarily in case of tie.
 (define (sensor-latest-reading measurement device)
-  (unless (member measurement MEASUREMENT-NAMES)
+  (unless (hash-has-key? measurement-device-table measurement)
     (raise-argument-error 'perform-write "legal measurement name"
                           0 measurement device))
-  (define devices (cadr (assoc measurement measurement-devices)))
+  (define devices (hash-ref measurement-device-table measurement))
   (unless (member device devices)
     (raise-argument-error 'perform-write "legal location for measurement"
                           1 measurement device))
@@ -186,15 +186,13 @@
            headers))
   (read-json port))
 
-(define MEASUREMENT-NAMES (map car measurement-devices))
-
 ;; given a measurement and a location/device and a reading, write them to
 ;; the database
 (define (record-sensor-status! measurement device reading)
-  (unless (member measurement MEASUREMENT-NAMES)
+  (unless (hash-has-key? measurement-device-table measurement)
     (raise-argument-error 'perform-write "legal measurement name"
                           0 measurement device reading))
-  (define devices (cadr (assoc measurement measurement-devices)))
+  (define devices (hash-ref measurement-device-table measurement))
   (unless (member device devices)
     (raise-argument-error 'perform-write "legal location for measurement"
                           1 measurement device reading))
