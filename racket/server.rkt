@@ -103,6 +103,7 @@
   (match query
     [(list-no-order (cons 'measurement (? string? measurement))
                     (cons 'device (? string? device)))
+     ;; intercept contract errors, turn them into 404s:
      (with-handlers ([(lambda (exn)
                         (regexp-match #px"expected: " (exn-message exn)))
                       (lambda (exn)
@@ -112,6 +113,18 @@
                          (exn-message exn)))])
        (response/json
         (maybe-reading->jsexpr (sensor-latest-reading measurement device))))]
+    ;; LEGACY STYLE ID
+    [(list-no-order (cons 'device (? string? id)))
+     (match (hash-ref id-lookup-table id #f)
+       [(list measurement device)
+        (response/json
+         (maybe-reading->jsexpr (sensor-latest-reading measurement device)))]
+       [other
+        (fail-response
+         404
+         #"bad id"
+         (format "can't find id ~e in lookup table"
+                 id))])]
     [else
      (404-response
       #"wrong query fields"

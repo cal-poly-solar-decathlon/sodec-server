@@ -86,6 +86,10 @@
                                        (device "testing_empty")))
                 "no events")
 
+   (test-not-exn
+    "old-style-device" 
+    (lambda () (gett "latest-event" '((device "s-elec-used-laundry")))))
+
 
    ;; think this endpoint may be going away...
    #;(test-case
@@ -170,7 +174,6 @@
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
 
                   "okay"))
-
    
 
    ;; test sending with urlencoding
