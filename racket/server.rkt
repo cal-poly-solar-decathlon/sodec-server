@@ -7,7 +7,6 @@
          racket/date
          racket/contract
          "data-model-influx.rkt"
-         #;"ids.rkt"
          "secret.rkt"
          "device-table.rkt"
          xml)
@@ -55,9 +54,8 @@
            (handle-device-count-events-in-range-request
             (url-query uri))]
           ;; a list of all devices
-          ;; removed for now
-          #;[(list (struct path/param ("srv" (list)))
-                 (struct path/param ("list-devices" (list))))
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("list-old-device-ids" (list))))
            (handle-device-list-request)]
           ;; timestamp of the server
           [(list (struct path/param ("srv" (list)))
@@ -95,8 +93,8 @@
 
 ;; handle a device list request
 ;; removed for now...
-#;(define (handle-device-list-request)
-  (response/json (devices-list)))
+(define (handle-device-list-request)
+  (response/json all-ids))
 
 ;; handle a device reading request
 (define (handle-device-latest-event-request query)

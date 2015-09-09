@@ -6,6 +6,7 @@
          rackunit/text-ui
          racket/date
          json
+         "../device-table.rkt"
          "../web-funs.rkt")
 
 (define-logger sodec)
@@ -62,6 +63,14 @@
     "timestamp"
     (check-match (gett "timestamp" #f)
                  (hash-table ('timestamp (? time-near-now? n)))))
+
+     (test-case
+    "list-devices"
+    ;; LIST DEVICES
+    (check-equal?
+     (gett "list-old-device-ids" #f)
+     all-ids))
+
 
       ;; bogus endpoint
    (test-case
@@ -223,70 +232,53 @@
 
 ;; this test suite ensures that the server is receiving
 ;; data in the expected way from downstream sensors
-#;(run-tests
-(test-suite
- "racket server recording data"
- (let ()
-   
-   (define ((port-containing str) port)
-     (regexp-match (regexp-quote str) port))
-
-
-   (define listed-devices
-     (map (lambda (ht)
-            (list (hash-ref ht 'device)
-                  (hash-ref ht 'description)))
-          (gett "list-devices" #f)))
-
-
-   (test-case
-    "latest-living-room-event"
-   (check-match
-    (gett "latest-event" '((device s-temp-lr)))
-    (hash-table ('timestamp (? number? n))
-                  ('device-id "s-temp-lr")
-                  ('status (? number? s)))))
-
-   ;; ignore the occupancy, temp, and ambient light devices:
-   (define (ignored-name n)
-     (or (regexp-match #px"^s-temp-testing-" n)
-         (regexp-match #px"^s-amb-" n)
-         (regexp-match #px"^s-occ-" n)
-         (regexp-match #px"^c-light-" n)))
-   
-   (for ([device (in-list device-strs)]
-         #:when (not (ignored-name device)))
-     (test-case
-      (~a "latest-event-"device)
-      (check-match
-       (gett "latest-event" `((device ,device)))
-       (hash-table ('timestamp (? number? n))
-                   ('device-id device)
-                   ('status (? number? s))))))
-
-   (test-case
-    "bed events in last hour not empty"
-    (check-match (bed-events-in-last-hour)
-                 (hash-table ('baseTimestamp (? number? _1))
-                             ('baseStatus (? values _2))
-                             ('seriesData (? values _3)))))
-
-   
-   (test-case
-    "count-events-in-range between 10 and 722 lr readings in last hour"
+(run-tests
+ (test-suite
+  "racket server recording data"
+  (let ()
     
-    (define ((number-in-range a b) n)
-      (and (<= a n) (< n b)))
+    (define ((port-containing str) port)
+      (regexp-match (regexp-quote str) port))
     
-    (check-pred (number-in-range 10 722)
-                (let ([ts (get-timestamp)])
-                  (gett
-                   "count-events-in-range" `((device s-temp-lr)
-                                             (start ,(- ts 3600))
-                                             (end ,ts))))))
+    (test-case
+     "latest-living-room-event"
+     (check-match
+      (gett "latest-event" '((device s-temp-lr)))
+      (? exact-integer? n)))
 
-   
-)))
+    
+    ;; ignore the occupancy, temp, and ambient light devices:
+    (define (ignored-name n)
+      (or (regexp-match #px"^s-temp-testing-" n)
+          (regexp-match #px"^s-amb-" n)
+          (regexp-match #px"^s-occ-" n)
+          (regexp-match #px"^c-light-" n)))
+    
+    (for ([device (in-list all-ids)]
+          #:when (not (ignored-name device)))
+      (test-case
+       (~a "latest-event-"device)
+       (check-match
+        (gett "latest-event" `((device ,device)))
+        (? exact-integer? n))))
+    
+    (test-case
+     "count-events-in-range between 10 and 722 lr readings in last hour"
+     
+     (define ((number-in-range a b) n)
+       (and (<= a n) (< n b)))
+     
+     (check-pred (number-in-range 10 722)
+                 (let ([ts (get-timestamp)])
+                   (gett
+                    "count-events-in-range"
+                    `((measurement "humidity")
+                      (device "living_room")
+                      (start ,(- ts 3600))
+                      (end ,ts))))))
+    
+    
+    )))
 
 #;((define ts (get-timestamp))
 
