@@ -10,7 +10,8 @@
 
 
 ;; the lights:
-(run-alice-barry-lights)
+;; lights ... aren't happening.
+;(run-alice-barry-lights)
 
 ;; everything else
 (run-mock-temp-hum-elec)
