@@ -137,9 +137,7 @@
                  (list (regexp #px#"^HTTP/1.1 404")
                        _1
                        (? (port-containing "uhnoth") _3))))
-   
-   #;(
-   
+
         
 
 
@@ -160,10 +158,12 @@
                    HOST PORT
                    (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+
                   "okay"))
 
-   ;; test sending with urlencoding
+   
 
+   ;; test sending with urlencoding
    (test-case
     "record-reading with form-urlencoded"
     (check-equal?
@@ -183,7 +183,7 @@
       #"status=-261&secret=$a8Es#crB469"
       #:content-type #"application/x-www-form-urlencoded")
      "okay"))
-
+   
    (test-case
     "record-reading with form-urlencoded bad number"
     (check-match
@@ -204,7 +204,7 @@
       #"status=21&=secret=$a8Es#crB469"
       #:content-type #"application/x-www-form-urlencoded")
      (list (regexp #"^HTTP/1.1 400 ")
-           _2 _3))))
+           _2 _3)))
    
 )))
 

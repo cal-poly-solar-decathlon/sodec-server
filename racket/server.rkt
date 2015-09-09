@@ -193,8 +193,15 @@
      (handle-new-reading/md measurement device headers post-data)]
     [(list (cons 'device (? string? id)))
      ;; HANDLING FOR LEGACY DEVICE ID SCHEME:
-     (define-values (measurement device) (parse-device-name id))
-     (handle-new-reading/md measurement device headers post-data)]
+     (match (hash-ref id-lookup-table id #f)
+       [(list measurement device)
+        (handle-new-reading/md measurement device headers post-data)]
+       [other
+        (fail-response
+         404
+         #"bad id"
+         (format "can't find id ~e in lookup table"
+                 id))])]
     [other
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...
