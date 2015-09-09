@@ -29,5 +29,8 @@
   (check-equal? (hash-ref id-lookup-table "s-temp-lr")
                 '("temperature" "living_room"))
 
+  (check-match (hash-ref measurement-device-table "temperature")
+               (list-no-order "testing_empty" (? string? _) ...))
+
   (check-equal? (hash-ref id-lookup-table "s-elec-used-air-handler-recep")
                 '("electricity_used" "air_handler")))

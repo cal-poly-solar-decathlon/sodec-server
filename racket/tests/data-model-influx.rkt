@@ -26,12 +26,15 @@
  "data model tests"
 (parameterize ([testing? #t])
 
-  (check-exn #px"expected: legal measurement name"
-             (lambda () (record-sensor-status! "shmoovy" "blaggo" 9)))
-  (check-exn #px"expected: legal location for measurement"
-             (lambda () (record-sensor-status! "electricity_used" "blaggo" 9)))
+  (test-case
+   "record-sensor-status illegal names"
+   (check-exn #px"expected: legal measurement name"
+              (lambda () (record-sensor-status! "shmoovy" "blaggo" 9)))
+   (check-exn #px"expected: legal location for measurement"
+              (lambda () (record-sensor-status! "electricity_used" "blaggo" 9))))
 
-  (check-not-exn
+  (test-not-exn
+   "record-sensor-status"
    (lambda () (record-sensor-status! "temperature" "living_room" 322)))
   
   ;; this is the latest:
