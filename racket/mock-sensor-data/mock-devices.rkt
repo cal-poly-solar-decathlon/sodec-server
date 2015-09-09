@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require "device-readings.rkt"
-         "../device-descriptions.rkt")
+         "../device-table.rkt")
 
 (provide run-mock-temp-hum-elec)
 
@@ -89,21 +89,21 @@
 (define temperature-ids
   ;; all but the testing...
   (remove*
-   (some-devices #px"^s-temp-testing-")
-   (some-devices #px"^s-temp-")))
+   (some-ids #px"^s-temp-testing-")
+   (some-ids #px"^s-temp-")))
 
 (define humidity-ids
   ;; turning off the kitchen for now...
-  (some-devices #px"^s-hum-"))
+  (some-ids #px"^s-hum-"))
 
 ;; generate a reading every so many seconds
 (define TEMP-READING-SECONDS 60)
 
 (define electrical-use-ids
-  (some-devices #px"s-elec-used-"))
+  (some-ids #px"s-elec-used-"))
 
 (define electrical-generation-ids
-  (some-devices #px"s-elec-gen-"))
+  (some-ids #px"s-elec-gen-"))
 
 ;; generate a reading every so many seconds
 (define ELEC-READING-SECONDS 15)

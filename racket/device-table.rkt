@@ -5,11 +5,23 @@
 (define-runtime-path here ".")
 
 (provide id-lookup-table
-         measurement-device-table)
+         measurement-device-table
+         all-ids
+         some-ids)
 
 (define table-data
   (with-input-from-file (build-path here "device-table.rktd")
     read))
+
+;; all of the old-style ids
+(define all-ids
+  (map car table-data))
+
+;; all of the devices that match the given regexp
+(define (some-ids regexp)
+  (for/list ([device-name (in-list all-ids)]
+             #:when (regexp-match regexp device-name))
+    device-name))
 
 ;; this table maps old ids to measurement/device lists
 (define id-lookup-table
