@@ -15,4 +15,7 @@
   (require rackunit)
 
   (check-equal? (hash-ref id-lookup-table "s-temp-lr")
-                '("temperature" "living_room")))
+                '("temperature" "living_room"))
+
+  (check-equal? (hash-ref id-lookup-table "s-elec-used-air-handler-recep")
+                '("electricity_used" "air_handler")))

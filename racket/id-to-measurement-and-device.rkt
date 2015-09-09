@@ -24,7 +24,8 @@
     (kit kitchen)
     (out outside)
     (bath bathroom)
-    (testing-blackhole testing_blackhole)))
+    (testing-blackhole testing_blackhole)
+    (testing-empty testing_empty)))
 
 (define temp-hum-table
   (map (lambda (pr) (cons (car pr) (map symbol->string (cdr pr))))
@@ -76,7 +77,7 @@
               (substring text 0 (- (string-length text) 8))]
              [else text]))
      (define measurement
-       (cond [(string=? (substring id 0 11) "s-elec-used-") "electricity_used"]
+       (cond [(string=? (substring id 0 12) "s-elec-used-") "electricity_used"]
              [else "electricity_generated"]))
      (cons
       id
