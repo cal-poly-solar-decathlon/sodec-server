@@ -126,6 +126,7 @@
     [(list (? series-hash? series))
      (match (assoc "count" (single-entry-series->alist series))
        [(list "count" (? integer? n)) n]
+       [(list "count" 'null) 0]
        [other (error 'count-sensor-events-in-range
                      "inferred constraint failed, expected count, got ~e"
                      other)])]
