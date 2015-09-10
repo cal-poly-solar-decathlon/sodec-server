@@ -1,28 +1,14 @@
-> REST implementation of our application server.
+This repository contains ... well, it actually contains two complete servers.
+One is written in JavaScript. One is written in Racket. We're currently using
+the one written in Racket. Because Racket is more awesome.
 
-## Pre-requisites
+Also, this server depends on InfluxDB, which has some rough edges but seems
+to be vastly more responsive than MySQL for the kinds of queries that we want
+to be running.
 
-Make sure that you've installed Node.js and NPM intalled! This is the only major requirement
+Big Picture:
 
-## To run:
-
-Install project dependencies with the following command:
-npm install
-
-To run the server:
-npm start
-
-The server will be started on your local machine, on port 3000.
-To acces from a web-browser, use the folling url: localhost:3000
-
-
-## Current Routes:
-/s-temp-lr - Living room temperature, currently a random value
-
-/s-occ-lr - Living room occupancy, currently random
-
-/power - Power generation value, currently random
-
-/arduino - Test route for Arduino to POST data to.
-
-
+This server runs on a Raspberry Pi. It listens on port 3000. POST requests are
+issued by the temperature and humidity sensors to record new readings. GET
+requests are issued by the web page in order to gather and display information.
+The API is documented in apiary.apib.
