@@ -5,30 +5,28 @@
 (define-runtime-path here ".")
 
 (provide id-lookup-table
-         measurement-device-table
-         all-ids
-         some-ids)
+         MEASUREMENT-NAMES
+         measurement-device-table)
+
+(define MEASUREMENT-NAMES
+  '("temperature"
+    "humidity"
+    "electric_power"
+    ;; add others as necessary...
+    ))
 
 (define table-data
   (with-input-from-file (build-path here "device-table.rktd")
     read))
 
-;; all of the old-style ids
-(define all-ids
-  (map car table-data))
-
-;; all of the devices that match the given regexp
-(define (some-ids regexp)
-  (for/list ([device-name (in-list all-ids)]
-             #:when (regexp-match regexp device-name))
-    device-name))
-
 ;; this table maps old ids to measurement/device lists
+;; NB: TEMPERATURE AND HUMIDITY ONLY
 (define id-lookup-table
   (make-immutable-hash
    table-data))
 
 ;; this table maps measurements to the legal devices
+;; NB: TEMPERATURE AND HUMIDITY ONLY
 (define measurement-device-table
   (for/fold ([ht (hash)])
             ([pr (map cdr table-data)])

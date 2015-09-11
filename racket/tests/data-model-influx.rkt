@@ -28,10 +28,10 @@
 
   (test-case
    "record-sensor-status illegal names"
-   (check-exn #px"expected: legal measurement name"
+   (check-exn #px"expected: measurement?"
               (lambda () (record-sensor-status! "shmoovy" "blaggo" 9)))
-   (check-exn #px"expected: legal location for measurement"
-              (lambda () (record-sensor-status! "electricity_used" "blaggo" 9))))
+   (check-exn #px"expected: device?"
+              (lambda () (record-sensor-status! "electric_power" "bla ggo" 9))))
 
   (test-not-exn
    "record-sensor-status"
@@ -68,6 +68,12 @@
    (map se->dr (sensor-events "s-temp-bed"))
    (list (list "s-temp-bed" 229)
          (list "s-temp-bed" 228)))
+
+  ;; you can record random electric devices...
+  (check-not-exn
+   (lambda ()
+     (record-sensor-status! "electric_power" "brungy_wungy"
+                             11982)))
 
     #;(
   

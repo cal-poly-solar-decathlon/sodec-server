@@ -66,12 +66,8 @@
                  (hash-table ('timestamp (? time-near-now? n)))))
 
    ;; this is kind of meaningless for now...
-     (test-case
-    "list-devices"
-    ;; LIST DEVICES
-    (check-equal?
-     (gett "list-old-device-ids" #f)
-     all-ids))
+   ;; ... need a new endpoint to list all measurements & all devices
+
 
 
    ;; bogus endpoint
@@ -97,9 +93,6 @@
                                        (device "testing_empty")))
                 "no events")
 
-   (test-not-exn
-    "old-style-device" 
-    (lambda () (gett "latest-event" '((device "s-elec-used-laundry")))))
 
    ;; new style of electric devices... anything goes!
    (test-case
@@ -107,7 +100,7 @@
     (check-match
      (remote-call/get/core HOST PORT (sodec-url "latest-event" '((measurement "electric_power")
                                                                  (device "device with spaces"))))
-     (list (regexp #px"^HTTP/1.1 400")
+     (list (regexp #px"^HTTP/1.1 404")
            _1
            (? (port-containing "device with spaces") _3))))
 
@@ -198,8 +191,9 @@
     "record-reading"
     (check-equal? (remote-call/post
                    HOST PORT
-                   (sodec-url "record-reading" '((device s-elec-used-air-handler-recep)))
-                   #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+                   (sodec-url "record-reading" '((measurement "electric_power")
+                                                 (device "krazbo_magnipod")))
+                   #"{\"status\":7111387,\"secret\":\"$a8Es#crB469\"}")
 
                   "okay"))
    
@@ -273,8 +267,9 @@
           (regexp-match #px"^s-amb-" n)
           (regexp-match #px"^s-occ-" n)
           (regexp-match #px"^c-light-" n)))
-    
-    (for ([device (in-list all-ids)]
+
+    ;; need a new pair of endpoints here.
+    #;(for ([device (in-list all-ids)]
           #:when (not (ignored-name device)))
       (test-case
        (~a "latest-event-"device)

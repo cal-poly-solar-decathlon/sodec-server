@@ -54,7 +54,7 @@
            (handle-device-count-events-in-range-request
             (url-query uri))]
           ;; a list of all devices
-          [(list (struct path/param ("srv" (list)))
+          #;[(list (struct path/param ("srv" (list)))
                  (struct path/param ("list-old-device-ids" (list))))
            (handle-device-list-request)]
           ;; timestamp of the server
@@ -93,7 +93,7 @@
 
 ;; handle a device list request
 ;; removed for now...
-(define (handle-device-list-request)
+#;(define (handle-device-list-request)
   (response/json all-ids))
 
 ;; handle a device reading request
@@ -111,18 +111,6 @@
                          (exn-message exn)))])
        (response/json
         (maybe-reading->jsexpr (sensor-latest-reading measurement device))))]
-    ;; LEGACY STYLE ID
-    [(list-no-order (cons 'device (? string? id)))
-     (match (hash-ref id-lookup-table id #f)
-       [(list measurement device)
-        (response/json
-         (maybe-reading->jsexpr (sensor-latest-reading measurement device)))]
-       [other
-        (fail-response
-         404
-         #"bad id"
-         (format "can't find id ~e in lookup table"
-                 id))])]
     [else
      (404-response
       #"wrong query fields"

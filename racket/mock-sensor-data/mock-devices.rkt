@@ -11,13 +11,18 @@
 (define TEMP-ROUNDING (/ 1 TEMP-QUANTA))
 (define INITIAL-TEMPERATURE (* 20 TEMP-QUANTA))
 
+;; generate a reading every so many seconds
+(define ELEC-READING-SECONDS 15)
+(define TEMP-READING-SECONDS 60)
+
+
 ;; generate a mock sensor reading every 'interval' seconds,
 ;; using a given generator
-(define (run-mock-device id interval generator)
+(define (run-mock-device measurement id interval generator)
   (thread 
    (lambda ()
      (let loop ()
-       (thread (lambda () (send-reading! id (generator))))
+       (thread (lambda () (send-reading! measurement id (generator))))
        (sleep interval)
        (loop)))))
 
@@ -53,13 +58,12 @@
                    (random ELEC-USE-CEILING)))
       (unbox saved))))
 
-;; a really big device would use 1500 watts, which would
-;; be 1500 watt-hours per hour, or 1,500,000 mWh per hour,
-;; or 25,000 mWh per minute, or 6250 mWh per fifteen seconds.
-;; we're going to do a terrible approximation at first
-;; and just pick a random number from 1 to 5000.
-
-(define ELEC-USE-CEILING 5000)
+;; a really big device would use 1500 watts
+(define ELEC-USE-CEILING
+  (let* ([W 1500]
+         [Ws-per-s W]
+         [Ws-per-interval (* Ws-per-s ELEC-READING-SECONDS)])
+    (round Ws-per-interval)))
 
 ;; an electrical generator generator. only goes up:
 
@@ -71,14 +75,13 @@
                    (random ELEC-GEN-CEILING)))
       (unbox saved))))
 
-;; a big array could generate 5 kW, or 5e6 mWh per hour.
+;; a big array could generate 5 kW
 (define ELEC-GEN-CEILING
   (let* ([kW 5]
-         [mW (* kW 1000000)]
-         [mWh-per-h mW]
-         [mWh-per-m (/ mWh-per-h 60)]
-         [mWh-per-15s (/ mWh-per-m 4)])
-    (round mWh-per-15s)))
+         [W (* kW 1000)]
+         [Ws-per-s W]
+         [Ws-per-interval (* Ws-per-s ELEC-READING-SECONDS)])
+    (round Ws-per-interval)))
 
 ;; in tenths of a percent
 (define INITIAL-HUMIDITY 664)
@@ -86,46 +89,68 @@
 
 ;; the ids of the temperature sensors
 
-(define temperature-ids
-  ;; all but the testing...
-  (remove*
-   (some-ids #px"^s-temp-testing-")
-   (some-ids #px"^s-temp-")))
+(define temperature-devices
+  (filter (lambda (s)
+            (not (regexp-match #px"^testing_" s)))
+          (hash-ref measurement-device-table "temperature")))
 
-(define humidity-ids
-  ;; turning off the kitchen for now...
-  (some-ids #px"^s-hum-"))
+(define humidity-devices
+  (filter (lambda (s)
+            (not (regexp-match #px"^testing_" s)))
+          (hash-ref measurement-device-table "humidity")))
 
-;; generate a reading every so many seconds
-(define TEMP-READING-SECONDS 60)
+(define electric-use-devices
+  '("laundry"
+    "dishwasher"
+    "refrigerator"
+    "induction_stove"
+    "water_heater"
+    "kitchen_outlets_1"
+    "kitchen_outlets_2"
+    "living_room_outlets"
+    "dining_room_outlets_1"
+    "dining_room_outlets_2"
+    "bathroom_outlets"
+    "bedroom_outlets_1"
+    "bedroom_outlets_2"
+    "mechanical_room_outlets"
+    "entry_hall_outlets"
+    "exterior_outlets"
+    "greywater_pump"
+    "blackwater_pump"
+    "thermal_loop_pump"
+    "water_supply_pump"
+    "water_supply_booster_pump"
+    "vehicle_charging"
+    "heat_pump"
+    "air_handler"))
 
-(define electrical-use-ids
-  (some-ids #px"s-elec-used-"))
-
-(define electrical-generation-ids
-  (some-ids #px"s-elec-gen-"))
-
-;; generate a reading every so many seconds
-(define ELEC-READING-SECONDS 15)
+(define electric-generation-devices
+  '("main_solar_array"
+    "bifacial_solar_array"))
 
 (define (run-mock-temp-hum-elec)
   ;; start temperature threads:
-  (for ([id (in-list temperature-ids)])
-    (run-mock-device id TEMP-READING-SECONDS (make-temperature-generator)))
+  (for ([device (in-list temperature-devices)])
+    (run-mock-device "temperature" device TEMP-READING-SECONDS
+                     (make-temperature-generator)))
   
   ;; start humidity threads:
-  (for ([id (in-list humidity-ids)])
-    (run-mock-device id TEMP-READING-SECONDS (make-humidity-generator)))
-
+  (for ([device (in-list humidity-devices)])
+    (run-mock-device "humidity" device TEMP-READING-SECONDS
+                     (make-humidity-generator)))
+  
   ;; start electrical use threads:
-  (for ([id (in-list electrical-use-ids)])
-    (let ([init (fetch-reading id)])
-      (run-mock-device id ELEC-READING-SECONDS (make-electrical-use-generator init))))
-
+  (for ([device (in-list electric-use-devices)])
+    (let ([init (fetch-reading "electric_power" device)])
+      (run-mock-device "electric_power" device ELEC-READING-SECONDS
+                       (make-electrical-use-generator init))))
+  
   ;; start electrical generation threads
-  (for ([id (in-list electrical-generation-ids)])
-    (let ([init (fetch-reading id)])
-      (run-mock-device id ELEC-READING-SECONDS (make-electrical-generation-generator init)))))
+  (for ([device (in-list electric-generation-devices)])
+    (let ([init (fetch-reading "electric_power" device)])
+      (run-mock-device "electric_power" device ELEC-READING-SECONDS
+                       (make-electrical-generation-generator init)))))
 
 
 
