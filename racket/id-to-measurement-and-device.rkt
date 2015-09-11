@@ -37,7 +37,9 @@
            (cons (string-append "s-hum-" (symbol->string (car device)))
                  `(humidity ,(cadr device)))))))
 
-
+;; no more strict specification of electricity circuits; just rolling with what the
+;; egauge provides.
+#;(
 (define electricity-text
   "- `s-elec-used-laundry` (Laundry Circuit) : energy consumption for dryer/washer circuit
 - `s-elec-used-dishwasher` (Dishwasher Circuit) : energy consumption for dishwasher circuit
@@ -76,20 +78,16 @@
                         " Circuit")
               (substring text 0 (- (string-length text) 8))]
              [else text]))
-     (define measurement
-       (cond [(string=? (substring id 0 12) "s-elec-used-") "electricity_used"]
-             [else "electricity_generated"]))
+     (define measurement "electricity")
      (cons
       id
       (list measurement (regexp-replace* #px" " (string-downcase text2) "_")))]
     [#f (error 'process "failed on line: ~e" line)]))
 
 (define electricity-table
-  (map process electricity-lines))
+  (map process electricity-lines)))
 
-(define devices-table
-  (append temp-hum-table
-          electricity-table))
+(define devices-table temp-hum-table)
 
 (with-output-to-file (build-path here "device-table.rktd")
   #:exists 'truncate
@@ -130,10 +128,5 @@
                 (list "temperature" "living_room"))
   (check-equal? (parse-device-name #"s-temp-testing-blackhole")
                 (list "temperature" "testing_blackhole")))
-
-
-
-
-
 
 

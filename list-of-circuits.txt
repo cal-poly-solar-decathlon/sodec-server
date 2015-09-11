@@ -1,0 +1,21 @@
+ 1  Dryer/Washer                 2  Dishwasher
+ 3  Refrigerator                 4- Cooktop
+ 5- Solar Water Heater           6/
+ 7/                              8  Kitchen Receptacles 1
+ 9  Kitchen Receptacles 2       10  (??) Dining Receptacles (?? can't read)
+11  <spare>                     12  Dining Receptacles
+13  Bathroom Receptacles        14  Bedroom Receptacles 1
+15  Bedroom Receptacles 2       16  Mechanical Room Receptacles
+17  Entry Receptacles 1         18  Exterior Receptacles
+19  Grey Water Pump             20  Black Water Pump
+21  Thermal Loop Pump           22  Water Supply Pump
+23  Microwave                   24  Windows
+25  HRV (??)                    26  Water Supply Booster Pump
+27- A/C                         28- Air Handler Receptacles
+29/                             30/
+31  Lighting                    32  Lighting
+33  Fire Alarm                  34  <spare>
+35- PV Inverter                 36- PV Inverter
+37/                             38/
+39  <spare>                     40  Vehicle Charging Station
+41  Entry Receptacles 2         42  <spare>

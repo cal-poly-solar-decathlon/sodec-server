@@ -13,8 +13,8 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
-  "129.65.138.226"
+  "localhost"
+  #;"129.65.138.226"
   #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
@@ -65,6 +65,7 @@
     (check-match (gett "timestamp" #f)
                  (hash-table ('timestamp (? time-near-now? n)))))
 
+   ;; this is kind of meaningless for now...
      (test-case
     "list-devices"
     ;; LIST DEVICES
@@ -73,7 +74,7 @@
      all-ids))
 
 
-      ;; bogus endpoint
+   ;; bogus endpoint
    (test-case
     "404s"
     ;; simple 404:
@@ -99,6 +100,23 @@
    (test-not-exn
     "old-style-device" 
     (lambda () (gett "latest-event" '((device "s-elec-used-laundry")))))
+
+   ;; new style of electric devices... anything goes!
+   (test-case
+    "illegal electrical device name"
+    (check-match
+     (remote-call/get/core HOST PORT (sodec-url "latest-event" '((measurement "electric_power")
+                                                                 (device "device with spaces"))))
+     (list (regexp #px"^HTTP/1.1 400")
+           _1
+           (? (port-containing "device with spaces") _3))))
+
+   (test-equal?
+    "made-up device"
+    (gett "latest-event" '((measurement "electric_power")
+                           (device "bogus_device")))
+    "no events")
+   
 
 
    ;; think this endpoint may be going away...
@@ -265,17 +283,17 @@
         (? exact-integer? n))))
     
     (test-case
-     "count-events-in-range between 10 and 722 lr readings in last hour"
+     "count-events-in-range between 10 and 120 bedroom readings in last hour"
      
      (define ((number-in-range a b) n)
        (and (<= a n) (< n b)))
      
-     (check-pred (number-in-range 10 722)
+     (check-pred (number-in-range 10 120)
                  (let ([ts (get-timestamp)])
                    (gett
                     "count-events-in-range"
                     `((measurement "humidity")
-                      (device "living_room")
+                      (device "bedroom")
                       (start ,(- ts 3600))
                       (end ,ts))))))
     

@@ -44,5 +44,7 @@
   (check-match (hash-ref measurement-device-table "temperature")
                (list-no-order "testing_empty" (? string? _) ...))
 
-  (check-equal? (hash-ref id-lookup-table "s-elec-used-air-handler-recep")
+  ;; Electric Power no longer appears in the device table. It's
+  ;; just dynamic; whatever shows up, we stow it in the database.
+  #;(check-equal? (hash-ref id-lookup-table "s-elec-used-air-handler-recep")
                 '("electricity_used" "air_handler")))

@@ -1,6 +1,7 @@
 #lang racket
 
-(require net/url)
+(require net/url
+         sxml)
 
 (define HOST "129.65.138.226")
 (define PORT 9080)
@@ -20,4 +21,21 @@
    #f ;;fragment
    ))
 
-(http-sendrecv/url egauge-url)
+(define-values (status-line headers port)
+  (http-sendrecv/url egauge-url))
+
+(define egauge-status
+  (ssax:xml->sxml port '()))
+
+(define egauge-current-seconds
+  (match ((sxpath '(data ts)) egauge-status)
+    [(list (list 'ts ts-string)) (string->number ts-string)]))
+
+;; for some reason, this is huge. NTP updating on egauge is not working,
+;; not sure why.
+(define egauge-difference
+  (- (current-seconds) egauge-current-seconds))
+
+egauge-status
+
+((sxpath '(data r)) egauge-status)
