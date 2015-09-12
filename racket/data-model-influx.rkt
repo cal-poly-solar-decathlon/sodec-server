@@ -17,12 +17,17 @@
 (provide 
          #;devices-list
          (contract-out
+          [struct event ([timestamp exact-integer?]
+                         [reading exact-integer?])]
           [sensor-latest-reading
            (-> measurement? device? (or/c false? exact-integer?))]
+          [sensor-events-in-range
+           (-> measurement? device? exact-integer? exact-integer? (listof event?))]
           [count-sensor-events-in-range
            (-> measurement? device? exact-integer? exact-integer? 64-bit-int?)]
           [record-sensor-status!
-           (-> measurement? device? 64-bit-int? void?)]
+           (->* (measurement? device? 64-bit-int?)
+                (#:timestamp exact-integer?) void?)]
           [maybe-reading->jsexpr
            (-> (or/c false? integer?) jsexpr?)]
           [current-timestamp
@@ -50,6 +55,7 @@
 (define MAX64INT #x7fffffffffffffff)
 (define MIN64INT (- #x8000000000000000))
 
+(struct event (timestamp reading) #:transparent)
 
 ;; return the current time
 (define (current-timestamp)
@@ -92,6 +98,39 @@
                   "inferred constraint failed, expected exactly one series in ~e"
                   other)]))
 
+;; return sensor statuses in some time range (one sensor),
+;; times in seconds
+(define (sensor-events-in-range measurement device start end)
+  (define start-ns (* start (expt 10 9)))
+  (define end-ns (* end (expt 10 9)))
+  (define response
+    (perform-query
+     (format EVENTS-IN-RANGE-QUERY measurement start-ns end-ns device)))
+  (match (query-response->series response)
+    [#f null]
+    [(list (? series-hash? series))
+     (define column-names (hash-ref series 'columns))
+     (define time-index (find-column-index column-names "time"))
+     (define reading-index (find-column-index column-names "reading"))
+     (for/list ([record (in-list (hash-ref series 'values))])
+       (event (influx-timestamp->milliseconds (list-ref record time-index))
+              (list-ref record reading-index)))]
+    [other (error 'count-sensor-events-in-range
+                  "inferred constraint failed, expected #f or one series in ~e"
+                  other)]))
+
+;; find the index of an element in an array
+(define (find-column-index los s)
+  (let loop ([idx 0] [los los])
+    (cond [(null? los) (raise-argument-error
+                         'find-column-index
+                         (format "list containing ~e" s)
+                         0 los s)]
+          [(equal? (car los) s) idx]
+          [else (loop (add1 idx) (cdr los))])))
+
+(define EVENTS-IN-RANGE-QUERY
+  "SELECT * FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
 
 ;; return sensor statuses in some time range (one sensor),
 ;; times in seconds
@@ -100,7 +139,7 @@
   (define end-ns (* end (expt 10 9)))
   (define response
     (perform-query
-     (format EVENTS-IN-RANGE-QUERY measurement start-ns end-ns device)))
+     (format COUNT-EVENTS-IN-RANGE-QUERY measurement start-ns end-ns device)))
   (match (query-response->series response)
     [#f 0]
     [(list (? series-hash? series))
@@ -114,13 +153,26 @@
                   "inferred constraint failed, expected #f or one series in ~e"
                   other)]))
 
+(define COUNT-EVENTS-IN-RANGE-QUERY
+  "SELECT COUNT(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
+
+
 ;; given a measurement and a location/device and a reading, write them to
 ;; the database
-(define (record-sensor-status! measurement device reading)
+(define (record-sensor-status! measurement device reading
+                               #:timestamp [timestamp-ms #f])
+  (define timestamp (cond [timestamp-ms timestamp-ms]
+                          [else (inexact->exact
+                                 (round (current-inexact-milliseconds)))]))
+  (let ([ans reading])
+    (printf "reading: ~s\n" ans)
+    ans)
+  (let ([ans timestamp])
+    (printf "timestamp: ~s\n" ans)
+    ans)
   (define point-line
     (format "~a,device=~a reading=~ai ~a"
-            measurement device reading
-            (inexact->exact (round (current-inexact-milliseconds)))))
+            measurement device reading timestamp))
   (define-values (status-line headers port)
     (http-sendrecv/url
      (build-url "write" `((precision . "ms")))
@@ -158,8 +210,7 @@
                   "inferred constraint failed, expected single-entry series in ~e"
                   other)]))
 
-(define EVENTS-IN-RANGE-QUERY
-  "SELECT COUNT(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
+
 
 
 ;; given query results, return the series as a list or #f if no results
@@ -232,3 +283,53 @@
   (cond [(integer? reading) reading]
         [else "no events"]))
 
+
+(define (influx-timestamp->milliseconds str)
+  (match (regexp-match TIMESTAMP-REGEXP str)
+    [(list dc year month day hour minute second maybe-ms)
+     (define ms (cond [maybe-ms
+                       (inexact->exact
+                        (round (* 1000 (string->number maybe-ms))))]
+                      [else 0]))
+     (+ ms
+        (* 1000
+           (find-seconds (string->number second)
+                         (string->number minute)
+                         (string->number hour)
+                         (string->number day)
+                         (string->number month)
+                         (string->number year))))]))
+
+(define TIMESTAMP-REGEXP
+  #px"^([[:digit:]]{4})-([[:digit:]]{2})-([[:digit:]]{2})T([[:digit:]]{2}):([[:digit:]]{2}):([[:digit:]]{2})(\\.[[:digit:]]+)?Z$")
+
+(module+ test
+  (require rackunit)
+
+  (check-equal? (influx-timestamp->milliseconds "2015-09-12T14:25:53.247Z")
+                (+
+                 (* 1000 (find-seconds 53
+                                       25
+                                       14
+                                       12
+                                       9
+                                       2015))
+                 247))
+
+  (check-equal? (influx-timestamp->milliseconds "2015-09-12T14:25:53.24Z")
+                (+
+                 (* 1000 (find-seconds 53
+                                       25
+                                       14
+                                       12
+                                       9
+                                       2015))
+                 240))
+  
+  (check-equal? (influx-timestamp->milliseconds "2015-09-12T14:25:53Z")
+                (* 1000 (find-seconds 53
+                                      25
+                                      14
+                                      12
+                                      9
+                                      2015))))

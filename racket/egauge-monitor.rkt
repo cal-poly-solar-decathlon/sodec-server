@@ -98,17 +98,19 @@
 
 ;; given an association list from names to names and a reading,
 ;; write the reading to influx
-(define (write-egauge-reading mapping reading)
+(define (write-egauge-reading mapping reading timestamp)
   (match (list ((sxpath '(@ n)) reading)
                ((sxpath '(v)) reading))
     [(list (list (list 'n name)) (list (list 'v value-str)))
      (define influx-device-name
        (cadr (assoc name mapping)))
      (define reading (string->number value-str))
-     (record-sensor-status! "electric_power" influx-device-name reading)]))
+     (record-sensor-status! "electric_power" influx-device-name reading
+                            #:timestamp timestamp)]))
 
 ;; read the data from the egauge, write it to influx
 (define (fetch-and-record-egauge-readings! egauge-url)
+  (define timestamp (current-seconds))
   (define-values (status-line headers port)
     (http-sendrecv/url egauge-url))
   (unless (regexp-match #px"^HTTP/1.1 200" status-line)
@@ -121,7 +123,7 @@
   (define names (map cadr ((sxpath '(data r @ n)) egauge-status)))
   (define mapping (name-mapping names))
   (for ([reading (in-list readings)])
-    (write-egauge-reading mapping reading)))
+    (write-egauge-reading mapping reading timestamp)))
 
 (module+ test
   (require rackunit)
