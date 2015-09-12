@@ -13,9 +13,9 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
+  "localhost"
   #;"129.65.138.226"
-  "calpolysolardecathlon.org"
+  #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -111,31 +111,32 @@
    
 
 
-   ;; think this endpoint may be going away...
-   #;(test-case
+   (test-case
     "events-in-empty-range"
     (check-equal?
      (gett "events-in-range"
-           '((device s-temp-bed)
+           '((measurement "temperature")
+             (device "bedroom")
              (start 0)
              (end 0)))
-     "no events"))
+     '()))
    ;; may be going away...
-   #;(test-case
+   (test-case
     "too long range for events-in-range"  
     
     ;; more than a day of data:
     (check-match (remote-call/get/core
                   HOST PORT
                   (sodec-url "events-in-range"
-                             `((device s-temp-bed)
+                             `((measurement "temperature")
+                               (device "bedroom")
                                (start 0)
                                (end 100000))))
                  (list #"HTTP/1.1 400 range too long"
                        _2
                        _3)))
    ;; may be going away...
-   #;(test-case
+   (test-case
     "count-events-in-range bad args"
     (check-match (remote-call/get/core
                   HOST PORT

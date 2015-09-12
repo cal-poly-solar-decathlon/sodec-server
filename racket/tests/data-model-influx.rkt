@@ -127,12 +127,14 @@
                 3)
 
   
-  #;(check-match
-   (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
-   (hash-table ('baseTimestamp (? number? n))
-               ('baseStatus 229)
-               ('seriesData 
-                (list (list (? number? n1) -1) (list (? number? n2) -4)))))
+  (check-match
+   (events->jsexpr (sensor-events-in-range "temperature" "bedroom" ts-1 ts+1sec))
+   (list (hash-table ('t (? exact-integer? n1))
+                     ('r 229))
+         (hash-table ('t (? exact-integer? n1))
+                     ('r 228))
+         (hash-table ('t (? exact-integer? n1))
+                     ('r 224))))
 
 
   ;; list-devices

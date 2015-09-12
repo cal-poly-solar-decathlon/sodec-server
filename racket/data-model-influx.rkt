@@ -31,7 +31,8 @@
           [maybe-reading->jsexpr
            (-> (or/c false? integer?) jsexpr?)]
           [current-timestamp
-           (-> exact-integer?)])
+           (-> exact-integer?)]
+          [events->jsexpr (-> (listof event?) jsexpr?)])
          testing?
          reset-database-test-tables!)
 
@@ -164,12 +165,6 @@
   (define timestamp (cond [timestamp-ms timestamp-ms]
                           [else (inexact->exact
                                  (round (current-inexact-milliseconds)))]))
-  (let ([ans reading])
-    (printf "reading: ~s\n" ans)
-    ans)
-  (let ([ans timestamp])
-    (printf "timestamp: ~s\n" ans)
-    ans)
   (define point-line
     (format "~a,device=~a reading=~ai ~a"
             measurement device reading timestamp))
@@ -260,6 +255,15 @@
            "expected content-type application/json, got these headers: ~v"
            headers))
   (read-json port))
+
+;; convert a list of events to jsexprs
+(define (events->jsexpr events)
+  (map event->jsexpr events))
+
+;; convert a single event to a jsexpr
+(define (event->jsexpr event)
+  (hash 't (event-timestamp event)
+        'r (event-reading event)))
 
 
 ;;

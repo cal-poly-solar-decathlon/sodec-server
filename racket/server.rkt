@@ -44,7 +44,7 @@
            (handle-device-latest-event-request
             (url-query uri))]
           ;; events in a range for a sensor
-          #;[(list (struct path/param ("srv" (list)))
+          [(list (struct path/param ("srv" (list)))
                  (struct path/param ("events-in-range" (list))))
            (handle-device-events-in-range-request
             (url-query uri))]
@@ -118,11 +118,12 @@
               query))]))
 
 ;; handle a device time range reading request
-#;(define (handle-device-events-in-range-request query)
+(define (handle-device-events-in-range-request query)
   (match query
     ;; could give more fine-grained error messages here...
     [(list-no-order
-      (cons 'device (? ID? id))
+      (cons 'measurement (? string? measurement))
+      (cons 'device (? string? device))
       (cons 'start (regexp NUM-REGEXP (list start-str)))
       (cons 'end (regexp NUM-REGEXP (list end-str))))
      (define start (string->number start-str))
@@ -140,10 +141,8 @@
                      (- end start)))]
            [else
             (response/json
-             (events->jsexpr/short
-              (sensor-events-in-range id 
-                                      (seconds->date start)
-                                      (seconds->date end))))])]
+             (events->jsexpr
+              (sensor-events-in-range measurement device start end)))])]
     [else
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...
