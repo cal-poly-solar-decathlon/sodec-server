@@ -13,13 +13,12 @@
 
 (define HOST 
   ;; test locally:
-  "localhost"
+  #;"localhost"
   #;"129.65.138.226"
-  #;"calpolysolardecathlon.org"
+  "calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
-  #;8080
   3000)
 
 (define (gett . args)
@@ -256,17 +255,21 @@
     (test-case
      "latest-living-room-event"
      (check-match
-      (gett "latest-event" '((device s-temp-lr)))
+      (gett "latest-event" '((measurement "temperature")
+                             (device "living_room")))
       (? exact-integer? n)))
 
-    
-    ;; ignore the occupancy, temp, and ambient light devices:
-    (define (ignored-name n)
-      (or (regexp-match #px"^s-temp-testing-" n)
-          (regexp-match #px"^s-hum-testing-" n)
-          (regexp-match #px"^s-amb-" n)
-          (regexp-match #px"^s-occ-" n)
-          (regexp-match #px"^c-light-" n)))
+    ;; this will only pick up temp/hum devices now...
+    (for ([measurement (in-list MEASUREMENT-NAMES)]
+          #:when (hash-ref measurement-device-table measurement #f))
+      (for ([device (in-list (hash-ref measurement-device-table measurement))]
+            #:when (not (string=? device "testing_empty")))
+        (test-case
+         (~a "latest-event-"(list measurement device))
+         (check-match
+          (gett "latest-event" `((measurement ,measurement)
+                                 (device ,device)))
+          (? exact-integer? n)))))
 
     ;; need a new pair of endpoints here.
     #;(for ([device (in-list all-ids)]
