@@ -110,7 +110,8 @@
 
 ;; read the data from the egauge, write it to influx
 (define (fetch-and-record-egauge-readings! egauge-url)
-  (define timestamp (current-seconds))
+  (define timestamp (inexact->exact
+                     (round (current-inexact-milliseconds))))
   (define-values (status-line headers port)
     (http-sendrecv/url egauge-url))
   (unless (regexp-match #px"^HTTP/1.1 200" status-line)
