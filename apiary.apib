@@ -154,7 +154,7 @@ last words.
             "okay"
 
 
-# Device Event Range [/srv/events-in-range{?device,start,end}]
+# Device Event Range [/srv/events-in-range{?measurement,device,start,end}]
 
 Fetch all events in the given range. More specifically, those with
 timestamps `n` such that `start <= n < end`. Currently, the difference
@@ -162,27 +162,24 @@ between 'start' and 'end' can't be greater than 3600 seconds, to
 limit the size of the response.
 
 + Parameters
-    + device (string) ... the id of the selected device
-    + start (number) ... the timestamp of the beginning of the desired range
-    + end (number) ... the timestamp of the end of the desired range
+    + measurement (string) ... the measurement
+    + device (string) ... the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
 
 
 ## Get events in a range [GET]
 
-To save space on the wire, the data is delivered as a sequence of deltas. More
-specifically, the initial timestamp and status are delivered in full. Following
-this, the remainder of the readings are delivered as a sequence of sequences
-of length 2, where each element contains the number of seconds since the prior
-reading and the difference in the status since the last reading. If there
-are no events in the range, the server returns the json string "no events".
+NB: the responses have times in MILLISECONDS. Given the 53 bits of mantissa
+in an IEEE 754 double, this should be plenty, allowing us to represent
+dates up until the year 287,396.
 
 + Response 200 (application/json)
 
     + Body
 
-            {baseTimestamp:1418096755,
-             baseStatus:224,
-             seriesData:[[5,5],[5,0],[5,-2],[5,4]]}
+            [{t:282379,r:229873},
+             {t:282483,r:229874}]
 
 # Count Device Events [/srv/count-events-in-range{?device,start,end}
 

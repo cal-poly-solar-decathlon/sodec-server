@@ -13,9 +13,9 @@
 
 (define HOST 
   ;; test locally:
-  "localhost"
+  #;"localhost"
   #;"129.65.138.226"
-  #;"calpolysolardecathlon.org"
+  "calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
