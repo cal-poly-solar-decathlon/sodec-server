@@ -10,7 +10,7 @@
 (provide
  (contract-out
   [latest-forecast (-> (or/c false? jsexpr?))]
-  [latest-forecast-timestamp-ms (-> exact-integer?)]
+  [latest-forecast-timestamp-ms (-> (or/c false? exact-integer?))]
   [start-forecast-monitor (-> thread?)]))
 
 (define FORECAST-SLEEP-INTERVAL (* 20 60))

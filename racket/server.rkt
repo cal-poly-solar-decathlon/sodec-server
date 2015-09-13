@@ -9,9 +9,11 @@
          "data-model-influx.rkt"
          "secret.rkt"
          "device-table.rkt"
+         "forecast.rkt"
          xml)
 
 (provide start
+         start-forecast-monitor
          (contract-out
           [log-client-errors! (-> path-string? void?)]))
 
@@ -53,6 +55,10 @@
                  (struct path/param ("count-events-in-range" (list))))
            (handle-device-count-events-in-range-request
             (url-query uri))]
+          ;; forecast from forecast.io
+          [(list (struct path/param ("srv" (list)))
+                 (struct path/param ("latest-forecast" (list))))
+           (handle-latest-forecast-request)]
           ;; a list of all devices
           #;[(list (struct path/param ("srv" (list)))
                  (struct path/param ("list-old-device-ids" (list))))
@@ -272,11 +278,17 @@
                              (exn-message exn)))])
            (record-sensor-status! measurement device (inexact->exact reading))
            (response/json "okay"))]
-        [else 
+        [else
          (fail-response
           403
           #"wrong secret"
           "request didn't come with the right secret")]))
+
+;; return the latest forecast, or #f if it doesn't exist
+(define (handle-latest-forecast-request)
+  (response/json
+   (hash 'timestamp (latest-forecast-timestamp-ms)
+         'forecast (latest-forecast))))
 
 (define NUM-REGEXP #px"^[[:digit:]]+$")
 

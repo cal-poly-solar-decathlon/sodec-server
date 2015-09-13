@@ -13,9 +13,9 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
+  "localhost"
   #;"129.65.138.226"
-  "calpolysolardecathlon.org"
+  #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -240,7 +240,18 @@
       #:content-type #"application/x-www-form-urlencoded")
      (list (regexp #"^HTTP/1.1 400 ")
            _2 _3)))
-   
+
+   (test-case
+    "weather forecast"
+    (check-match
+     (gett "latest-forecast" '())
+     (hash-table ('timestamp (? number? n))
+                 ('forecast (hash-table ('latitude _1)
+                                        ('longitude _2)
+                                        ('currently _3)
+                                        ('minutely _4)
+                                        (_5 _6)
+                                        ...)))))
 )))
 
 ;; this test suite ensures that the server is receiving

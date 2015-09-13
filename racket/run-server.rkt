@@ -10,11 +10,12 @@
 
 (log-client-errors! (build-path here "error.log"))
 
-
 #;(define HOST "129.65.138.226")
 #;(define PORT 9080)
 
 (start-egauge-monitor #:host "192.168.1.5" #:port 80)
+
+(start-forecast-monitor)
 
 (serve/servlet start
                ;; I see... changing server root path means you need
