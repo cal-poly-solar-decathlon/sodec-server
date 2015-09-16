@@ -99,21 +99,6 @@ UTC on server).
             }
 
 
-# List of Devices [/srv/list-old-device-ids]
-
-BROKEN!!
-
-List the old-style device ids
-
-## List of Devices [GET]
-
-+ Response 200 (application/json)
-
-    + Body
-            [{string},...]
-
-
-
 # Device Latest Event [/srv/latest-event{?measurement,device}]
 
 The last event of the given device.
@@ -152,6 +137,58 @@ last words.
     + Body
 
             "okay"
+
+
+# Device Subsampling by Mean [/srv/mean-by-interval{?measurement,device,start,end,interval}]
+
+Aggregate the data by returning the mean reading for each interval in the given range.
+
+NB: this will probably be valuable for temperature & humidity, but electrical power
+is probably best measured using `first-by-interval`
+
++ Parameters
+    + measurement (string) ... the measurement
+    + device (string) ... the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
+    + interval (number) ... the interval length (in seconds)
+
+## Get the men value of each interval [GET]
+
+For consistency, times are in milliseconds. The time is the beginning of each interval,
+not the time of a particular reading
+
++ Response 200 (application/json)
+
+    + Body
+
+            [{t:282379,r:229873},
+             {t:282483,r:229874}]
+
+# Device Subsampling by first event in range [/srv/first-by-interval{?measurement,device,start,end,interval}]
+
+Return the first event in each interval. This will probably be the most
+useful way to aggregate power readings.
+
++ Parameters
+    + measurement (string) ... the measurement
+    + device (string) ... the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
+    + interval (number) ... the interval length (in seconds)
+
+## Get the first event in each interval [GET]
+
+For consistency, times are in milliseconds.  The time is the actual time
+of the first event in each interval
+
++ Response 200 (application/json)
+
+    + Body
+
+            [{t:282379,r:229873},
+             {t:282483,r:229874}]
+
 
 
 # Device Event Range [/srv/events-in-range{?measurement,device,start,end}]
