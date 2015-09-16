@@ -3,7 +3,7 @@
 ;; one-off for extracting readings from the tail of a sql dump
 
 (require "../device-table.rkt"
-         "../data-model-influx.rkt")
+         "../data-model.rkt")
 
 #;((define scraped-lines
   (file->lines "/tmp/gg.txt"))
@@ -46,4 +46,4 @@ scraped-lines
   (("electricity_used" "kitchen_outlets_1") 1595741711)))
 
 (for ([reading old-readings])
-  (record-sensor-status! (caar reading) (cadar reading) (cadr reading)))
+  (record-device-status! (caar reading) (cadar reading) (cadr reading)))

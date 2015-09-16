@@ -14,69 +14,105 @@
   (or (string? s)
       (equal? s 'null)))
 
+
+#;(parameterize ([testing? #t])
+  
+  (check-not-exn (lambda () (record-device-status! "temperature" "outside" 9)))
+  (check-equal? (device-latest-event "temperature" "outside") 9)
+  )
+
 (run-tests
 (test-suite
  "data model tests"
 (parameterize ([testing? #t])
-  
-  (define (se->dr e)
-    (cond [(eq? #f e) (error 'se->dr "test fail")]
-          [else (list (SensorEvent-device e)
-                      (SensorEvent-reading e))]))
-  
-  (check-not-exn
-   (lambda () (record-sensor-status! "s-temp-lr" 322)))
+
+  (test-case
+   "record-device-status illegal names"
+   (check-exn #px"expected: measurement?"
+              (lambda () (record-device-status! "shmoovy" "blaggo" 9)))
+   (check-exn #px"expected: device?"
+              (lambda () (record-device-status! "electric_power" "bla ggo" 9))))
+
+  (test-not-exn
+   "record-device-status"
+   (lambda () (record-device-status! "temperature" "living_room" 322)))
   
   ;; this is the latest:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 322))
+  (check-equal? (device-latest-reading "temperature" "living_room")
+                322)
 
-  (record-sensor-status! "s-temp-bed" 229)
+  ;; no readings for outside yet
+  (check-equal? (device-latest-reading "temperature" "outside")  #f)
+
+  (define now1 (current-seconds))
+  (record-device-status! "temperature" "bedroom" 229)
   
   ;; this is still the latest:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 322))
-  
-  (sleep 1.5)
-  (record-sensor-status! "s-temp-lr" 331)
+  (test-equal?
+   "still-the-latest"
+   (device-latest-reading "temperature" "living_room")
+   322)
+
+  ;; record something in the future!
+  (define future1 (+ (* 1000 (current-seconds)) 500))
+  (record-device-status! "temperature" "living_room" 331
+                         #:timestamp future1) 
+
+  (sleep 1)
   
   ;; now the latest has changed:
-  (check-equal? (se->dr (sensor-latest-event "s-temp-lr"))
-                (list "s-temp-lr" 331))
+   (check-equal? (device-latest-reading "temperature" "living_room")
+                331)
 
-  (sleep 1.5)
-  (record-sensor-status! "s-temp-bed" 228)
+  (define future2 (+ (* 1000 (current-seconds)) 800))
+  (record-device-status! "temperature" "bedroom" 228
+                         #:timestamp future2)
+
+  (sleep 1)
  
-  (check-match (maybe-event->jsexpr (sensor-latest-event "s-temp-lr"))
-               (hash-table ('device-id "s-temp-lr")
-                           ('timestamp (? number? n))
-                           ('status 331)))
+  (check-equal? (maybe-reading->jsexpr
+                 (device-latest-reading "temperature" "living_room"))
+                331)
+
+  (test-case
+   "device-events-in-range"
+  (check-match
+   (device-events-in-range "temperature" "bedroom"
+                           (sub1 now1)
+                           (add1 (round (/ future2 1000))))
+   (list (event future1 229)
+         (event future2 228))))
+
+  ;; you can record random electric devices...
+  (check-not-exn
+   (lambda ()
+     (record-device-status! "electric_power" "brungy_wungy"
+                             11982)))
+
   
-  (check-equal?
-   (map se->dr (sensor-events "s-temp-bed"))
-   (list (list "s-temp-bed" 229)
-         (list "s-temp-bed" 228)))
-  
+
   (check-not-exn (lambda () (current-timestamp)))
   
   (define ts (current-timestamp))
-  (define ts+1sec (seconds->date (+ (date->seconds ts) 1)))
-  (define ts-1 (seconds->date (- (date->seconds ts) 86400)))
-  (define ts-2 (seconds->date (- (date->seconds ts) (* 2 86400))))
+  (define ts+1sec (+ ts 1))
+  (define ts-1 (- ts 86400))
+  (define ts-2 (- ts (* 2 86400)))
   
-  (check-equal? (sensor-events-in-range "s-temp-bed" ts-2 ts-1)
+  (check-equal? (device-events-in-range "temperature" "bedroom" ts-2 ts-1)
                 '())
-  (check-match (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
-                (list (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts1)
+
+  
+  (check-match (device-events-in-range "temperature" "bedroom" ts-1 ts+1sec)
+                (list (struct event [(? exact-integer? ts1)
                                            229])
-                      (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts2)
+                      (struct event [(? exact-integer? ts2)
                                            228])))
+
   
-  (record-sensor-status! "s-temp-bed" 224)
   
-  (check-match (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
+  (record-device-status! "temperature" "bedroom" 224)
+  
+  #;(check-match (device-events-in-range "s-temp-bed" ts-1 ts+1sec)
                (list (struct SensorEvent ["s-temp-bed"
                                            (? date? ts1)
                                            229])
@@ -87,19 +123,22 @@
                                            (? date? ts3)
                                            224])))
 
-  (check-equal? (count-sensor-events-in-range "s-temp-bed" ts-1 ts+1sec)
+  (check-equal? (count-device-events-in-range "temperature" "bedroom" ts-1 ts+1sec)
                 3)
+
   
   (check-match
-   (events->jsexpr/short (sensor-events-in-range "s-temp-bed" ts-1 ts+1sec))
-   (hash-table ('baseTimestamp (? number? n))
-               ('baseStatus 229)
-               ('seriesData 
-                (list (list (? number? n1) -1) (list (? number? n2) -4)))))
+   (events->jsexpr (device-events-in-range "temperature" "bedroom" ts-1 ts+1sec))
+   (list (hash-table ('t (? exact-integer? n1))
+                     ('r 229))
+         (hash-table ('t (? exact-integer? n1))
+                     ('r 228))
+         (hash-table ('t (? exact-integer? n1))
+                     ('r 224))))
 
 
   ;; list-devices
-  (test-case
+  #;(test-case
    "devices-list"
    (check-pred (lambda (devlist)
                  (and (list? devlist)
@@ -110,5 +149,8 @@
                           [other #f]))
                       (< 10 (length devlist))))
                (devices-list)))
+
+  #;(record-device-status! )
+    
 
   )))

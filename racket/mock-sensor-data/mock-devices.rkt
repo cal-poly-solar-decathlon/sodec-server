@@ -16,7 +16,7 @@
 (define TEMP-READING-SECONDS 60)
 
 
-;; generate a mock sensor reading every 'interval' seconds,
+;; generate a mock device reading every 'interval' seconds,
 ;; using a given generator
 (define (run-mock-device measurement id interval generator)
   (thread 
@@ -87,7 +87,7 @@
 (define INITIAL-HUMIDITY 664)
 
 
-;; the ids of the temperature sensors
+;; the ids of the temperature devices
 
 (define temperature-devices
   (filter (lambda (s)

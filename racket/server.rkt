@@ -6,7 +6,7 @@
          json
          racket/date
          racket/contract
-         "data-model-influx.rkt"
+         "data-model.rkt"
          "secret.rkt"
          "device-table.rkt"
          "forecast.rkt"
@@ -40,17 +40,17 @@
      (match method
        [#"GET"
         (match (url-path uri)
-          ;; latest event for a sensor
+          ;; latest event for a device
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("latest-event" (list))))
            (handle-device-latest-event-request
             (url-query uri))]
-          ;; events in a range for a sensor
+          ;; events in a range for a device
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("events-in-range" (list))))
            (handle-device-events-in-range-request
             (url-query uri))]
-          ;; number of events in a range for a sensor
+          ;; number of events in a range for a device
           [(list (struct path/param ("srv" (list)))
                  (struct path/param ("count-events-in-range" (list))))
            (handle-device-count-events-in-range-request
@@ -116,7 +116,7 @@
                          #"bad arguments"
                          (exn-message exn)))])
        (response/json
-        (maybe-reading->jsexpr (sensor-latest-reading measurement device))))]
+        (maybe-reading->jsexpr (device-latest-reading measurement device))))]
     [else
      (404-response
       #"wrong query fields"
@@ -148,7 +148,7 @@
            [else
             (response/json
              (events->jsexpr
-              (sensor-events-in-range measurement device start end)))])]
+              (device-events-in-range measurement device start end)))])]
     [else
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...
@@ -176,7 +176,7 @@
                      query))]
            [else
             (response/json
-             (count-sensor-events-in-range
+             (count-device-events-in-range
               measurement
               device
               start
@@ -276,7 +276,7 @@
                              404
                              #"bad arguments"
                              (exn-message exn)))])
-           (record-sensor-status! measurement device (inexact->exact reading))
+           (record-device-status! measurement device (inexact->exact reading))
            (response/json "okay"))]
         [else
          (fail-response

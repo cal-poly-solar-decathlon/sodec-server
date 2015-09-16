@@ -6,7 +6,7 @@
          rackunit/text-ui
          racket/date
          json
-         "../device-descriptions.rkt"
+         "../device-table.rkt"
          "../web-funs.rkt")
 
 (define-logger sodec)
@@ -14,19 +14,18 @@
 (define HOST 
   ;; test locally:
   "localhost"
+  #;"129.65.138.226"
   #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
-  8080
-  #;3000)
+  3000)
 
 (define (gett . args)
   (remote-call/get HOST PORT (apply sodec-url args)))
 
 (define (get-timestamp)
   (hash-ref (gett "timestamp" #f) 'timestamp))
-
 
 ;; events in last hour on the "s-temp-bed" device
 (define (bed-events-in-last-hour)
@@ -44,6 +43,13 @@
       (string? s)))
 
 
+(define (time-near-now? n)
+  (and (exact-integer? n)
+       (< (abs (- (current-seconds) n)) 100)))
+
+(define ((port-containing str) port)
+  (regexp-match (regexp-quote str) port))
+
 
 (run-tests
 (test-suite
@@ -55,15 +61,13 @@
 
    (test-case
     "timestamp"
-    (match (gett "timestamp" #f)
-      [(hash-table ('timestamp (? number? n)))
-       (check > n (find-seconds 0 0 0 1 1 2014))
-       (check < n (find-seconds 0 0 0 1 1 2016))]
-      [other 
-       (fail "timestamp shape")]))
-   
-   (define ((port-containing str) port)
-     (regexp-match (regexp-quote str) port))
+    (check-match (gett "timestamp" #f)
+                 (hash-table ('timestamp (? time-near-now? n)))))
+
+   ;; this is kind of meaningless for now...
+   ;; ... need a new endpoint to list all measurements & all devices
+
+
 
    ;; bogus endpoint
    (test-case
@@ -83,53 +87,40 @@
                        _1
                        (? (port-containing "uhnoth") _3))))
 
-   (test-case
-    "list-devices"
-    ;; LIST DEVICES
-    (check-pred (lambda (devlist)
-                  (and (list? devlist)
-                       (for/and ([ht (in-list devlist)])
-                         (match ht
-                           [(hash-table ('device (? string? dev))
-                                        ('description (? string-or-null? descn)))
-                            #t]
-                           [other #f]))))
-                (gett "list-devices" #f)))
-
-   (gett "list-devices" #f)
-
-   (define listed-devices
-     (map (lambda (ht)
-            (list (hash-ref ht 'device)
-                  (hash-ref ht 'description)))
-          (gett "list-devices" #f)))
-
-   (test-case
-    "list-devices-descriptions"
-   ;; check that all of the listed devices are present:
-   (for ([dd-pair (in-list dd-pairs)])
-     (define device-name (first dd-pair))
-     (check-not-exn (lambda ()
-                      (dict-ref listed-devices device-name)))
-     (check-equal? (dict-ref listed-devices device-name)
-                   (list (second dd-pair)))))
-
-   
-   
-   (test-equal? "empty-latest-events"
-                (gett "latest-event" '((device s-temp-testing-empty)))
+   (test-equal? "no-latest-event"
+                (gett "latest-event" '((measurement "temperature")
+                                       (device "testing_empty")))
                 "no events")
+
+
+   ;; new style of electric devices... anything goes!
+   (test-case
+    "illegal electrical device name"
+    (check-match
+     (remote-call/get/core HOST PORT (sodec-url "latest-event" '((measurement "electric_power")
+                                                                 (device "device with spaces"))))
+     (list (regexp #px"^HTTP/1.1 404")
+           _1
+           (? (port-containing "device with spaces") _3))))
+
+   (test-equal?
+    "made-up device"
+    (gett "latest-event" '((measurement "electric_power")
+                           (device "bogus_device")))
+    "no events")
+   
+
 
    (test-case
     "events-in-empty-range"
     (check-equal?
      (gett "events-in-range"
-           '((device s-temp-bed)
+           '((measurement "temperature")
+             (device "bedroom")
              (start 0)
              (end 0)))
-     "no events"))
-
-   
+     '()))
+   ;; may be going away...
    (test-case
     "too long range for events-in-range"  
     
@@ -137,13 +128,14 @@
     (check-match (remote-call/get/core
                   HOST PORT
                   (sodec-url "events-in-range"
-                             `((device s-temp-bed)
+                             `((measurement "temperature")
+                               (device "bedroom")
                                (start 0)
                                (end 100000))))
                  (list #"HTTP/1.1 400 range too long"
                        _2
                        _3)))
-
+   ;; may be going away...
    (test-case
     "count-events-in-range bad args"
     (check-match (remote-call/get/core
@@ -158,6 +150,7 @@
                                                        (end 1))))
                  (list #"HTTP/1.1 404 wrong query fields"  _2 _3)))
 
+   
    ;; RECORDING READINGS
 
    (test-case
@@ -169,6 +162,9 @@
                  (list (regexp #px#"^HTTP/1.1 404")
                        _1
                        (? (port-containing "uhnoth") _3))))
+
+        
+
 
    (test-case
     "record-reading-bad-json"
@@ -187,10 +183,22 @@
                    HOST PORT
                    (sodec-url "record-reading" '((device s-temp-testing-blackhole)))
                    #"{\"status\":7772387,\"secret\":\"$a8Es#crB469\"}")
+
                   "okay"))
 
-   ;; test sending with urlencoding
+   ;; try with electrical ones
+   (test-case
+    "record-reading"
+    (check-equal? (remote-call/post
+                   HOST PORT
+                   (sodec-url "record-reading" '((measurement "electric_power")
+                                                 (device "krazbo_magnipod")))
+                   #"{\"status\":7111387,\"secret\":\"$a8Es#crB469\"}")
 
+                  "okay"))
+   
+
+   ;; test sending with urlencoding
    (test-case
     "record-reading with form-urlencoded"
     (check-equal?
@@ -210,7 +218,7 @@
       #"status=-261&secret=$a8Es#crB469"
       #:content-type #"application/x-www-form-urlencoded")
      "okay"))
-
+   
    (test-case
     "record-reading with form-urlencoded bad number"
     (check-match
@@ -232,79 +240,78 @@
       #:content-type #"application/x-www-form-urlencoded")
      (list (regexp #"^HTTP/1.1 400 ")
            _2 _3)))
-   
+
+   (test-case
+    "weather forecast"
+    (check-match
+     (gett "latest-forecast" '())
+     (hash-table ('timestamp (? number? n))
+                 ('forecast (hash-table ('latitude _1)
+                                        ('longitude _2)
+                                        ('currently _3)
+                                        ('minutely _4)
+                                        (_5 _6)
+                                        ...)))))
 )))
 
 ;; this test suite ensures that the server is receiving
-;; data in the expected way from downstream sensors
+;; data in the expected way from downstream devices
 (run-tests
-(test-suite
- "racket server recording data"
- (let ()
-   
-   (define ((port-containing str) port)
-     (regexp-match (regexp-quote str) port))
-
-
-   (define listed-devices
-     (map (lambda (ht)
-            (list (hash-ref ht 'device)
-                  (hash-ref ht 'description)))
-          (gett "list-devices" #f)))
-
-
-   (test-case
-    "latest-living-room-event"
-   (check-match
-    (gett "latest-event" '((device s-temp-lr)))
-    (hash-table ('timestamp (? number? n))
-                  ('device-id "s-temp-lr")
-                  ('status (? number? s)))))
-
-   ;; ignore the occupancy, temp, and ambient light devices:
-   (define (ignored-name n)
-     (or (regexp-match #px"^s-temp-testing-" n)
-         (regexp-match #px"^s-amb-" n)
-         (regexp-match #px"^s-occ-" n)
-         (regexp-match #px"^c-light-" n)))
-   
-   (for ([device (in-list device-strs)]
-         #:when (not (ignored-name device)))
-     (test-case
-      (~a "latest-event-"device)
-      (check-match
-       (gett "latest-event" `((device ,device)))
-       (hash-table ('timestamp (? number? n))
-                   ('device-id device)
-                   ('status (? number? s))))))
-
-   (test-case
-    "bed events in last hour not empty"
-    (check-match (bed-events-in-last-hour)
-                 (hash-table ('baseTimestamp (? number? _1))
-                             ('baseStatus (? values _2))
-                             ('seriesData (? values _3)))))
-
-   
-   (test-case
-    "count-events-in-range between 10 and 722 lr readings in last hour"
+ (test-suite
+  "racket server recording data"
+  (let ()
     
-    (define ((number-in-range a b) n)
-      (and (<= a n) (< n b)))
+    (define ((port-containing str) port)
+      (regexp-match (regexp-quote str) port))
     
-    (check-pred (number-in-range 10 722)
-                (let ([ts (get-timestamp)])
-                  (gett
-                   "count-events-in-range" `((device s-temp-lr)
-                                             (start ,(- ts 3600))
-                                             (end ,ts))))))
+    (test-case
+     "latest-living-room-event"
+     (check-match
+      (gett "latest-event" '((measurement "temperature")
+                             (device "living_room")))
+      (? exact-integer? n)))
 
-   
-)))
+    ;; this will only pick up temp/hum devices now...
+    (for ([measurement (in-list MEASUREMENT-NAMES)]
+          #:when (hash-ref measurement-device-table measurement #f))
+      (for ([device (in-list (hash-ref measurement-device-table measurement))]
+            #:when (not (string=? device "testing_empty")))
+        (test-case
+         (~a "latest-event-"(list measurement device))
+         (check-match
+          (gett "latest-event" `((measurement ,measurement)
+                                 (device ,device)))
+          (? exact-integer? n)))))
 
-(define ts (get-timestamp))
+    ;; need a new pair of endpoints here.
+    #;(for ([device (in-list all-ids)]
+          #:when (not (ignored-name device)))
+      (test-case
+       (~a "latest-event-"device)
+       (check-match
+        (gett "latest-event" `((device ,device)))
+        (? exact-integer? n))))
+    
+    (test-case
+     "count-events-in-range between 10 and 120 bedroom readings in last hour"
+     
+     (define ((number-in-range a b) n)
+       (and (<= a n) (< n b)))
+     
+     (check-pred (number-in-range 10 120)
+                 (let ([ts (get-timestamp)])
+                   (gett
+                    "count-events-in-range"
+                    `((measurement "humidity")
+                      (device "bedroom")
+                      (start ,(- ts 3600))
+                      (end ,ts))))))
+    
+    
+    )))
 
-;; this is getting a bit nasty in the string-append region...
+#;((define ts (get-timestamp))
+
 (define last-hour-jsexpr
   (gett "events-in-range" `((device s-temp-bed)
                             (start ,(- ts 3600))
@@ -333,5 +340,5 @@
 
 (define last-reading-time (hash-ref last-reading 'timestamp))
 
-(printf "time since last reading: ~v seconds\n" (- ts last-reading-time))
+(printf "time since last reading: ~v seconds\n" (- ts last-reading-time)))
 

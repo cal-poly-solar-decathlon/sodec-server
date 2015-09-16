@@ -49,8 +49,8 @@
            (printf "i: ~a\n" i)
            (vector i (events-in-division i)))))
 
-;; the number of readings from this sensor in the last 24 hours
-(define (sensor-readings-in-last-day device)
+;; the number of readings from this device in the last 24 hours
+(define (device-readings-in-last-day device)
   (define now (current-seconds))
   (define one-day-ago (- now SECONDS-IN-DAY))
   (remote-call/get
@@ -60,34 +60,34 @@
                 (start ,one-day-ago)
                 (end ,now)))))
 
-;; the expected number of seconds between electrical sensor readings
-(define ELEC-SENSOR-INTERVAL 15)
+;; the expected number of seconds between electrical device readings
+(define ELEC-DEVICE-INTERVAL 15)
 ;; .... temperature and humidity readings
-(define TEMP/HUM-SENSOR-INTERVAL 60)
+(define TEMP/HUM-DEVICE-INTERVAL 60)
 
-(define expected-elec-sensor-readings
-  (/ SECONDS-IN-DAY ELEC-SENSOR-INTERVAL))
-(define expected-temp/hum-sensor-readings
-  (/ SECONDS-IN-DAY TEMP/HUM-SENSOR-INTERVAL))
+(define expected-elec-device-readings
+  (/ SECONDS-IN-DAY ELEC-DEVICE-INTERVAL))
+(define expected-temp/hum-device-readings
+  (/ SECONDS-IN-DAY TEMP/HUM-DEVICE-INTERVAL))
 
-;; sensor-alive? : has this sensor produced about the expected
+;; device-alive? : has this device produced about the expected
 ;; number of readings over the past day?
-(define (sensor-alive? device)
-  (log-sodec-debug "checking readings from sensor: ~a" device)
+(define (device-alive? device)
+  (log-sodec-debug "checking readings from device: ~a" device)
   
   (match device
     [(or (regexp #px"^s-elec-used-")
          (regexp #px"^s-elec-gen-"))
      (define num-readings
-       (sensor-readings-in-last-day device))
-     (sensor-performance num-readings
-                         expected-elec-sensor-readings)]
+       (device-readings-in-last-day device))
+     (device-performance num-readings
+                         expected-elec-device-readings)]
     [(or (regexp #px"^s-temp-")
          (regexp #px"^s-hum-"))
      (define num-readings
-       (sensor-readings-in-last-day device))
-     (sensor-performance num-readings
-                         expected-temp/hum-sensor-readings)]
+       (device-readings-in-last-day device))
+     (device-performance num-readings
+                         expected-temp/hum-device-readings)]
     [(regexp #px"^s-light-")
      (light-last-reading device)]
     [(or (regexp #px"^s-occ-")
@@ -114,7 +114,7 @@
 ;; given a number of readings and an expected number of
 ;; readings, return a list indicating whether the number
 ;; of readings is unexpectedly low or high
-(define (sensor-performance num-readings expected-num-readings)
+(define (device-performance num-readings expected-num-readings)
   (define frac (/ num-readings expected-num-readings))
   (cond [(< frac 0.9)
          (list 'too-low num-readings frac)]
@@ -124,7 +124,7 @@
          (list 'too-high num-readings frac)]))
 
 (for/list ([device (in-list device-strs)])
-  (list device (sensor-alive? device)))
+  (list device (device-alive? device)))
 
 
 

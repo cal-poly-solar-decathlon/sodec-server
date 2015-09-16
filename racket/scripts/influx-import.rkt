@@ -109,11 +109,11 @@
             (round (- estimated-total time-taken))))
   (match (regexp-match RECORD-REGEXP port)
     [#f (list 'done-1 last-index)]
-    [(list dc index sensor-name date reading)
+    [(list dc index device-name date reading)
      (define date-sec (sql-date->seconds date))
-     (define last-device-reading (hash-ref last-reading sensor-name #f))
+     (define last-device-reading (hash-ref last-reading device-name #f))
      (cond [(or (not last-device-reading) (> (- date-sec last-device-reading) MIN-INTERVAL))
-            (match (parse-device-name sensor-name)
+            (match (parse-device-name device-name)
               [(list measurement device)
                (fprintf
                 (match (assoc
@@ -128,7 +128,7 @@
                 device
                 reading
                 date-sec)])
-            (hash-set! last-reading sensor-name date-sec)]
+            (hash-set! last-reading device-name date-sec)]
            [else ;; not long enough since last reading, ignore it
             last-reading])
      (match (regexp-match BETWEEN-RECORDS-REGEXP port)

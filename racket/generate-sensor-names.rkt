@@ -8,17 +8,17 @@
                ("mech" "mechanical room")
                ("out" "outside north wall")))
 
-;; generate the list of sensor names. Used to populate the
+;; generate the list of device names. Used to populate the
 ;; database.  This list must also match the one in ids.rkt
 
 (provide device-names device-strs light-names)
 
 ;- `hum` : Humidity : out, bed, bath, lr
 ;- `amb` : Ambient Light: bed, mech, lr, bath
-;- `occ` : Occupancy sensors: bed, mech, lr, bath
+;- `occ` : Occupancy devices: bed, mech, lr, bath
 
 
-(define sensor-patterns
+(define device-patterns
   '(("s-temp" ("out" "bed" "bath" "lr" "kit") "the temperature in the ~a")
     ("s-hum" ("out" "bed" "bath" "lr" "kit") "the humidity in the ~a")
     ("s-occ" ("bed" "mech" "lr" "bath") "whether the ~a is occupied")
@@ -90,7 +90,7 @@ Uplights and Pot Lights (8B)")
 
 (define all-devices
   (append
-   (for*/list ([pat (in-list sensor-patterns)]
+   (for*/list ([pat (in-list device-patterns)]
                [r (in-list (second pat))])
      (list (~a (first pat)"-"r)
            (format (third pat) (second (assoc r rooms)))))
@@ -98,14 +98,14 @@ Uplights and Pot Lights (8B)")
    (for/list ([l (in-list light-names)])
      (list l "..."))))
 
-(define (print-sensor-spec)
+(define (print-device-spec)
   (for-each
    display
    (append
     (for/list ([pr (in-list all-devices)])
       (~a "- `"(first pr)"` : "(second pr)"\n")))))
 
-;(print-sensor-spec)
+;(print-device-spec)
 
 ;; as strings, for ids.rkt:
 (define device-strs

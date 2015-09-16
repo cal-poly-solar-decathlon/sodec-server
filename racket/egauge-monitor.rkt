@@ -5,7 +5,7 @@
          racket/contract
          racket/date
          sxml
-         "data-model-influx.rkt")
+         "data-model.rkt")
 
 (define-logger sodec)
 
@@ -105,7 +105,7 @@
      (define influx-device-name
        (cadr (assoc name mapping)))
      (define reading (string->number value-str))
-     (record-sensor-status! "electric_power" influx-device-name reading
+     (record-device-status! "electric_power" influx-device-name reading
                             #:timestamp timestamp)]))
 
 ;; read the data from the egauge, write it to influx
