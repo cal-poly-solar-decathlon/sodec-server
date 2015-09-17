@@ -17,26 +17,46 @@
 (provide 
          #;devices-list
          (contract-out
-          [struct event ([timestamp exact-integer?]
-                         [reading exact-integer?])]
+          [struct event ([timestamp milliseconds?]
+                         [reading 64-bit-int?])]
           [device-latest-reading
-           (-> measurement? device? (or/c false? exact-integer?))]
+           (-> measurement? device? maybe-reading/c)]
           [device-events-in-range
-           (-> measurement? device? exact-integer? exact-integer? (listof event?))]
+           (-> measurement? device? seconds? seconds? (listof event?))]
+          [device-interval-means
+           (-> measurement? device? exact-integer? seconds? seconds?
+               #;(listof maybe-reading/c)
+               any)]
           [count-device-events-in-range
-           (-> measurement? device? exact-integer? exact-integer? 64-bit-int?)]
+           (-> measurement? device? seconds? seconds? 64-bit-int?)]
           [record-device-status!
            (->* (measurement? device? 64-bit-int?)
-                (#:timestamp exact-integer?) void?)]
+                (#:timestamp milliseconds?) void?)]
           [maybe-reading->jsexpr
-           (-> (or/c false? integer?) jsexpr?)]
+           (-> maybe-reading/c jsexpr?)]
           [current-timestamp
-           (-> exact-integer?)]
+           (-> seconds?)]
           [events->jsexpr (-> (listof event?) jsexpr?)])
          testing?
          reset-database-test-tables!)
 
 (define (false? x) (eq? x #false))
+
+;; can a number be represented as a 64-bit int?
+;(: 64-bit-int? (Integer -> Boolean))
+(define (64-bit-int? x)
+  (<= MIN64INT x MAX64INT))
+(define MAX64INT #x7fffffffffffffff)
+(define MIN64INT (- #x8000000000000000))
+
+
+;; either a reading or else false
+(define maybe-reading/c (or/c false? 64-bit-int?))
+
+;; a number of seconds
+(define seconds? exact-integer?)
+;; a number of milliseconds
+(define milliseconds? exact-integer?)
 
 ;; is this one of the known measurements?
 (define (measurement? m)
@@ -48,13 +68,6 @@
 (define (device? d)
   (and (string? d)
        (regexp-match LEGAL-DEVICE-REGEXP d)))
-
-;; can a number be represented as a 64-bit int?
-;(: 64-bit-int? (Integer -> Boolean))
-(define (64-bit-int? x)
-  (<= MIN64INT x MAX64INT))
-(define MAX64INT #x7fffffffffffffff)
-(define MIN64INT (- #x8000000000000000))
 
 (struct event (timestamp reading) #:transparent)
 
@@ -120,6 +133,27 @@
                   "inferred constraint failed, expected #f or one series in ~e"
                   other)]))
 
+(define EVENTS-IN-RANGE-QUERY
+  "SELECT * FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
+
+;; given a device, a start, an end, and an interval length (all in seconds),
+;; return the mean reading in each of a set of intervals. The timestamps
+;; in the returned events represent the beginnings of the given intervals,
+;; and don't correspond to a particular event. If no events occurred in a
+;; particular interval, the value "no event" takes the place of the reading
+(define (device-interval-means measurement device start end interval)
+  (define start-ns (* start (expt 10 9)))
+  (define end-ns (* end (expt 10 9)))
+  (define response
+    (perform-query
+     (let ([ans (format INTERVAL-MEANS-QUERY measurement start-ns end-ns device interval)])
+       (printf "~s\n" ans)
+       ans)))
+  response)
+
+(define INTERVAL-MEANS-QUERY
+  "SELECT MEAN(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a' GROUP BY time(~as)")
+
 ;; find the index of an element in an array
 (define (find-column-index los s)
   (let loop ([idx 0] [los los])
@@ -130,8 +164,6 @@
           [(equal? (car los) s) idx]
           [else (loop (add1 idx) (cdr los))])))
 
-(define EVENTS-IN-RANGE-QUERY
-  "SELECT * FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
 
 ;; return device statuses in some time range (one device),
 ;; times in seconds
@@ -158,8 +190,8 @@
   "SELECT COUNT(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
 
 
-;; given a measurement and a location/device and a reading, write them to
-;; the database
+;; given a measurement and a location/device and a reading and an optional timestamp
+;; in milliseconds since epoch, write them to the database
 (define (record-device-status! measurement device reading
                                #:timestamp [timestamp-ms #f])
   (define timestamp (cond [timestamp-ms timestamp-ms]

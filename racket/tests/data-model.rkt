@@ -54,17 +54,19 @@
    322)
 
   ;; record something in the future!
-  (define future1 (+ (* 1000 (current-seconds)) 500))
+  ;; NB: "current-seconds" may be as much as a second in the past...
+  (define future1 (+ (* 1000 now1) 1500))
   (record-device-status! "temperature" "living_room" 331
                          #:timestamp future1) 
-
-  (sleep 1)
+  (sleep 2)
+  
+  
   
   ;; now the latest has changed:
    (check-equal? (device-latest-reading "temperature" "living_room")
                 331)
 
-  (define future2 (+ (* 1000 (current-seconds)) 800))
+  (define future2 (+ (* 1000 now1) 1800))
   (record-device-status! "temperature" "bedroom" 228
                          #:timestamp future2)
 
@@ -93,10 +95,10 @@
 
   (check-not-exn (lambda () (current-timestamp)))
   
-  (define ts (current-timestamp))
-  (define ts+1sec (+ ts 1))
-  (define ts-1 (- ts 86400))
-  (define ts-2 (- ts (* 2 86400)))
+  (define ts+1sec (+ now1 1))
+  (define ts+2sec (+ now1 2))
+  (define ts-1 (- now1 86400))
+  (define ts-2 (- now1 (* 2 86400)))
   
   (check-equal? (device-events-in-range "temperature" "bedroom" ts-2 ts-1)
                 '())
@@ -123,6 +125,7 @@
                                            (? date? ts3)
                                            224])))
 
+  (sleep 1)
   (check-equal? (count-device-events-in-range "temperature" "bedroom" ts-1 ts+1sec)
                 3)
 
@@ -151,6 +154,24 @@
                (devices-list)))
 
   #;(record-device-status! )
+  (let ()
+    (define ts (current-timestamp))
+    (define (secs n) (+ ts n))
+
+    (define testpoints
+      '((0 10)
+        (-1 24)
+        (-3 36)
+        (-4 100)))
+    (for ([t (in-list testpoints)])
+      (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp (* (secs (car t)) 1000)))
+
+    (print (device-interval-means "temperature" "kitchen"
+                                  (secs -10) (secs 0) 5))
     
+    (check-equal? (device-interval-means "temperature" "kitchen" (secs -10) (secs 0) 5)
+                  (list "no event"
+                        (/ (+ 100 36 24) 3)))
+    )
 
   )))
