@@ -153,17 +153,16 @@ is probably best measured using `first-by-interval`
     + end (number) ... the timestamp (in seconds) of the end of the desired range
     + interval (number) ... the interval length (in seconds)
 
-## Get the men value of each interval [GET]
-
-For consistency, times are in milliseconds. The time is the beginning of each interval,
-not the time of a particular reading
+## Get the mean value of each interval [GET]
 
 + Response 200 (application/json)
 
     + Body
 
-            [{t:282379,r:229873},
-             {t:282483,r:229874}]
+            [229873,
+             229874,
+             "no events",
+             228383]
 
 # Device Subsampling by first event in range [/srv/first-by-interval{?measurement,device,start,end,interval}]
 
