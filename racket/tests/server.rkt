@@ -260,6 +260,12 @@
                                         (_5 _6)
                                         ...)))))
 
+   (test-case
+    "insights"
+    (check-pred
+     (listof (hash/c symbol? (or/c string? number?) #:immutable #t))
+     (gett "latest-insights" '())))
+
    ;; INTERVAL MEANS
 
    
@@ -398,12 +404,6 @@
     
     )))
 
-(define ts (find-seconds 23 14 17 11 9 2015))
-(gett "mean-by-interval" `((measurement "humidity")
-                           (device "outside")
-                           (start ,ts)
-                           (end ,(+ ts 100))
-                           (interval 30)))
 
 #;((define ts (get-timestamp))
 

@@ -10,6 +10,7 @@
          "secret.rkt"
          "device-table.rkt"
          "forecast.rkt"
+         "comfort-insights.rkt"
          xml)
 
 (provide start
@@ -55,6 +56,8 @@
               (handle-interval-aggregation-request "first" (url-query uri))]
              ["latest-forecast"
               (handle-latest-forecast-request)]
+             ["latest-insights"
+              (handle-latest-insights-request)]
              #;["list-old-device-ids"
               (handle-device-list-request)]
              ["timestamp"
@@ -262,6 +265,10 @@
       #"wrong query fields"
       (format "expected a query with fields matching spec, got: ~e"
               query))]))
+
+(define (handle-latest-insights-request)
+  (response/json
+   (map insight->jsexpr (generate-comfort-insights))))
 
 ;;;;
 ;;

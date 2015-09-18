@@ -21,6 +21,8 @@
                          [reading reading?])]
           [struct summary ([timestamp ts-milliseconds?]
                            [maybe-reading maybe-reading?])]
+          [measurement-devices
+           (-> measurement? (listof device?))]
           [device-latest-reading
            (-> measurement? device? maybe-reading?)]
           [device-events-in-range
@@ -95,6 +97,22 @@
 
 (struct event (timestamp reading) #:transparent)
 (struct summary (timestamp maybe-reading) #:transparent)
+
+;; return a list of the devices associated with a measurement
+(define (measurement-devices measurement)
+  (define response
+    (perform-query (format
+                    "SHOW TAG VALUES FROM ~a WITH KEY = device"
+                    measurement)))
+  (match (query-response->series response)
+    [(list (? series-hash? series))
+     (define column-names (hash-ref series 'columns))
+     (define device-index (find-column-index column-names "device"))
+     (for/list ([record (in-list (hash-ref series 'values))])
+       (list-ref record device-index))]
+    [other (error 'device-latest-event
+                  "inferred constraint failed, expected exactly one series in ~e"
+                  other)]))
 
 ;; return the current time
 (define (current-timestamp)
