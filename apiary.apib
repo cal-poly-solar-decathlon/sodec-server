@@ -142,9 +142,12 @@ last words.
 # Device Subsampling by Mean [/srv/mean-by-interval{?measurement,device,start,end,interval}]
 
 Aggregate the data by returning the mean reading for each interval in the given range.
+Ranges that don't have any data will return the reading "none".
 
 NB: this will probably be valuable for temperature & humidity, but electrical power
-is probably best measured using `first-by-interval`
+is probably best measured using `first-by-interval`.
+
+Note that timestamps are in millisecond timestamps
 
 + Parameters
     + measurement (string) ... the measurement
@@ -159,10 +162,10 @@ is probably best measured using `first-by-interval`
 
     + Body
 
-            [229873,
-             229874,
-             "no events",
-             228383]
+            [{t:1442551980533,r:225},
+             {t:1442551985533,r:228},
+             {t:1442551990533,r:"none"},
+             {t:1442551995533,r:198}]
 
 # Device Subsampling by first event in range [/srv/first-by-interval{?measurement,device,start,end,interval}]
 

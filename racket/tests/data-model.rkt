@@ -178,10 +178,6 @@
         (-3 36)
         (-4 99)))
     (for ([t (in-list testpoints)])
-      (let ([ans (* 1000000000 (secs (car t)))])
-        (printf "~s\n" ans)
-        ans))
-    (for ([t (in-list testpoints)])
       (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
                              (* (secs (car t)) 1000)))
 
@@ -190,9 +186,9 @@
     
     (check-equal? (device-interval-means "temperature" "kitchen"
                                          (secs -8) (secs 2) 5)
-                  (list (summary (* 1000 (- ts 10)) "no event")
-                        (/ (+ 99 36 24) 3)
-                        22))
+                  (list (summary (* 1000 (- ts 10)) #f)
+                        (summary (* 1000 (- ts 5)) (/ (+ 99 36 24) 3))
+                        (summary (* 1000 ts) 22)))
     )
 
   )))

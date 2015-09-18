@@ -5,6 +5,7 @@
          rackunit
          rackunit/text-ui
          racket/date
+         racket/block
          json
          "../device-table.rkt"
          "../web-funs.rkt")
@@ -50,11 +51,13 @@
 (define ((port-containing str) port)
   (regexp-match (regexp-quote str) port))
 
+(define ((eqto? a) b)
+  (equal? a b))
 
 (run-tests
 (test-suite
  "racket server"
- (let ()
+ (block
 
 
    (test-equal? "ping" (gett "ping" #f) "alive")
@@ -241,6 +244,7 @@
      (list (regexp #"^HTTP/1.1 400 ")
            _2 _3)))
 
+   ;; WEATHER FORECAST
    (test-case
     "weather forecast"
     (check-match
@@ -252,6 +256,30 @@
                                         ('minutely _4)
                                         (_5 _6)
                                         ...)))))
+
+   ;; INTERVAL MEANS
+
+   
+    (test-case
+     "interval means"
+     (define ts (find-seconds 23 14 17 4 9 2015))
+     (check-match
+      (gett "mean-by-interval" `((measurement "humidity")
+                                 (device "outside")
+                                 (start ,ts)
+                                 (end ,(+ ts 100))
+                                 (interval 30)))
+      (list (hash-table ('t (? (eqto? (find-seconds 0 14 17 4 9 2015)) _1))
+                        ('r _2))
+            (hash-table ('t (? (eqto? (find-seconds 30 14 17 4 9 2015)) _3))
+                        ('r _4))
+            (hash-table ('t (? (eqto? (find-seconds 0 15 17 4 9 2015)) _5))
+                        ('r _6))
+            (hash-table ('t (? (eqto? (find-seconds 30 15 17 4 9 2015)) _7))
+                        ('r _8))
+            (hash-table ('t (? (eqto? (find-seconds 0 16 17 4 9 2015)) _9))
+                        ('r _10))
+            )))
 )))
 
 ;; this test suite ensures that the server is receiving
@@ -306,6 +334,7 @@
                       (device "bedroom")
                       (start ,(- ts 3600))
                       (end ,ts))))))
+
     
     
     )))

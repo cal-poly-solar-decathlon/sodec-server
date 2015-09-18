@@ -47,7 +47,8 @@
 ;; can a number be represented as a 64-bit int?
 ;(: 64-bit-int? (Integer -> Boolean))
 (define (64-bit-int? x)
-  (<= MIN64INT x MAX64INT))
+  (and (exact-integer? x)
+       (<= MIN64INT x MAX64INT)))
 (define MAX64INT #x7fffffffffffffff)
 (define MIN64INT (- #x8000000000000000))
 (define reading? 64-bit-int?)
@@ -172,10 +173,14 @@
     [(list (? series-hash? series))
      (define column-names (hash-ref series 'columns))
      (define time-index (find-column-index column-names "time"))
-     (define reading-index (find-column-index column-names "reading"))
+     (define mean-index (find-column-index column-names "mean"))
      (for/list ([record (in-list (hash-ref series 'values))])
-       (event (influx-timestamp->milliseconds (list-ref record time-index))
-              (list-ref record reading-index)))]
+       (define mean
+         (match (list-ref record mean-index)
+           ['null #f]
+           [other other]))
+       (summary (influx-timestamp->milliseconds (list-ref record time-index))
+                mean))]
     [other (error 'count-device-events-in-range
                   "inferred constraint failed, expected #f or one series in ~e"
                   other)]))
@@ -348,7 +353,8 @@
   (cond [(integer? reading) reading]
         [else "no events"]))
 
-
+;; translate influx time strings into local milliseconds.
+;; note that influx time strings are in Zulu (GMT) time
 (define (influx-timestamp->milliseconds str)
   (match (regexp-match TIMESTAMP-REGEXP str)
     [(list dc year month day hour minute second maybe-ms)
@@ -363,7 +369,8 @@
                          (string->number hour)
                          (string->number day)
                          (string->number month)
-                         (string->number year))))]))
+                         (string->number year)
+                         #f)))]))
 
 (define TIMESTAMP-REGEXP
   #px"^([[:digit:]]{4})-([[:digit:]]{2})-([[:digit:]]{2})T([[:digit:]]{2}):([[:digit:]]{2}):([[:digit:]]{2})(\\.[[:digit:]]+)?Z$")
@@ -378,7 +385,8 @@
                                        14
                                        12
                                        9
-                                       2015))
+                                       2015
+                                       #f))
                  247))
 
   (check-equal? (influx-timestamp->milliseconds "2015-09-12T14:25:53.24Z")
@@ -388,7 +396,8 @@
                                        14
                                        12
                                        9
-                                       2015))
+                                       2015
+                                       #f))
                  240))
   
   (check-equal? (influx-timestamp->milliseconds "2015-09-12T14:25:53Z")
@@ -397,4 +406,5 @@
                                       14
                                       12
                                       9
-                                      2015))))
+                                      2015
+                                      #f))))
