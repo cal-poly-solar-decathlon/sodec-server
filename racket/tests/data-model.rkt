@@ -140,9 +140,9 @@
                                            (ms->s/ceiling ts+4sec)))
    (list (hash-table ('t (? exact-integer? n1))
                      ('r 229))
-         (hash-table ('t (? exact-integer? n1))
+         (hash-table ('t (? exact-integer? n2))
                      ('r 228))
-         (hash-table ('t (? exact-integer? n1))
+         (hash-table ('t (? exact-integer? n3))
                      ('r 224))))
 
 
