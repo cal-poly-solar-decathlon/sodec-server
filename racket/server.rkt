@@ -50,7 +50,9 @@
              ["count-events-in-range"
               (handle-device-count-events-in-range-request (url-query uri))]
              ["mean-by-interval"
-              (handle-interval-means-request (url-query uri))]
+              (handle-interval-aggregation-request "mean" (url-query uri))]
+             ["first-by-interval"
+              (handle-interval-aggregation-request "first" (url-query uri))]
              ["latest-forecast"
               (handle-latest-forecast-request)]
              #;["list-old-device-ids"
@@ -211,9 +213,8 @@
               query))]))
 
 ;; handle an interval means request
-(define (handle-interval-means-request query)
+(define (handle-interval-aggregation-request aggregation query)
   (match query
-    ;; could give more fine-grained error messages here...
     [(list-no-order
       (cons 'measurement (? string? measurement))
       (cons 'device (? string? device))
@@ -253,7 +254,7 @@
            [else
             (response/json
              (datapoints->jsexpr
-              (device-interval-means measurement device start end interval)))])]
+              (device-interval-aggregate aggregation measurement device start end interval)))])]
     [else
      ;; spent a while on stack overflow checking what response code is
      ;; best, seems there's quite a bit of disagreement...

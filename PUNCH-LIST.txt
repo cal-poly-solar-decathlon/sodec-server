@@ -1,2 +1,10 @@
 - pi needs internet to set time
-- cable for wired internet & trip cover?
+- trip cable for wired internet cover?
+- logos on web page
+- password for solar wifi
+- sodec network ability to log in remotely?
+- update pi server on Tuesday
+
+APP
+
+add "degrees" symbol and "percent"

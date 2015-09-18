@@ -3,7 +3,8 @@
 (require rackunit
          rackunit/text-ui
          "../data-model.rkt"
-         racket/date)
+         racket/date
+         racket/block)
 
 
 ;; safe to do this every time...
@@ -169,32 +170,40 @@
                       (< 10 (length devlist))))
                (devices-list)))
 
-  #;(record-device-status! )
-  (let ()
-    ;; ARRGGHH. Finally figured out influxdb forcibly rounds its
-    ;; interval starts. so, if you ask for 5-second intervals starting
-    ;; at 14:31, it will actually start at 14:30, because 14:30 is
-    ;; 'divisible by 5'. Sounds frightening.
-    ;; in order to test this, then, we need times that are "divisible by
-    ;; 5 seconds."
-    (define ts (find-seconds 35 04 17 15 09 2015))
-    (define (secs n) (+ ts n))
+  (block
+   ;; ARRGGHH. Finally figured out influxdb forcibly rounds its
+   ;; interval starts. so, if you ask for 5-second intervals starting
+   ;; at 14:31, it will actually start at 14:30, because 14:30 is
+   ;; 'divisible by 5'. Sounds frightening (fragile). What about intervals
+   ;; like 7 seconds?
+   ;; in order to test this, then, we need times that are "divisible by
+   ;; 5 seconds."
+   (define ts (find-seconds 35 04 17 15 09 2015))
+   (define (secs n) (+ ts n))
+   
+   (define testpoints
+     '((1 33)
+       (0 11)
+       (-1 24)
+       (-3 36)
+       (-4 99)))
+   (for ([t (in-list testpoints)])
+     (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
+                            (* (secs (car t)) 1000)))
+   
+   (check-equal? (device-interval-aggregate "mean"
+                                            "temperature" "kitchen"
+                                            (secs -8) (secs 2) 5)
+                 (list (summary (* 1000 (- ts 10)) #f)
+                       (summary (* 1000 (- ts 5)) (/ (+ 99 36 24) 3))
+                       (summary (* 1000 ts) 22)))
 
-    (define testpoints
-      '((1 33)
-        (0 11)
-        (-1 24)
-        (-3 36)
-        (-4 99)))
-    (for ([t (in-list testpoints)])
-      (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
-                             (* (secs (car t)) 1000)))
-    
-    (check-equal? (device-interval-means "temperature" "kitchen"
-                                         (secs -8) (secs 2) 5)
-                  (list (summary (* 1000 (- ts 10)) #f)
-                        (summary (* 1000 (- ts 5)) (/ (+ 99 36 24) 3))
-                        (summary (* 1000 ts) 22)))
-    )
+   (check-equal? (device-interval-aggregate "first"
+                                            "temperature" "kitchen"
+                                            (secs -8) (secs 2) 5)
+                 (list (summary (* 1000 (- ts 10)) #f)
+                       (summary (* 1000 (- ts 5)) 99)
+                       (summary (* 1000 ts) 11)))
+   )
 
   )))

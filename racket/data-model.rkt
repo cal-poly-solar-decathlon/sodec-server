@@ -25,8 +25,9 @@
            (-> measurement? device? maybe-reading?)]
           [device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
-          [device-interval-means
-           (-> measurement? device? exact-integer? ts-seconds? seconds?
+          [device-interval-aggregate
+           (-> (or/c "first" "mean")
+               measurement? device? exact-integer? ts-seconds? seconds?
                (listof summary?))]
           [count-device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? 64-bit-int?)]
@@ -160,36 +161,43 @@
 (define EVENTS-IN-RANGE-QUERY
   "SELECT * FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
 
-;; given a device, a start, an end, and an interval length (all in seconds),
-;; return the mean reading in each of a set of intervals. The timestamps
+
+;; given a string that's either "first" or "mean",
+;; a device, a start, an end, and an interval length (all in seconds),
+;; return the mean or first reading in each of a set of intervals. The timestamps
 ;; in the returned events represent the beginnings of the given intervals,
 ;; and don't correspond to a particular event. If no events occurred in a
 ;; particular interval, the value "no event" takes the place of the reading
-(define (device-interval-means measurement device start end interval)
+(define (device-interval-aggregate aggregation-name measurement device start end interval)
   (define start-ns (* start (expt 10 9)))
   (define end-ns (* end (expt 10 9)))
   (define response
     (perform-query
-     (format INTERVAL-MEANS-QUERY measurement start-ns end-ns device interval)))
+     (format INTERVAL-QUERY
+             aggregation-name measurement start-ns end-ns device interval)))
   (match (query-response->series response)
     [#f null]
     [(list (? series-hash? series))
      (define column-names (hash-ref series 'columns))
      (define time-index (find-column-index column-names "time"))
-     (define mean-index (find-column-index column-names "mean"))
+     (define mean-index (find-column-index column-names aggregation-name))
      (for/list ([record (in-list (hash-ref series 'values))])
-       (define mean
+       (define summary-value
          (match (list-ref record mean-index)
            ['null #f]
            [other other]))
        (summary (influx-timestamp->milliseconds (list-ref record time-index))
-                mean))]
+                summary-value))]
     [other (error 'count-device-events-in-range
                   "inferred constraint failed, expected #f or one series in ~e"
                   other)]))
 
-(define INTERVAL-MEANS-QUERY
-  "SELECT MEAN(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a' GROUP BY time(~as)")
+
+(define INTERVAL-QUERY
+  "SELECT ~a(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a' GROUP BY time(~as)")
+
+
+
 
 ;; find the index of an element in an array
 (define (find-column-index los s)

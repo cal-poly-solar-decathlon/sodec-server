@@ -264,28 +264,24 @@
 
    
    (test-case
-     "interval means"
+     "interval means/firsts"
      (define ts (find-seconds 23 14 17 4 9 2015))
-     (check-match
+     (check-pred
+      (flat-contract-predicate
+       (listof (hash/c (symbols 't 'r) any/c #:immutable #t)))
       (gett "mean-by-interval" `((measurement "humidity")
                                  (device "outside")
                                  (start ,ts)
                                  (end ,(+ ts 100))
-                                 (interval 30)))
-      ;;this test just became kind of pointless...
-      (or/c
-       (list (hash-table ('t (? (eqto? (find-seconds 0 14 17 4 9 2015)) _1))
-                         ('r _2))
-             (hash-table ('t (? (eqto? (find-seconds 30 14 17 4 9 2015)) _3))
-                         ('r _4))
-             (hash-table ('t (? (eqto? (find-seconds 0 15 17 4 9 2015)) _5))
-                         ('r _6))
-             (hash-table ('t (? (eqto? (find-seconds 30 15 17 4 9 2015)) _7))
-                         ('r _8))
-             (hash-table ('t (? (eqto? (find-seconds 0 16 17 4 9 2015)) _9))
-                         ('r _10))
-             )
-       (list))))
+                                 (interval 30))))
+     (check-pred
+      (flat-contract-predicate
+       (listof (hash/c (symbols 't 'r) any/c #:immutable #t)))
+      (gett "first-by-interval" `((measurement "humidity")
+                                 (device "outside")
+                                 (start ,ts)
+                                 (end ,(+ ts 100))
+                                 (interval 30)))))
 )))
 
 ;; this test suite ensures that the server is receiving
@@ -341,29 +337,73 @@
                       (start ,(- ts 3600))
                       (end ,ts))))))
 
-    #;(test-case
-     "interval means"
-     (define ts (find-seconds 23 14 17 4 9 2015))
+    (test-case
+     "interval means/firsts"
+     (define ts (find-seconds 23 14 17 11 9 2015))
      (check-match
       (gett "mean-by-interval" `((measurement "humidity")
                                  (device "outside")
                                  (start ,ts)
                                  (end ,(+ ts 100))
                                  (interval 30)))
-      (list (hash-table ('t (? (eqto? (find-seconds 0 14 17 4 9 2015)) _1))
+      (list (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 14 17 11 9 2015)))
+                               _1))
                         ('r _2))
-            (hash-table ('t (? (eqto? (find-seconds 30 14 17 4 9 2015)) _3))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 14 17 11 9 2015)))
+                               _3))
                         ('r _4))
-            (hash-table ('t (? (eqto? (find-seconds 0 15 17 4 9 2015)) _5))
+            (hash-table ('t (? (eqto?
+                                (* 1000(find-seconds 0 15 17 11 9 2015)))
+                               _5))
                         ('r _6))
-            (hash-table ('t (? (eqto? (find-seconds 30 15 17 4 9 2015)) _7))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 15 17 11 9 2015)))
+                               _7))
                         ('r _8))
-            (hash-table ('t (? (eqto? (find-seconds 0 16 17 4 9 2015)) _9))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 16 17 11 9 2015)))
+                               _9))
+                        ('r _10))
+            ))
+     (check-match
+      (gett "first-by-interval" `((measurement "humidity")
+                                 (device "outside")
+                                 (start ,ts)
+                                 (end ,(+ ts 100))
+                                 (interval 30)))
+      (list (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 14 17 11 9 2015)))
+                               _1))
+                        ('r _2))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 14 17 11 9 2015)))
+                               _3))
+                        ('r _4))
+            (hash-table ('t (? (eqto?
+                                (* 1000(find-seconds 0 15 17 11 9 2015)))
+                               _5))
+                        ('r _6))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 15 17 11 9 2015)))
+                               _7))
+                        ('r _8))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 16 17 11 9 2015)))
+                               _9))
                         ('r _10))
             )))
     
     
     )))
+
+(define ts (find-seconds 23 14 17 11 9 2015))
+(gett "mean-by-interval" `((measurement "humidity")
+                           (device "outside")
+                           (start ,ts)
+                           (end ,(+ ts 100))
+                           (interval 30)))
 
 #;((define ts (get-timestamp))
 
