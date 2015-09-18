@@ -167,6 +167,12 @@ Note that timestamps are in millisecond timestamps
              {t:1442551990533,r:"none"},
              {t:1442551995533,r:198}]
 
+GRR! Because of InfluxDB's inconsistency, the whole thing may also just return
+
+"no events"
+
+
+
 # Device Subsampling by first event in range [/srv/first-by-interval{?measurement,device,start,end,interval}]
 
 Return the first event in each interval. This will probably be the most

@@ -135,7 +135,7 @@
 
   
   (check-match
-   (events->jsexpr (device-events-in-range "temperature" "bedroom"
+   (datapoints->jsexpr (device-events-in-range "temperature" "bedroom"
                                            (ms->s/floor ts-1day)
                                            (ms->s/ceiling ts+4sec)))
    (list (hash-table ('t (? exact-integer? n1))
@@ -168,7 +168,6 @@
     ;; in order to test this, then, we need times that are "divisible by
     ;; 5 seconds."
     (define ts (find-seconds 35 04 17 15 09 2015))
-    (printf "ts: ~v\n" (seconds->date ts))
     (define (secs n) (+ ts n))
 
     (define testpoints
@@ -180,9 +179,6 @@
     (for ([t (in-list testpoints)])
       (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
                              (* (secs (car t)) 1000)))
-
-    (print (device-interval-means "temperature" "kitchen"
-                                  (secs -10) (secs 0) 5))
     
     (check-equal? (device-interval-means "temperature" "kitchen"
                                          (secs -8) (secs 2) 5)

@@ -27,8 +27,7 @@
            (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
           [device-interval-means
            (-> measurement? device? exact-integer? ts-seconds? seconds?
-               #;(listof maybe-reading/c)
-               any)]
+               (listof summary?))]
           [count-device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? 64-bit-int?)]
           [record-device-status!
@@ -38,9 +37,15 @@
            (-> maybe-reading? jsexpr?)]
           [current-timestamp
            (-> ts-seconds?)]
-          [events->jsexpr (-> (listof event?) jsexpr?)])
+          [datapoints->jsexpr (-> (listof (or/c event? summary?)) jsexpr?)])
          testing?
-         reset-database-test-tables!)
+         reset-database-test-tables!
+         ts-seconds?
+         seconds?
+         ts-milliseconds?
+         device?
+         measurement?
+         reading?)
 
 (define (false? x) (eq? x #false))
 
@@ -165,9 +170,7 @@
   (define end-ns (* end (expt 10 9)))
   (define response
     (perform-query
-     (let ([ans (format INTERVAL-MEANS-QUERY measurement start-ns end-ns device interval)])
-       (printf "~s\n" ans)
-       ans)))
+     (format INTERVAL-MEANS-QUERY measurement start-ns end-ns device interval)))
   (match (query-response->series response)
     [#f null]
     [(list (? series-hash? series))
@@ -322,14 +325,18 @@
            headers))
   (read-json port))
 
-;; convert a list of events to jsexprs
-(define (events->jsexpr events)
-  (map event->jsexpr events))
+;; convert a list of events and summaries to jsexprs
+(define (datapoints->jsexpr events)
+  (map datapoint->jsexpr events))
 
 ;; convert a single event to a jsexpr
-(define (event->jsexpr event)
-  (hash 't (event-timestamp event)
-        'r (event-reading event)))
+(define (datapoint->jsexpr datapoint)
+  (cond [(event? datapoint)
+         (hash 't (event-timestamp event)
+               'r (event-reading event))]
+        [(summary? datapoint)
+         (hash 't (summary-timestamp event)
+               'r (summary-maybe-reading event))]))
 
 
 ;;

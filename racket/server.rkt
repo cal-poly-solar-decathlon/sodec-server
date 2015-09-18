@@ -40,48 +40,35 @@
      (match method
        [#"GET"
         (match (url-path uri)
-          ;; latest event for a device
           [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("latest-event" (list))))
-           (handle-device-latest-event-request
-            (url-query uri))]
-          ;; events in a range for a device
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("events-in-range" (list))))
-           (handle-device-events-in-range-request
-            (url-query uri))]
-          ;; number of events in a range for a device
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("count-events-in-range" (list))))
-           (handle-device-count-events-in-range-request
-            (url-query uri))]
-          ;; forecast from forecast.io
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("latest-forecast" (list))))
-           (handle-latest-forecast-request)]
-          ;; a list of all devices
-          #;[(list (struct path/param ("srv" (list)))
-                 (struct path/param ("list-old-device-ids" (list))))
-           (handle-device-list-request)]
-          ;; timestamp of the server
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("timestamp" (list))))
-           (response/json (handle-timestamp-request))]
-          ;; a simple 'ping'
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("ping" (list))))
-           (response/json "alive")]
-          ;; a deliberate exception for testing logging
-          [(list (struct path/param ("srv" (list)))
-                 (struct path/param ("divbyzero" (list))))
-           (/ 1 0)]
+                 (struct path/param (endpoint (list))))
+           (match endpoint
+             ["latest-event"
+              (handle-device-latest-event-request (url-query uri))]
+             ["events-in-range"
+              (handle-device-events-in-range-request (url-query uri))]
+             ["count-events-in-range"
+              (handle-device-count-events-in-range-request (url-query uri))]
+             ["mean-by-interval"
+              (handle-interval-means-request (url-query uri))]
+             ["latest-forecast"
+              (handle-latest-forecast-request)]
+             #;["list-old-device-ids"
+              (handle-device-list-request)]
+             ["timestamp"
+              (handle-timestamp-request)]
+             ["ping"
+              (response/json "alive")]
+             ["divbyzero"
+              (/ 1 0)]
+             [other
+              (404-response
+               #"unknown server path"
+               (format "GET url ~v doesn't match known pattern" (url->string uri)))])]
           [other
-           (define message
-             (format "GET url ~v doesn't match known pattern" (url->string uri)))
-           (log-warning message)
            (404-response
             #"unknown server path"
-            message)])]
+            (format "GET url ~v doesn't match known pattern" (url->string uri)))])]
        [#"POST"
         (match (url-path uri)
           ;; record a new reading
@@ -95,7 +82,7 @@
 
 ;; handle a timestamp request
 (define (handle-timestamp-request)
-  (hash 'timestamp (current-timestamp)))
+  (response/json (hash 'timestamp (current-timestamp))))
 
 ;; handle a device list request
 ;; removed for now...
@@ -108,15 +95,17 @@
     [(list-no-order (cons 'measurement (? string? measurement))
                     (cons 'device (? string? device)))
      ;; intercept contract errors, turn them into 404s:
-     (with-handlers ([(lambda (exn)
-                        (regexp-match #px"expected: " (exn-message exn)))
-                      (lambda (exn)
-                        (fail-response
-                         404
-                         #"bad arguments"
-                         (exn-message exn)))])
-       (response/json
-        (maybe-reading->jsexpr (device-latest-reading measurement device))))]
+     (cond [(not (measurement? measurement))
+            (404-response
+             #"expected legal measurement"
+             (format "expected legal measurement name, got: ~e" measurement))]
+           [(not (device? device))
+            (404-response
+             #"expected legal device name"
+             (format "expected legal device name, got: ~e" device))]
+           [else
+            (response/json
+             (maybe-reading->jsexpr (device-latest-reading measurement device)))])]
     [else
      (404-response
       #"wrong query fields"
@@ -134,7 +123,23 @@
       (cons 'end (regexp NUM-REGEXP (list end-str))))
      (define start (string->number start-str))
      (define end (string->number end-str))
-     (cond [(< end start)
+     (cond [(not (measurement? measurement))
+            (404-response
+             #"expected legal measurement"
+             (format "expected legal measurement name, got: ~e" measurement))]
+           [(not (device? device))
+            (404-response
+             #"expected legal device name"
+             (format "expected legal device name, got: ~e" device))]
+           [(not (ts-seconds? start))
+            (404-response
+             #"expected legal seconds timestamp"
+             (format "expected legal timestamp in seconds for 'start', got: ~e" device))]
+           [(not (ts-seconds? end))
+            (404-response
+             #"expected legal seconds timestamp"
+             (format "expected legal timestamp in seconds for 'end', got: ~e" device))]
+           [(< end start)
             (404-response
              #"end before start"
              (format "expected a query with start <= end, got: ~e"
@@ -147,7 +152,7 @@
                      (- end start)))]
            [else
             (response/json
-             (events->jsexpr
+             (datapoints->jsexpr
               (device-events-in-range measurement device start end)))])]
     [else
      ;; spent a while on stack overflow checking what response code is
@@ -169,7 +174,23 @@
       (cons 'end (regexp NUM-REGEXP (list end-str))))
      (define start (string->number start-str))
      (define end (string->number end-str))
-     (cond [(< end start)
+     (cond [(not (measurement? measurement))
+            (404-response
+             #"expected legal measurement"
+             (format "expected legal measurement name, got: ~e" measurement))]
+           [(not (device? device))
+            (404-response
+             #"expected legal device name"
+             (format "expected legal device name, got: ~e" device))]
+           [(not (ts-seconds? start))
+            (404-response
+             #"expected legal number of seconds"
+             (format "expected legal timestamp in seconds for 'start', got: ~e" device))]
+           [(not (ts-seconds? end))
+            (404-response
+             #"expected legal number of seconds"
+             (format "expected legal timestamp in seconds for 'end', got: ~e" device))]
+           [(< end start)
             (404-response
              #"end before start"
              (format "expected a query with start <= end, got: ~e"
@@ -188,6 +209,64 @@
       #"wrong query fields"
       (format "expected a query with fields matching spec, got: ~e"
               query))]))
+
+;; handle an interval means request
+(define (handle-interval-means-request query)
+  (match query
+    ;; could give more fine-grained error messages here...
+    [(list-no-order
+      (cons 'measurement (? string? measurement))
+      (cons 'device (? string? device))
+      (cons 'start (regexp NUM-REGEXP (list start-str)))
+      (cons 'end (regexp NUM-REGEXP (list end-str)))
+      (cons 'interval (regexp NUM-REGEXP (list interval-str))))
+     (define start (string->number start-str))
+     (define end (string->number end-str))
+     (define interval (string->number interval-str))
+     (cond [(not (measurement? measurement))
+            (404-response
+             #"expected legal measurement"
+             (format "expected legal measurement name, got: ~e" measurement))]
+           [(not (device? device))
+            (404-response
+             #"expected legal device name"
+             (format "expected legal device name, got: ~e" device))]
+           [(not (ts-seconds? start))
+            (404-response
+             #"expected legal seconds timestamp"
+             (format "expected legal timestamp in seconds for 'start', got: ~e" device))]
+           [(not (ts-seconds? end))
+            (404-response
+             #"expected legal seconds timestamp"
+             (format "expected legal timestamp in seconds for 'end', got: ~e" device))]
+           [(< end start)
+            (404-response
+             #"end before start"
+             (format "expected a query with start <= end, got: ~e"
+                     query))]
+           [(< DAY-SECONDS (- end start))
+            (fail-response
+             400
+             #"range too long"
+             (format "expected a query length of less than or equal to one day, got ~e"
+                     (- end start)))]
+           [else
+            (response/json
+             (datapoints->jsexpr
+              (device-interval-means measurement device start end interval)))])]
+    [else
+     ;; spent a while on stack overflow checking what response code is
+     ;; best, seems there's quite a bit of disagreement...
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with fields matching spec, got: ~e"
+              query))]))
+
+;;;;
+;;
+;; POSTING
+;;
+;;;;
 
 ;; handle an incoming reading
 (define (handle-new-reading query headers post-data)
@@ -268,16 +347,21 @@
 
 ;; given a measurement, a device, a reading, and a secret, record the reading
 (define (handle-new-reading/mdss measurement device reading secret)
-  (cond [(string=? secret SEKRIT)
-         (with-handlers ([(lambda (exn)
-                            (regexp-match #px"expected: " (exn-message exn)))
-                          (lambda (exn)
-                            (fail-response
-                             404
-                             #"bad arguments"
-                             (exn-message exn)))])
-           (record-device-status! measurement device (inexact->exact reading))
-           (response/json "okay"))]
+  (cond [(not (measurement? measurement))
+         (404-response
+          #"expected legal measurement"
+          (format "expected legal measurement name, got: ~e" measurement))]
+        [(not (device? device))
+         (404-response
+          #"expected legal device name"
+          (format "expected legal device name, got: ~e" device))]
+        [(not (reading? reading))
+         (404-response
+          #"expected legal reading"
+          (format "expected legal reading, got: ~e" reading))]
+        [(string=? secret SEKRIT)
+         (record-device-status! measurement device reading)
+         (response/json "okay")]
         [else
          (fail-response
           403
@@ -356,9 +440,6 @@
 
 (module+ test
   (require rackunit)
-  
-  (check-match (jsexpr->bytes (handle-timestamp-request))
-               (regexp #px#"^\\{\"timestamp\":[[:digit:]]+\\}$"))
 
   (check-equal? (regexp-member #px"ad*e" (list "ab" "adddde" "aq"))
                 '("adddde")))
