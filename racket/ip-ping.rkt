@@ -19,7 +19,7 @@
 (define IP-PING-SLEEP-INTERVAL (* 60 15))
 
 (define (start-ip-ping #:host host #:port port)
-  (define url
+  (define the-url
     (url "http" #f ;; user
      host port
      #t ;; absolute?
@@ -41,7 +41,8 @@
                                              (current-seconds))
                                             #t)
                               (exn-message exn)))])
-            (define-values (status-line headers body-port) (http-sendrecv/url url))
+            (define-values (status-line headers body-port)
+              (http-sendrecv/url the-url))
             ;; drain the body port just to be civilized:
             (regexp-match #px".*" body-port))))
        (sleep IP-PING-SLEEP-INTERVAL)
