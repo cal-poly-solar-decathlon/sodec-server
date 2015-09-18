@@ -17,25 +17,27 @@
 (provide 
          #;devices-list
          (contract-out
-          [struct event ([timestamp milliseconds?]
-                         [reading 64-bit-int?])]
+          [struct event ([timestamp ts-milliseconds?]
+                         [reading reading?])]
+          [struct summary ([timestamp ts-milliseconds?]
+                           [maybe-reading maybe-reading?])]
           [device-latest-reading
-           (-> measurement? device? maybe-reading/c)]
+           (-> measurement? device? maybe-reading?)]
           [device-events-in-range
-           (-> measurement? device? seconds? seconds? (listof event?))]
+           (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
           [device-interval-means
-           (-> measurement? device? exact-integer? seconds? seconds?
+           (-> measurement? device? exact-integer? ts-seconds? seconds?
                #;(listof maybe-reading/c)
                any)]
           [count-device-events-in-range
-           (-> measurement? device? seconds? seconds? 64-bit-int?)]
+           (-> measurement? device? ts-seconds? ts-seconds? 64-bit-int?)]
           [record-device-status!
            (->* (measurement? device? 64-bit-int?)
-                (#:timestamp milliseconds?) void?)]
+                (#:timestamp ts-milliseconds?) void?)]
           [maybe-reading->jsexpr
-           (-> maybe-reading/c jsexpr?)]
+           (-> maybe-reading? jsexpr?)]
           [current-timestamp
-           (-> seconds?)]
+           (-> ts-seconds?)]
           [events->jsexpr (-> (listof event?) jsexpr?)])
          testing?
          reset-database-test-tables!)
@@ -48,15 +50,30 @@
   (<= MIN64INT x MAX64INT))
 (define MAX64INT #x7fffffffffffffff)
 (define MIN64INT (- #x8000000000000000))
+(define reading? 64-bit-int?)
 
 
 ;; either a reading or else false
-(define maybe-reading/c (or/c false? 64-bit-int?))
+(define maybe-reading? (or/c false? reading?))
 
+;; dates before the year 2000 or after 3000 are likely
+;; to be unit errors:
+(define MIN-REASONABLE-SECONDS
+  (find-seconds 0 0 0 1 1 2000))
+(define MAX-REASONABLE-SECONDS
+  (find-seconds 0 0 0 1 1 3000))
+(define MIN-REASONABLE-MILLISECONDS
+  (* MIN-REASONABLE-SECONDS 1000))
+(define MAX-REASONABLE-MILLISECONDS
+  (* MAX-REASONABLE-SECONDS 1000))
+
+;; a number of seconds used as a timestamp
+(define ts-seconds? (integer-in MIN-REASONABLE-SECONDS MAX-REASONABLE-SECONDS))
 ;; a number of seconds
 (define seconds? exact-integer?)
-;; a number of milliseconds
-(define milliseconds? exact-integer?)
+;; a number of milliseconds used as a timestamp
+(define ts-milliseconds?
+  (integer-in MIN-REASONABLE-MILLISECONDS MAX-REASONABLE-MILLISECONDS))
 
 ;; is this one of the known measurements?
 (define (measurement? m)
@@ -70,6 +87,7 @@
        (regexp-match LEGAL-DEVICE-REGEXP d)))
 
 (struct event (timestamp reading) #:transparent)
+(struct summary (timestamp maybe-reading) #:transparent)
 
 ;; return the current time
 (define (current-timestamp)
@@ -149,7 +167,18 @@
      (let ([ans (format INTERVAL-MEANS-QUERY measurement start-ns end-ns device interval)])
        (printf "~s\n" ans)
        ans)))
-  response)
+  (match (query-response->series response)
+    [#f null]
+    [(list (? series-hash? series))
+     (define column-names (hash-ref series 'columns))
+     (define time-index (find-column-index column-names "time"))
+     (define reading-index (find-column-index column-names "reading"))
+     (for/list ([record (in-list (hash-ref series 'values))])
+       (event (influx-timestamp->milliseconds (list-ref record time-index))
+              (list-ref record reading-index)))]
+    [other (error 'count-device-events-in-range
+                  "inferred constraint failed, expected #f or one series in ~e"
+                  other)]))
 
 (define INTERVAL-MEANS-QUERY
   "SELECT MEAN(reading) FROM ~a WHERE time > ~a AND time < ~a AND device = '~a' GROUP BY time(~as)")

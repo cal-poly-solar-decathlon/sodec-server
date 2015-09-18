@@ -21,6 +21,12 @@
   (check-equal? (device-latest-event "temperature" "outside") 9)
   )
 
+(define (ms->s/floor n)
+  (inexact->exact (floor (/ n 1000))))
+
+(define (ms->s/ceiling n)
+  (inexact->exact (ceiling (/ n 1000))))
+
 (run-tests
 (test-suite
  "data model tests"
@@ -44,7 +50,13 @@
   ;; no readings for outside yet
   (check-equal? (device-latest-reading "temperature" "outside")  #f)
 
-  (define now1 (current-seconds))
+  (define now1 (inexact->exact (round (current-inexact-milliseconds))))
+  (define ts+1sec (+ now1 1000))
+  (define ts+2sec (+ now1 2000))
+  (define ts+4sec (+ now1 4000))
+  (define ts-1day (- now1 86400000))
+  (define ts-2days (- now1 (* 2 1000 86400)))
+  
   (record-device-status! "temperature" "bedroom" 229)
   
   ;; this is still the latest:
@@ -54,11 +66,10 @@
    322)
 
   ;; record something in the future!
-  ;; NB: "current-seconds" may be as much as a second in the past...
-  (define future1 (+ (* 1000 now1) 1500))
+  (define future1 (+ now1 500))
   (record-device-status! "temperature" "living_room" 331
                          #:timestamp future1) 
-  (sleep 2)
+  (sleep 1)
   
   
   
@@ -66,7 +77,7 @@
    (check-equal? (device-latest-reading "temperature" "living_room")
                 331)
 
-  (define future2 (+ (* 1000 now1) 1800))
+  (define future2 (+ now1 800))
   (record-device-status! "temperature" "bedroom" 228
                          #:timestamp future2)
 
@@ -80,8 +91,8 @@
    "device-events-in-range"
   (check-match
    (device-events-in-range "temperature" "bedroom"
-                           (sub1 now1)
-                           (add1 (round (/ future2 1000))))
+                           (ms->s/floor (- now1 1000))
+                           (ms->s/ceiling future2))
    (list (event future1 229)
          (event future2 228))))
 
@@ -95,43 +106,38 @@
 
   (check-not-exn (lambda () (current-timestamp)))
   
-  (define ts+1sec (+ now1 1))
-  (define ts+2sec (+ now1 2))
-  (define ts-1 (- now1 86400))
-  (define ts-2 (- now1 (* 2 86400)))
+
+  (check-exn #px"expected: \\(integer-in"
+             (λ() (device-events-in-range "temperature" "bedroom" ts-2days ts-1day)))
   
-  (check-equal? (device-events-in-range "temperature" "bedroom" ts-2 ts-1)
+  (check-equal? (device-events-in-range "temperature" "bedroom"
+                                        (ms->s/floor ts-2days)
+                                        (ms->s/floor ts-1day))
                 '())
 
   
-  (check-match (device-events-in-range "temperature" "bedroom" ts-1 ts+1sec)
+  (check-match (device-events-in-range "temperature" "bedroom"
+                                       (ms->s/floor now1)
+                                       (ms->s/ceiling ts+1sec))
                 (list (struct event [(? exact-integer? ts1)
                                            229])
                       (struct event [(? exact-integer? ts2)
                                            228])))
 
   
-  
   (record-device-status! "temperature" "bedroom" 224)
-  
-  #;(check-match (device-events-in-range "s-temp-bed" ts-1 ts+1sec)
-               (list (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts1)
-                                           229])
-                      (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts2)
-                                           228])
-                      (struct SensorEvent ["s-temp-bed"
-                                           (? date? ts3)
-                                           224])))
 
   (sleep 1)
-  (check-equal? (count-device-events-in-range "temperature" "bedroom" ts-1 ts+1sec)
+  (check-equal? (count-device-events-in-range "temperature" "bedroom"
+                                              (ms->s/floor ts-1day)
+                                              (ms->s/ceiling ts+4sec))
                 3)
 
   
   (check-match
-   (events->jsexpr (device-events-in-range "temperature" "bedroom" ts-1 ts+1sec))
+   (events->jsexpr (device-events-in-range "temperature" "bedroom"
+                                           (ms->s/floor ts-1day)
+                                           (ms->s/ceiling ts+4sec)))
    (list (hash-table ('t (? exact-integer? n1))
                      ('r 229))
          (hash-table ('t (? exact-integer? n1))
@@ -155,23 +161,38 @@
 
   #;(record-device-status! )
   (let ()
-    (define ts (current-timestamp))
+    ;; ARRGGHH. Finally figured out influxdb forcibly rounds its
+    ;; interval starts. so, if you ask for 5-second intervals starting
+    ;; at 14:31, it will actually start at 14:30, because 14:30 is
+    ;; 'divisible by 5'. Sounds frightening.
+    ;; in order to test this, then, we need times that are "divisible by
+    ;; 5 seconds."
+    (define ts (find-seconds 35 04 17 15 09 2015))
+    (printf "ts: ~v\n" (seconds->date ts))
     (define (secs n) (+ ts n))
 
     (define testpoints
-      '((0 10)
+      '((1 33)
+        (0 11)
         (-1 24)
         (-3 36)
-        (-4 100)))
+        (-4 99)))
     (for ([t (in-list testpoints)])
-      (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp (* (secs (car t)) 1000)))
+      (let ([ans (* 1000000000 (secs (car t)))])
+        (printf "~s\n" ans)
+        ans))
+    (for ([t (in-list testpoints)])
+      (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
+                             (* (secs (car t)) 1000)))
 
     (print (device-interval-means "temperature" "kitchen"
                                   (secs -10) (secs 0) 5))
     
-    (check-equal? (device-interval-means "temperature" "kitchen" (secs -10) (secs 0) 5)
-                  (list "no event"
-                        (/ (+ 100 36 24) 3)))
+    (check-equal? (device-interval-means "temperature" "kitchen"
+                                         (secs -8) (secs 2) 5)
+                  (list (summary (* 1000 (- ts 10)) "no event")
+                        (/ (+ 99 36 24) 3)
+                        22))
     )
 
   )))
