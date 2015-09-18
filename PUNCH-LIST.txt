@@ -1,0 +1,2 @@
+- pi needs internet to set time
+- cable for wired internet & trip cover?
