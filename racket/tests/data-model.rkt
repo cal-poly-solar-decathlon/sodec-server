@@ -33,6 +33,16 @@
 (parameterize ([testing? #t])
 
   (test-case
+   "datapoints->jsexpr"
+   (define ts (inexact->exact (round (current-inexact-milliseconds))))
+   (check-equal?
+    (datapoints->jsexpr
+     (list (event ts 201)
+           (summary ts 202)))
+    (list (hash 't ts 'r 201)
+          (hash 't ts 'r 202))))
+  
+  (test-case
    "record-device-status illegal names"
    (check-exn #px"expected: measurement?"
               (lambda () (record-device-status! "shmoovy" "blaggo" 9)))

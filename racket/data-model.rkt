@@ -109,7 +109,7 @@
         [else REGULAR-DB]))
 
 
-
+;; RIGHT HERE, RETURNING 'null
 
 ;; return the latest device reading from one device.
 ;; choose arbitrarily in case of tie.
@@ -332,11 +332,11 @@
 ;; convert a single event to a jsexpr
 (define (datapoint->jsexpr datapoint)
   (cond [(event? datapoint)
-         (hash 't (event-timestamp event)
-               'r (event-reading event))]
+         (hash 't (event-timestamp datapoint)
+               'r (event-reading datapoint))]
         [(summary? datapoint)
-         (hash 't (summary-timestamp event)
-               'r (summary-maybe-reading event))]))
+         (hash 't (summary-timestamp datapoint)
+               'r (summary-maybe-reading datapoint))]))
 
 
 ;;
