@@ -70,7 +70,7 @@
 (define MIN-REASONABLE-SECONDS
   (find-seconds 0 0 0 1 1 2000))
 (define MAX-REASONABLE-SECONDS
-  (find-seconds 0 0 0 1 1 3000))
+  (find-seconds 0 0 0 1 1 2030))
 (define MIN-REASONABLE-MILLISECONDS
   (* MIN-REASONABLE-SECONDS 1000))
 (define MAX-REASONABLE-MILLISECONDS
