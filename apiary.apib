@@ -142,7 +142,7 @@ last words.
 # Device Subsampling by Mean [/srv/mean-by-interval{?measurement,device,start,end,interval}]
 
 Aggregate the data by returning the mean reading for each interval in the given range.
-Ranges that don't have any data will return the reading "none".
+Ranges that don't have any data will return the reading 'false'.
 
 NB: this will probably be valuable for temperature & humidity, but electrical power
 is probably best measured using `first-by-interval`.
@@ -164,7 +164,7 @@ Note that timestamps are in millisecond timestamps
 
             [{t:1442551980533,r:225},
              {t:1442551985533,r:228},
-             {t:1442551990533,r:"none"},
+             {t:1442551990533,r:false},
              {t:1442551995533,r:198}]
 
 GRR! Because of InfluxDB's inconsistency, the whole thing may also just return
