@@ -14,9 +14,9 @@
 
 (define HOST 
   ;; test locally:
-  "localhost"
+  #;"localhost"
   #;"129.65.138.226"
-  #;"calpolysolardecathlon.org"
+  "calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -274,7 +274,7 @@
      (define ts (find-seconds 23 14 17 4 9 2015))
      (check-pred
       (flat-contract-predicate
-       (listof (hash/c (symbols 't 'r) any/c #:immutable #t)))
+       (listof (hash/c (symbols 't 'r) (or/c number? "none") #:immutable #t)))
       (gett "mean-by-interval" `((measurement "humidity")
                                  (device "outside")
                                  (start ,ts)
@@ -282,12 +282,24 @@
                                  (interval 30))))
      (check-pred
       (flat-contract-predicate
-       (listof (hash/c (symbols 't 'r) any/c #:immutable #t)))
+       (listof (hash/c (symbols 't 'r) (or/c number? "none") #:immutable #t)))
       (gett "first-by-interval" `((measurement "humidity")
                                  (device "outside")
                                  (start ,ts)
                                  (end ,(+ ts 100))
                                  (interval 30)))))
+
+   (test-case
+    "long-term means"
+    (define ts (find-seconds 23 14 17 4 9 2015))
+    (check-pred
+     (flat-contract-predicate
+      (listof (hash/c (symbols 't 'r) (or/c number? "none") #:immutable #t)))
+     (gett "mean-by-interval" `((measurement "humidity")
+                                (device "outside")
+                                (start ,(- ts (* 86400 2)))
+                                (end ,ts)
+                                (interval 3600)))))
 )))
 
 ;; this test suite ensures that the server is receiving

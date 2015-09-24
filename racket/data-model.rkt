@@ -206,7 +206,7 @@
            [other other]))
        (summary (influx-timestamp->milliseconds (list-ref record time-index))
                 summary-value))]
-    [other (error 'count-device-events-in-range
+    [other (error 'device-interval-aggregate
                   "inferred constraint failed, expected #f or one series in ~e"
                   other)]))
 

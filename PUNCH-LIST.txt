@@ -1,9 +1,9 @@
 - pi needs internet to set time
 - trip cable for wired internet cover?
 - logos on web page
-- password for solar wifi
+- password for solar wifi: "then cas"
 - sodec network ability to log in remotely?
-- update pi server on Tuesday
+- update pi server AGAIN
 
 APP
 

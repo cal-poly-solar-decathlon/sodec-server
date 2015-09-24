@@ -248,12 +248,6 @@
              #"end before start"
              (format "expected a query with start <= end, got: ~e"
                      query))]
-           [(< DAY-SECONDS (- end start))
-            (fail-response
-             400
-             #"range too long"
-             (format "expected a query length of less than or equal to one day, got ~e"
-                     (- end start)))]
            [else
             (response/json
              (datapoints->jsexpr
