@@ -1,4 +1,4 @@
 #!/bin/sh
 
-racket -W 'warning' -L 'warning' ./run-server.rkt > server.out 2>&1
+racket -W 'error' -L 'error' ./run-server.rkt > server.out 2>&1
 
