@@ -1,0 +1,34 @@
+John,
+
+
+I am using the circuits assuming they are the same as the list you sent.  To make sure things are clear I have updated the list with the circuit description if these have been moved
+
+Mains Red -  100A
+Mains Black - 100A
+
+1.   50A  (Dryer/Washer)
+2 - 20A   (Dishwasher)
+3 - 20A    (Refrigerator)
+4 - 50A  (Cooktop) 
+5 - 20A  (Solar Water Heater)
+16 - 20A   (Mechanical Room Receptacles)
+19 - 20A   (Grey Water Pump)
+20 - 20A  (Black Water Pump)
+21 - 20A  (Thermal Loop Pump)
+22 - 20A  (Water Supply Pump)
+23 - 20A  (Microwave)
+25 - 20A   (HRV)
+26 - 20A  (Water Supply Booster Pump)
+27 - 50A    (A/C)   (may be fine with a 20A but not sure of the AC specs)
+28 - 20A   (Air Handler Receptacles)
+31 - 20A   (Lighting)
+32 - 20A   (Lighting)
+35  -  20A  (PV Inverter)
+36 - 50A   (PV Inverter)
+40   -   20A   (Vehicle Charging Station)
+
+35 & 36 are the Inverters.   The 5000W inverter connected to the bifacial panels should use the 50A CT and the 4000W Inverter connected to the Sunpower panels should use a 20A CT.   I am not sure which circuit is connected to which inverter
+
+This leaves us with 2 more 20A CTs to use to monitor receptacles.
+Possible choices are  8,9,10,12,13,14,15
+

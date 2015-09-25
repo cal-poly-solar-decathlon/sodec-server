@@ -1,0 +1,30 @@
+What follows are the expected power & network connections for the control
+systems that I'm aware of (I know nothing of lighting, for instance).
+
+I think most of this is going to be obvious, but I'll write it all up just to
+be sure.
+
+POWER:
+
+- eGauge gets power from mains
+- Raspberry Pi gets standard USB 5v using micro-usb, using supplied cable &
+  adapter
+- Arduino Mega gets 5v from goofy hacked-up power supply from Tim (or we could
+  probably hack something together from a consumer USB adapter, sigh)
+- wireless router has its own (19V?) power supply (labeled "asus", with blue
+  light)
+- ethernet switch has its own power supply (ribbed, IIRC ...)
+- everything else (remote temp/hum sensors) get power via existing Cat5
+
+NETWORK:
+
+- exterior-grade Cat5 connects grid to WAN port of wireless router
+- Cat5 from router LAN port to ethernet switch WAN port
+- Cat5 from *either* router or switch LAN ports to the following
+   * raspberry Pi
+   * arduino mega
+   * egauge 1
+   * egauge 2
+   * anything else needed by others on the project (consumer laptop?)
+- custom Cat5 from arduino mega to 4 remote temp/hum sensors throughout the
+  house.
