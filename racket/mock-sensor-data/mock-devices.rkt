@@ -123,7 +123,16 @@
     "water_supply_booster_pump"
     "vehicle_charging"
     "heat_pump"
-    "air_handler"))
+    "air_handler"
+    "air_conditioning"
+    "microwave"
+    "lighting_1"
+    "lighting_2"
+    "mains"))
+
+
+
+
 
 (define electric-generation-devices
   '("main_solar_array"

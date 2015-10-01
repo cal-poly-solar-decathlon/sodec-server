@@ -319,7 +319,6 @@
                              (device "living_room")))
       (? exact-integer? n)))
 
-    ;; this will only pick up temp/hum devices now...
     (for ([measurement (in-list MEASUREMENT-NAMES)]
           #:when (hash-ref measurement-device-table measurement #f))
       (for ([device (in-list (hash-ref measurement-device-table measurement))]

@@ -39,6 +39,51 @@ In order to maintain flexibility, we're just going to go with the flow,
 and accept whatever device ids come in from the eGauge. Note that no
 distinction is made here between power generated and power used.
 
+Sigh... looks like on the *app* side, it may be easier to hard-code these,
+depending on the interface. Here are the ones I've got right now:
+
+- main_solar_array
+- bifacial_solar_array
+- laundry
+- dishwasher
+- refrigerator
+- induction_stove (Cooktop)
+- water_heater (Solar Water Heater)
+- mechanical_room_outlets
+- greywater_pump
+- blackwater_pump
+- thermal_loop_pump
+- water_supply_pump
+- water_supply_booster_pump
+- vehicle_charging
+- heat_pump (heat recovery ventilation)
+- air_handler (air handler outlets)
+NEW
+- mains
+- air_conditioning
+- microwave
+- lighting_1
+- lighting_2
+OLD
+kitchen_outlets_1
+kitchen_outlets_2
+living_room_outlets
+dining_room_outlets_1
+dining_room_outlets_2
+bathroom_outlets
+bedroom_outlets_1
+bedroom_outlets_2
+entry_hall_outlets
+exterior_outlets
+
+Since the server is dynamic (it can handle whatever the eGauge provides), the
+basic rule is that the *app* must agree with the *egauge*. We have control
+over both of these, so it shouldn't be too bad. Once we start accumulating data,
+things get much harder to move around.
+
+The "old" ones are probably not going to occur in the house, but we'll continue
+generating mock data for them just in case.
+
 
 ## Representing Sensor Readings
 
@@ -243,68 +288,4 @@ Returns a number representing the number of events in a time range.
     + Body
 
             24739
-
-# Subscribe to Events [/srv/subscribe]
-
-Register a client with the server, to receive all events as they occur.
-NB: There's no unsubscribe; I don't think it'll ever be necessary, and
-the server will have to handle disappearing subscribers anyway.
-[UNIMPLEMENTED]
-
-## Subscribe [POST]
-
-Some authentication here might be nice.  I'm going to leave it
-out for now.
-
-+ Request (application/json)
-
-    + Body
-
-            {"ip":"xxx.xxx.xxx.xxx"}
-
-+ Response 200 (application/json)
-
-    + Body
-
-            true
-
-
-# Group Client
-
-# Notify [/totally/bogus]
-
-Notification that an event has occurred.
-
-As an aside, this model (that is, apiary) is totally broken... I can't refer to a model
-from outside? There are some major issues here.
-
-## Event [/client/notify]
-
-Messages sent from the server to a subscribed client
-
-+ Model (application/json)
-
-    A JSON object representing a control or sensor event
-
-    As a side note... this JSON schema mechanism is... weak.
-
-    + Body
-
-            {   "type": "controlorsensor",
-                "device" : "thedevicename",
-                "timestamp" : 472379717,
-                "reading" : 2271938470
-            }
-
-
-### Notify [POST]
-
-+ Request (application/json)
-    [Event][]
-
-+ Response 200 (application/json)
-
-    + Body
-
-            true
 

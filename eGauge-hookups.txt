@@ -32,3 +32,5 @@ Mains Black - 100A
 This leaves us with 2 more 20A CTs to use to monitor receptacles.
 Possible choices are  8,9,10,12,13,14,15
 
+
+[ed. note: For the names we're using in the eGauge, see apiary.apib]
