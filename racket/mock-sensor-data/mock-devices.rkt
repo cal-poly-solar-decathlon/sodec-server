@@ -49,39 +49,26 @@
       (unbox h-box))))
 
 ;; an electrical use generator. only goes up.
-
-(define (make-electrical-use-generator init)
+(define (make-electric-generator init ceiling)
   (let ([saved (box init)])
     (lambda ()
       (set-box! saved
                 (+ (unbox saved)
-                   (random ELEC-USE-CEILING)))
+                   (random ceiling)))
       (unbox saved))))
+
+;; convert watts to watt-seconds-per-interval
+(define (watts->ws-per-interval watts)
+  (let* ([Ws-per-s watts]
+         [Ws-per-interval (* Ws-per-s ELEC-READING-SECONDS)])
+    (round Ws-per-interval)))
 
 ;; a really big device would use 1500 watts
-(define ELEC-USE-CEILING
-  (let* ([W 1500]
-         [Ws-per-s W]
-         [Ws-per-interval (* Ws-per-s ELEC-READING-SECONDS)])
-    (round Ws-per-interval)))
-
-;; an electrical generator generator. only goes up:
-
-(define (make-electrical-generation-generator init)
-  (let ([saved (box init)])
-    (lambda ()
-      (set-box! saved
-                (+ (unbox saved)
-                   (random ELEC-GEN-CEILING)))
-      (unbox saved))))
-
+(define ELEC-USE-CEILING (watts->ws-per-interval 1500))
+;; the mains could use as much as 200 Amps * 120 Volts
+(define ELEC-MAINS-CEILING (watts->ws-per-interval (* 200 120)))
 ;; a big array could generate 5 kW
-(define ELEC-GEN-CEILING
-  (let* ([kW 5]
-         [W (* kW 1000)]
-         [Ws-per-s W]
-         [Ws-per-interval (* Ws-per-s ELEC-READING-SECONDS)])
-    (round Ws-per-interval)))
+(define ELEC-GEN-CEILING (watts->ws-per-interval 5000))
 
 ;; in tenths of a percent
 (define INITIAL-HUMIDITY 664)
@@ -127,39 +114,41 @@
     "air_conditioning"
     "microwave"
     "lighting_1"
-    "lighting_2"
-    "mains"))
-
-
-
-
+    "lighting_2"))
 
 (define electric-generation-devices
   '("main_solar_array"
     "bifacial_solar_array"))
+
+;; start an electric power device that's incremental
+;; and increases each interval by an integer chosen
+;; from a uniform distribution running from 0 to some
+;; given ceiling
+(define (run-mock-elec device ceiling)
+  (let ([init (fetch-reading "electric_power" device)])
+      (run-mock-device "electric_power" device ELEC-READING-SECONDS
+                       (make-electric-generator init ceiling))))
 
 (define (run-mock-temp-hum-elec)
   ;; start temperature threads:
   (for ([device (in-list temperature-devices)])
     (run-mock-device "temperature" device TEMP-READING-SECONDS
                      (make-temperature-generator)))
-  
   ;; start humidity threads:
   (for ([device (in-list humidity-devices)])
     (run-mock-device "humidity" device TEMP-READING-SECONDS
                      (make-humidity-generator)))
-  
   ;; start electrical use threads:
   (for ([device (in-list electric-use-devices)])
-    (let ([init (fetch-reading "electric_power" device)])
-      (run-mock-device "electric_power" device ELEC-READING-SECONDS
-                       (make-electrical-use-generator init))))
-  
+    (run-mock-elec device ELEC-USE-CEILING))
   ;; start electrical generation threads
   (for ([device (in-list electric-generation-devices)])
-    (let ([init (fetch-reading "electric_power" device)])
-      (run-mock-device "electric_power" device ELEC-READING-SECONDS
-                       (make-electrical-generation-generator init)))))
+    (run-mock-elec device ELEC-GEN-CEILING))
+  ;; mains
+  (run-mock-elec "mains" ELEC-MAINS-CEILING)
+
+  
+)
 
 
 
