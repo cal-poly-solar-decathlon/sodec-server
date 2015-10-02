@@ -1,11 +1,11 @@
-#lang typed/racket/base
+#lang racket/base
 
 ;; defines the testing parameter.
 
 (provide testing?)
 
 ;; are we in testing mode (i.e., using testing tables)?
-(: testing? (Parameterof Boolean))
+;;(: testing? (Parameterof Boolean))
 (define testing? 
   (make-parameter #f 
                   (lambda (b)

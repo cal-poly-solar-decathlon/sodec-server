@@ -167,18 +167,18 @@
     [(list (? series-hash? series))
      (define series-name (hash-ref series 'name))
      (unless (string=? series-name measurement)
-       (error 'device-latest-event
+       (error 'device-interval-last
               "inferred constraint failed. Expected measurement name ~e, got ~e"
               measurement series-name))
      (define a-list (single-entry-series->alist series))
      (match (assoc "last" a-list)
        [(list dc 'null) #f]
        [(list dc reading) reading]
-       [other (error 'device-latest-event
+       [other (error 'device-interval-last
                      "inferred constraint failed, no column named 'last'.")])]
     [#f ;; query successful, no results
      #f]
-    [other (error 'device-latest-event
+    [other (error 'device-interval-last
                   "inferred constraint failed, expected exactly one series in ~e"
                   other)]))
 
