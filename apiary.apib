@@ -220,8 +220,7 @@ GRR! Because of InfluxDB's inconsistency, the whole thing may also just return
 
 # Device Subsampling by first event in range [/srv/first-by-interval{?measurement,device,start,end,interval}]
 
-Return the first event in each interval. This will probably be the most
-useful way to aggregate power readings.
+Return the first event in each interval.
 
 + Parameters
     + measurement (string) ... the measurement
@@ -231,6 +230,32 @@ useful way to aggregate power readings.
     + interval (number) ... the interval length (in seconds)
 
 ## Get the first event in each interval [GET]
+
+For consistency, times are in milliseconds.  Right now, the time is
+NOT the actual time of the first event, but simply the time that begins
+the interval
+
++ Response 200 (application/json)
+
+    + Body
+
+            [{t:282379,r:229873},
+             {t:282483,r:229874}]
+
+
+# Device Subsampling by last event in range [/srv/last-by-interval{?measurement,device,start,end,interval}]
+
+Return the last event in each interval. This will probably be the most
+useful way to aggregate power readings.
+
++ Parameters
+    + measurement (string) ... the measurement
+    + device (string) ... the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
+    + interval (number) ... the interval length (in seconds)
+
+## Get the last event in each interval [GET]
 
 For consistency, times are in milliseconds.  Right now, the time is
 NOT the actual time of the first event, but simply the time that begins

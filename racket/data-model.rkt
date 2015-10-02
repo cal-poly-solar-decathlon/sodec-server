@@ -28,7 +28,7 @@
           [device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
           [device-interval-aggregate
-           (-> (or/c "first" "mean")
+           (-> (or/c "first" "mean" "last")
                measurement? device? exact-integer? ts-seconds? seconds?
                (listof summary?))]
           [count-device-events-in-range
@@ -180,12 +180,15 @@
   "SELECT * FROM ~a WHERE time > ~a AND time < ~a AND device = '~a'")
 
 
-;; given a string that's either "first" or "mean",
+;; given a string that's either "first" or "mean" or "last",
 ;; a device, a start, an end, and an interval length (all in seconds),
 ;; return the mean or first reading in each of a set of intervals. The timestamps
 ;; in the returned events represent the beginnings of the given intervals,
 ;; and don't correspond to a particular event. If no events occurred in a
 ;; particular interval, the value "no event" takes the place of the reading
+;;
+;; NB: Influx is observed to behave pretty badly for intervals where the start and
+;; end lie in the same natural interval.
 (define (device-interval-aggregate aggregation-name measurement device start end interval)
   (define start-ns (* start (expt 10 9)))
   (define end-ns (* end (expt 10 9)))
