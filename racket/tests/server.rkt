@@ -14,9 +14,9 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
+  "localhost"
   #;"129.65.138.226"
-  "calpolysolardecathlon.org"
+  #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -141,7 +141,7 @@
                  (list #"HTTP/1.1 400 range too long"
                        _2
                        _3)))
-   ;; may be going away...
+
    (test-case
     "count-events-in-range bad args"
     (check-match (remote-call/get/core
@@ -296,6 +296,17 @@
                                  (start ,ts)
                                  (end ,(+ ts 100))
                                  (interval 30)))))
+
+   (test-case
+    "last in interval"
+    (define ts (find-seconds 23 14 17 4 9 2015))
+    (check-pred
+     (flat-contract-predicate
+      (or/c number? "no events"))
+     (gett "interval-last-event" `((measurement "humidity")
+                                   (device "outside")
+                                   (start ,(- ts (* 3600 2)))
+                                   (end ,ts)))))
 
    (test-case
     "long-term means"
