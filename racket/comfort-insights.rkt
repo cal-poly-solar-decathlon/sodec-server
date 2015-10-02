@@ -2,7 +2,7 @@
 
 (require racket/contract
          "data-model.rkt"
-         math/statistics
+         (only-in math/statistics mean stddev)
          json)
 
 (provide

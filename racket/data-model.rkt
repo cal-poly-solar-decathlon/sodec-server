@@ -6,7 +6,6 @@
 
 (require #;racket/runtime-path
          racket/contract
-         rackunit
          json
          racket/date
          racket/match

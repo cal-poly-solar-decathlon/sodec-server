@@ -1,6 +1,10 @@
-#lang racket
+#lang racket/base
 
-(require racket/runtime-path)
+(require racket/runtime-path
+         (only-in racket/file file->string)
+         racket/match
+         (only-in racket/list first)
+         racket/contract)
 
 
 (provide (contract-out [dd-pairs (listof (list/c string? string?))]

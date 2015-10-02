@@ -146,7 +146,7 @@ UTC on server).
 
 # Device Latest Event [/srv/latest-event{?measurement,device}]
 
-The last event of the given device.
+The last event of the given device. Returns "no events" if no events available.
 
 + Parameters
     + measurement (string) ... the kind of measurement (temperature, etc.)
@@ -163,7 +163,8 @@ The last event of the given device.
 
 # Device Last Event in Interval [/srv/interval-last-event{?measurement,device,start,end}]
 
-The last event of the given device.
+The last event of the given device in the given interval. Returns "no events"
+if no events available.
 
 + Parameters
     + measurement (string) ... the kind of measurement (temperature, etc.)

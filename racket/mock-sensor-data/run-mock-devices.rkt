@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require "person-model.rkt"
+(require #;"person-model.rkt"
          "mock-devices.rkt"
          "device-readings.rkt")
 

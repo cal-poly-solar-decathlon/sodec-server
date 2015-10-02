@@ -1,5 +1,8 @@
+#lang racket/base
 
-#lang racket
+(require (only-in racket/format ~a)
+         racket/match
+         (only-in racket/list first second third))
 
 (define rooms'(("lr" "living room")
                ("bath" "bathroom")
