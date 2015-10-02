@@ -204,6 +204,12 @@
                  (list (summary (* 1000 (- ts 10)) #f)
                        (summary (* 1000 (- ts 5)) 99)
                        (summary (* 1000 ts) 11)))
+   (check-equal? (device-interval-aggregate "last"
+                                            "temperature" "kitchen"
+                                            (secs -8) (secs 2) 5)
+                 (list (summary (* 1000 (- ts 10)) #f)
+                       (summary (* 1000 (- ts 5)) 24)
+                       (summary (* 1000 ts) 33)))
    )
 
   )))

@@ -54,6 +54,8 @@
               (handle-interval-aggregation-request "mean" (url-query uri))]
              ["first-by-interval"
               (handle-interval-aggregation-request "first" (url-query uri))]
+             ["last-by-interval"
+              (handle-interval-aggregation-request "last" (url-query uri))]
              ["latest-forecast"
               (handle-latest-forecast-request)]
              ["latest-insights"

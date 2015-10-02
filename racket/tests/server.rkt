@@ -287,6 +287,14 @@
                                  (device "outside")
                                  (start ,ts)
                                  (end ,(+ ts 100))
+                                 (interval 30))))
+     (check-pred
+      (flat-contract-predicate
+       (listof (hash/c (symbols 't 'r) (or/c number? "none") #:immutable #t)))
+      (gett "last-by-interval" `((measurement "humidity")
+                                 (device "outside")
+                                 (start ,ts)
+                                 (end ,(+ ts 100))
                                  (interval 30)))))
 
    (test-case
@@ -386,6 +394,33 @@
             ))
      (check-match
       (gett "first-by-interval" `((measurement "humidity")
+                                 (device "outside")
+                                 (start ,ts)
+                                 (end ,(+ ts 100))
+                                 (interval 30)))
+      (list (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 14 17 11 9 2015)))
+                               _1))
+                        ('r _2))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 14 17 11 9 2015)))
+                               _3))
+                        ('r _4))
+            (hash-table ('t (? (eqto?
+                                (* 1000(find-seconds 0 15 17 11 9 2015)))
+                               _5))
+                        ('r _6))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 30 15 17 11 9 2015)))
+                               _7))
+                        ('r _8))
+            (hash-table ('t (? (eqto?
+                                (* 1000 (find-seconds 0 16 17 11 9 2015)))
+                               _9))
+                        ('r _10))
+            ))
+     (check-match
+      (gett "last-by-interval" `((measurement "humidity")
                                  (device "outside")
                                  (start ,ts)
                                  (end ,(+ ts 100))
