@@ -67,6 +67,13 @@
   (define ts+4sec (+ now1 4000))
   (define ts-1day (- now1 86400000))
   (define ts-2days (- now1 (* 2 1000 86400)))
+
+
+  ;; nonexistent electrical power device:
+  (test-equal?
+   "nonexistent electric device read"
+   (device-latest-reading "electric_power" "20151001")
+   #f)
   
   (record-device-status! "temperature" "bedroom" 229)
   
@@ -191,25 +198,39 @@
      (record-device-status! "temperature" "kitchen" (cadr t) #:timestamp
                             (* (secs (car t)) 1000)))
    
-   (check-equal? (device-interval-aggregate "mean"
-                                            "temperature" "kitchen"
-                                            (secs -8) (secs 2) 5)
-                 (list (summary (* 1000 (- ts 10)) #f)
-                       (summary (* 1000 (- ts 5)) (/ (+ 99 36 24) 3))
-                       (summary (* 1000 ts) 22)))
+   (test-equal? "mean by interval"
+                (device-interval-aggregate "mean"
+                                           "temperature" "kitchen"
+                                           (secs -8) (secs 2) 5)
+                (list (summary (* 1000 (- ts 10)) #f)
+                      (summary (* 1000 (- ts 5)) (/ (+ 99 36 24) 3))
+                      (summary (* 1000 ts) 22)))
 
-   (check-equal? (device-interval-aggregate "first"
+   (test-equal? "first by interval"
+                 (device-interval-aggregate "first"
                                             "temperature" "kitchen"
                                             (secs -8) (secs 2) 5)
                  (list (summary (* 1000 (- ts 10)) #f)
                        (summary (* 1000 (- ts 5)) 99)
                        (summary (* 1000 ts) 11)))
-   (check-equal? (device-interval-aggregate "last"
-                                            "temperature" "kitchen"
-                                            (secs -8) (secs 2) 5)
-                 (list (summary (* 1000 (- ts 10)) #f)
-                       (summary (* 1000 (- ts 5)) 24)
-                       (summary (* 1000 ts) 33)))
+   (test-equal? "last by interval"
+                (device-interval-aggregate "last"
+                                           "temperature" "kitchen"
+                                           (secs -8) (secs 2) 5)
+                (list (summary (* 1000 (- ts 10)) #f)
+                      (summary (* 1000 (- ts 5)) 24)
+                      (summary (* 1000 ts) 33)))
+   (test-case
+    "last in single interval"
+    (check-equal? (device-interval-last "temperature" "kitchen"
+                                        (secs -8) (secs -4))
+                  #f)
+    (check-equal? (device-interval-last "temperature" "kitchen"
+                                        (secs -8) (secs -3))
+                  99)
+    (check-equal? (device-interval-last "temperature" "kitchen"
+                                        (secs -8) (secs -2))
+                  36))
    )
 
   )))

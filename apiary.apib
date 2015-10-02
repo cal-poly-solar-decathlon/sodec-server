@@ -160,6 +160,25 @@ The last event of the given device.
     + Body
             {status}
 
+
+# Device Latest Event in Interval [/srv/interval-last-event{?measurement,device,start,end}]
+
+The last event of the given device.
+
++ Parameters
+    + measurement (string) ... the kind of measurement (temperature, etc.)
+    + device (string) ... the id of the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
+
+## Latest Event [GET]
+
++ Response 200 (application/json)
+
+    + Body
+            {status}
+
+
 # Post a sensor reading [/srv/record-reading{?device}]
 
 ## Record Reading [POST]

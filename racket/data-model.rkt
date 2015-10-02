@@ -25,6 +25,8 @@
            (-> measurement? (listof device?))]
           [device-latest-reading
            (-> measurement? device? maybe-reading?)]
+          [device-interval-last
+           (-> measurement? device? ts-seconds? ts-seconds? maybe-reading?)]
           [device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
           [device-interval-aggregate
@@ -128,8 +130,6 @@
         [else REGULAR-DB]))
 
 
-;; RIGHT HERE, RETURNING 'null
-
 ;; return the latest device reading from one device.
 ;; choose arbitrarily in case of tie.
 (define (device-latest-reading measurement device)
@@ -146,6 +146,33 @@
               measurement series-name))
      (define a-list (single-entry-series->alist series))
      (match (assoc "last" a-list)
+       [(list dc reading) reading]
+       [other (error 'device-latest-event
+                     "inferred constraint failed, no column named 'last'.")])]
+    [#f ;; query successful, no results
+     #f]
+    [other (error 'device-latest-event
+                  "inferred constraint failed, expected exactly one series in ~e"
+                  other)]))
+
+;; return last reading in given interval
+(define (device-interval-last measurement device start end)
+  (define start-ns (* start (expt 10 9)))
+  (define end-ns (* end (expt 10 9)))
+  (define response
+    (perform-query (format
+                    "SELECT LAST(reading) FROM ~a WHERE device='~a' AND time > ~a AND time < ~a"
+                    measurement device start-ns end-ns)))
+  (match (query-response->series response)
+    [(list (? series-hash? series))
+     (define series-name (hash-ref series 'name))
+     (unless (string=? series-name measurement)
+       (error 'device-latest-event
+              "inferred constraint failed. Expected measurement name ~e, got ~e"
+              measurement series-name))
+     (define a-list (single-entry-series->alist series))
+     (match (assoc "last" a-list)
+       [(list dc 'null) #f]
        [(list dc reading) reading]
        [other (error 'device-latest-event
                      "inferred constraint failed, no column named 'last'.")])]
