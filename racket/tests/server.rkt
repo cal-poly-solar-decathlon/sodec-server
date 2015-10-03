@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require net/url
          net/head
@@ -6,6 +6,8 @@
          rackunit/text-ui
          racket/date
          racket/block
+         racket/contract
+         racket/format
          json
          "../device-table.rkt"
          "../web-funs.rkt")
@@ -14,14 +16,14 @@
 
 (define HOST 
   ;; test locally:
-  "localhost"
+  #;"localhost"
   #;"129.65.138.226"
-  #;"calpolysolardecathlon.org"
+  "calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
-  #;3000
-  8080)
+  3000
+  #;8080)
 
 (define (gett . args)
   (remote-call/get HOST PORT (apply sodec-url args)))
@@ -320,6 +322,8 @@
                                 (start ,(- ts (* 86400 2)))
                                 (end ,ts)
                                 (interval 3600)))))
+
+   
 )))
 
 ;; this test suite ensures that the server is receiving
@@ -459,39 +463,5 @@
                         ('r _10))
             )))
     
-    
     )))
-
-
-#;((define ts (get-timestamp))
-
-(define last-hour-jsexpr
-  (gett "events-in-range" `((device s-temp-bed)
-                            (start ,(- ts 3600))
-                            (end ,ts))))
-
-(printf "number of readings in the last hour: ~v\n"
-        (add1 (length (hash-ref last-hour-jsexpr 'seriesData))))
-
-(printf "number of readings in the last hour: ~v\n"
-        (gett "count-events-in-range"
-              `((device s-temp-bed)
-                (start ,(- ts 3600))
-                (end ,ts))))
-
-(define jsexpr-len
-  (bytes-length
-   (jsexpr->bytes last-hour-jsexpr)))
-
-(printf "bytes per reading: ~v\n" (/ jsexpr-len 
-                                     (add1 (length 
-                                            (hash-ref last-hour-jsexpr
-                                                      'seriesData)))))
-
-(define last-reading
-  (gett "latest-event" '((device s-temp-bed))))
-
-(define last-reading-time (hash-ref last-reading 'timestamp))
-
-(printf "time since last reading: ~v seconds\n" (- ts last-reading-time)))
 

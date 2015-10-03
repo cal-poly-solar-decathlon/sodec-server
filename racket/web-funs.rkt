@@ -21,11 +21,15 @@
           [remote-call/post/core
            (->* (string? number? string? bytes?)
                 (#:content-type bytes?)
-                (list/c bytes? (listof bytes?) input-port?))])
-         results->jsexpr
-         sodec-url)
+                (list/c bytes? (listof bytes?) input-port?))]
+          [sodec-url
+           (-> string? (or/c query? #f) string?)])
+         results->jsexpr)
 
 (define-logger sodec)
+
+;; represents elements of a "GET" query
+(define query? (listof (list/c symbol? (or/c number? symbol? string?))))
 
 ;; map query associations to a string
 (define (query->string assoc)
@@ -95,21 +99,6 @@
                  rhs]
                 [other (find-field name (cdr headers))])]))
 
-(module+ test
-  (require rackunit)
-  
-  (check-equal? (find-field #"Content-Type"
-                            '(#"Argybargy: 23"
-                              #"Content-Type: application/json"
-                              #"Troubador: 9"))
-                #"application/json"))
-
-;; DEAD:
-;; given a URL string, return the response code, the first line, the rest
-;; of the headers, and the port for the remainder of the body
-
-
-
 
 ;; given a list of results, ensure that the return code is 200 and then parse
 ;; the body as a jsexpr
@@ -163,6 +152,11 @@
 (module+ test
   (require rackunit)
 
+  (check-equal? (find-field #"Content-Type"
+                            '(#"Argybargy: 23"
+                              #"Content-Type: application/json"
+                              #"Troubador: 9"))
+                #"application/json")
   (check-equal? (clean-string? "hth-t987") #t)
   (check-equal? (clean-string? "hth-t98.7") #f)
   

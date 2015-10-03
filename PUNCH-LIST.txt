@@ -23,3 +23,27 @@ red_bifacial_ct * L1 + black_bifacial_ct * L2 = net energy from bifacial
 
 
 use closure compiler to check for obvious static errors
+
+
+order of events on-site:
+- power on
+- egauge configuration
+- power for wireless router
+- password for wireless router
+- power & network for raspberry pi
+- update software
+- enable data echo? (could be a bad idea with no network?)
+- t/h sensors
+- install autossh
+- zero out database
+
+-- for tunnel: be sure to get it set up right, test to local machine before pointing at cpsd
+- gotchas:
+  - log in by hand to get host into known_hosts
+  - -t -t to force creation of tty
+  - ownership of key file
+
+When we get network:
+disable mock data on cpsd, zero out databases, 
+
+

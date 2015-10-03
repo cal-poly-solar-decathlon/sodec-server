@@ -4,18 +4,17 @@
 ;; json encoding design in places. EG: on no results, there's
 ;; no 'series' list. The empty list is a list, you know....
 
-(require #;racket/runtime-path
-         racket/contract
+(require racket/contract
          json
          racket/date
          racket/match
          net/url
          "device-table.rkt"
-         "testing-param.rkt")
+         "testing-param.rkt"
+         "web-funs.rkt"
+         "secret.rkt")
 
-(provide 
-         #;devices-list
-         (contract-out
+(provide (contract-out
           [struct event ([timestamp ts-milliseconds?]
                          [reading reading?])]
           [struct summary ([timestamp ts-milliseconds?]
@@ -43,6 +42,7 @@
            (-> ts-seconds?)]
           [datapoints->jsexpr (-> (listof (or/c event? summary?)) jsexpr?)])
          testing?
+         echo-data-to-host
          reset-database-test-tables!
          ts-seconds?
          seconds?
@@ -111,7 +111,7 @@
      (define device-index (find-column-index column-names "device"))
      (for/list ([record (in-list (hash-ref series 'values))])
        (list-ref record device-index))]
-    [other (error 'device-latest-event
+    [other (error 'measurement-devices
                   "inferred constraint failed, expected exactly one series in ~e"
                   other)]))
 
@@ -127,6 +127,16 @@
 (define (DATABASE)
   (cond [(testing?) TESTING-DB]
         [else REGULAR-DB]))
+
+;; a parameter that allows data to be echoed to another remote host
+(define echo-data-to-host
+  (make-parameter #f
+                  (λ (host-port)
+                    (match host-port
+                      [(list (? string? _1)
+                             (? exact-nonnegative-integer? _2))
+                       host-port]
+                      [other #f]))))
 
 
 ;; return the latest device reading from one device.
@@ -145,6 +155,7 @@
               measurement series-name))
      (define a-list (single-entry-series->alist series))
      (match (assoc "last" a-list)
+       [(list dc 'null) #f]
        [(list dc reading) reading]
        [other (error 'device-latest-event
                      "inferred constraint failed, no column named 'last'.")])]
@@ -300,7 +311,19 @@
   (unless (regexp-match #px"^HTTP/1.1 204" status-line)
     (error 'perform-query
            "expected '204 No Content' status line, got: ~v"
-           status-line)))
+           status-line))
+  (match (echo-data-to-host)
+    [#f 'nothing-to-do]
+    [(list host port)
+     (thread
+      (λ ()
+        (remote-call/post
+         host port (sodec-url "record-reading"
+                              `((measurement ,measurement)
+                                (device ,device)))
+         (jsexpr->bytes (hash 'status reading
+                              'secret SEKRIT)))))])
+  (void))
 
 ;;
 ;; INFLUXDB PARSING

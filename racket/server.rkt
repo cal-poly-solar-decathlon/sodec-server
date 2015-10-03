@@ -229,8 +229,8 @@
 ;; handle an incoming reading
 (define (handle-new-reading query headers post-data)
   (match query
-    [(list-no-order (cons 'measurement (? string? measurement))
-                    (cons 'device (? string? device)))
+    [(list-no-order (cons 'measurement (? measurement? measurement))
+                    (cons 'device (? device? device)))
      (handle-new-reading/md measurement device headers post-data)]
     [(list (cons 'device (? string? id)))
      ;; HANDLING FOR LEGACY DEVICE ID SCHEME:
