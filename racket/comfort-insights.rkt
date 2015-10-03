@@ -63,14 +63,16 @@
     (apply max inside-humidities))
   (join-insights
    ;; MEAN INTERIOR TEMPERATURE
-   (insight (format "The mean inside temperature is ~a°C"
-                    (num-format temp-mean))
-            (cond [(< temp-mean COMFORT-MIN-TEMP)
-                   (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP temp-mean))]
-                  [(< temp-mean COMFORT-MAX-TEMP)
-                   0]
-                  [else
-                   (* COMFORT-TEMP-RAMP (- temp-mean COMFORT-MAX-TEMP))]))
+   (cond [(< temp-mean COMFORT-MIN-TEMP)
+          (insight "The mean inside temperature is ~a°C, which is below the contest minimum!"
+          (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP temp-mean)))]
+         [(< temp-mean COMFORT-MAX-TEMP)
+          (insight "The mean inside temperature is ~a°C"
+          0)]
+         [else
+          (insight (format "The mean inside temperature is ~a°C, which is above the contest minimum!"
+                           (num-format temp-mean))
+                   (* COMFORT-TEMP-RAMP (- temp-mean COMFORT-MAX-TEMP)))])
    ;; STDDEV OF INTERIOR TEMPS
    (insight (format "The standard deviation of interior temperatures is ~a°C"
                     (num-format temp-stddev))

@@ -5,6 +5,21 @@
 - sodec network ability to log in remotely?
 - update pi server AGAIN
 
-APP
+configure eGauge.
+- add all devices
+- virtuals: whole-house energy use?
+- water supply + booster
+- lighting 1 + 2
 
-add "degrees" symbol and "percent"
+okay, let's work this out.
+
+red_main_ct * L1 + black_main_ct * L2 = net energy from electric company
+
+red_overhead_ct * L1 + black_overhead_ct * L2 = net energy from overhead
+** ALTERNATIVELY, USE (- red_overhead_ct) in place of black_overhead_ct
+
+red_bifacial_ct * L1 + black_bifacial_ct * L2 = net energy from bifacial
+** ALTERNATIVELY, USE (- red_bifacial_ct) in place of black_bifacial_ct
+
+
+use closure compiler to check for obvious static errors
