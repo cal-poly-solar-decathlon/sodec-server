@@ -4,19 +4,19 @@
          racket/runtime-path
          "server.rkt"
          "egauge-monitor.rkt"
-         "ip-ping.rkt")
+         "ip-ping.rkt"
+         "network-config.rkt")
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
 (log-client-errors! (build-path here "error.log"))
 
-#;(define HOST "129.65.138.226")
-#;(define PORT 9080)
+(start-ip-ping #:host PING-HOST #:port 80)
 
-(start-ip-ping #:host "calpolysolardecathlon.org" #:port 80)
-
-(start-egauge-monitor #:host "192.168.1.5" #:port 80)
+;; duplicated device names will cause problems...
+(start-egauge-monitor #:host EGAUGE-1 #:port 80)
+(start-egauge-monitor #:host EGAUGE-2 #:port 80)
 
 (start-forecast-monitor)
 
