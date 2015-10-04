@@ -26,15 +26,15 @@ use closure compiler to check for obvious static errors
 
 
 order of events on-site:
-- power on
-- egauge configuration
-- power for wireless router
-- password for wireless router
-- power & network for raspberry pi
-- update software
+- power on X
+- egauge configuration X
+- power for wireless router X
+- password for wireless router X
+- power & network for raspberry pi X
+- update software X
+- install autossh X
 - enable data echo? (could be a bad idea with no network?)
 - t/h sensors
-- install autossh
 - zero out database
 
 -- for tunnel: be sure to get it set up right, test to local machine before pointing at cpsd
@@ -47,3 +47,10 @@ When we get network:
 disable mock data on cpsd, zero out databases, 
 
 
+TOO MUCH WIRELESS POWER. Turn off at night, turn down transmission power. shut down one antenna?
+
+instructions to lisa-marie about turning off wireless.
+
+egauge 2 not recording any data at all?
+
+configure water heater wireless
