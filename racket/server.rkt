@@ -239,7 +239,7 @@
 
 (define (handle-latest-insights-request)
   (response/json
-   (map insight->jsexpr (generate-comfort-insights))))
+   (map insight->jsexpr (comfort-insights))))
 
 ;;;;
 ;;
