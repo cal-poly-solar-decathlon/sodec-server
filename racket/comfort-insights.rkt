@@ -64,13 +64,14 @@
   (join-insights
    ;; MEAN INTERIOR TEMPERATURE
    (cond [(< temp-mean COMFORT-MIN-TEMP)
-          (insight "The mean inside temperature is ~a°C, which is below the contest minimum!"
+          (insight (format "The mean inside temperature is ~a°C, which is below the contest minimum."
+                           (num-format temp-mean))
           (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP temp-mean)))]
          [(< temp-mean COMFORT-MAX-TEMP)
           (insight "The mean inside temperature is ~a°C"
           0)]
          [else
-          (insight (format "The mean inside temperature is ~a°C, which is above the contest minimum!"
+          (insight (format "The mean inside temperature is ~a°C, which is above the contest minimum."
                            (num-format temp-mean))
                    (* COMFORT-TEMP-RAMP (- temp-mean COMFORT-MAX-TEMP)))])
    ;; STDDEV OF INTERIOR TEMPS
@@ -78,13 +79,15 @@
                     (num-format temp-stddev))
             (min 100 (* temp-stddev 20)))
    ;; INTERIOR HUMIDITY
-   (insight (format "The maximum interior humidity is ~a%"
-                    (num-format max-inside-humidity))
-            (cond [(< max-inside-humidity COMFORT-MAX-HUM)
-                   0]
-                  [else (min 100
+   (cond [(< max-inside-humidity COMFORT-MAX-HUM)
+          (insight (format "The maximum interior humidity is ~a%"
+                           (num-format max-inside-humidity))
+                   0)]
+         [else (insight (format "The maximum interior humidity is ~a%, which is higher than the contest maximum."
+                           (num-format max-inside-humidity))
+                        (min 100
                              (* COMFORT-HUM-RAMP
-                                (- max-inside-humidity COMFORT-MAX-HUM)))]))
+                                (- max-inside-humidity COMFORT-MAX-HUM))))])
    )
   )
 
