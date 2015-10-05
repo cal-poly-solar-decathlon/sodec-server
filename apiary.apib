@@ -180,6 +180,25 @@ if no events available.
     + Body
             {status}
 
+# Device First Event in Interval [/srv/interval-first-event{?measurement,device,start,end}]
+
+The first event of the given device in the given interval. Returns "no events"
+if no events available. Returns the actual timestamp of the event.
+
++ Parameters
+    + measurement (string) ... the kind of measurement (temperature, etc.)
+    + device (string) ... the id of the selected device
+    + start (number) ... the timestamp (in seconds) of the beginning of the desired range
+    + end (number) ... the timestamp (in seconds) of the end of the desired range
+
+## Latest Event [GET]
+
++ Response 200 (application/json)
+
+    + Body
+            {t:1444007021000,r:230}
+
+
 
 # Post a sensor reading [/srv/record-reading{?device}]
 

@@ -25,6 +25,8 @@
            (-> measurement? device? maybe-reading?)]
           [device-interval-last
            (-> measurement? device? ts-seconds? ts-seconds? maybe-reading?)]
+          [device-interval-first
+           (-> measurement? device? ts-seconds? ts-seconds? maybe-event?)]
           [device-events-in-range
            (-> measurement? device? ts-seconds? ts-seconds? (listof event?))]
           [device-interval-aggregate
@@ -36,11 +38,8 @@
           [record-device-status!
            (->* (measurement? device? 64-bit-int?)
                 (#:timestamp ts-milliseconds?) void?)]
-          [maybe-reading->jsexpr
-           (-> maybe-reading? jsexpr?)]
           [current-timestamp
-           (-> ts-seconds?)]
-          [datapoints->jsexpr (-> (listof (or/c event? summary?)) jsexpr?)])
+           (-> ts-seconds?)])
          testing?
          echo-data-to-host
          reset-database-test-tables!
@@ -65,6 +64,7 @@
 
 ;; either a reading or else false
 (define maybe-reading? (or/c false? reading?))
+
 
 ;; dates before the year 2000 or after 3000 are likely
 ;; to be unit errors:
@@ -98,6 +98,9 @@
 
 (struct event (timestamp reading) #:transparent)
 (struct summary (timestamp maybe-reading) #:transparent)
+
+;; either an event or else false
+(define maybe-event? (or/c #f event?))
 
 ;; return a list of the devices associated with a measurement
 (define (measurement-devices measurement)
@@ -162,6 +165,37 @@
     [#f ;; query successful, no results
      #f]
     [other (error 'device-latest-event
+                  "inferred constraint failed, expected exactly one series in ~e"
+                  other)]))
+
+;; return the first event in the interval
+(define (device-interval-first measurement device start end)
+  (define start-ns (* start (expt 10 9)))
+  (define end-ns (* end (expt 10 9)))
+  (define response
+    (perform-query
+     (format
+      "SELECT * FROM ~a WHERE device='~a' AND time > ~a AND \
+      time < ~a ORDER BY time LIMIT 1"
+      measurement device start-ns end-ns)))
+  (match (query-response->series response)
+    [(list (? series-hash? series))
+     (define series-name (hash-ref series 'name))
+     (unless (string=? series-name measurement)
+       (error 'device-interval-last
+              "inferred constraint failed. Expected measurement name ~e, got ~e"
+              measurement series-name))
+     (define a-list (single-entry-series->alist series))
+     (match a-list
+       [(list-no-order
+         (list "time" t)
+         (list "device" d)
+         (list "reading" r))
+        (event (influx-timestamp->milliseconds t)
+               r)])]
+    [#f ;; query successful, no results
+     #f]
+    [other (error 'device-interval-last
                   "inferred constraint failed, expected exactly one series in ~e"
                   other)]))
 
@@ -403,20 +437,6 @@
            headers))
   (read-json port))
 
-;; convert a list of events and summaries to jsexprs
-(define (datapoints->jsexpr events)
-  (map datapoint->jsexpr events))
-
-;; convert a single event to a jsexpr
-(define (datapoint->jsexpr datapoint)
-  (cond [(event? datapoint)
-         (hash 't (event-timestamp datapoint)
-               'r (event-reading datapoint))]
-        [(summary? datapoint)
-         (hash 't (summary-timestamp datapoint)
-               'r (summary-maybe-reading datapoint))]))
-
-
 ;;
 ;; TESTING
 ;;
@@ -431,12 +451,6 @@
      (error 'reset-database-test-tables!
             "unexpected response from table creation: ~e"
             other)]))
-
-;; convert an Event to a jsexpr
-;; convert a temperature event to a jsexpr
-(define (maybe-reading->jsexpr reading)
-  (cond [(integer? reading) reading]
-        [else "no events"]))
 
 ;; translate influx time strings into local milliseconds.
 ;; note that influx time strings are in Zulu (GMT) time

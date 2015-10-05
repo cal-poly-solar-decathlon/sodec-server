@@ -16,9 +16,9 @@
 
 (define HOST 
   ;; test locally:
-  #;"localhost"
+  "localhost"
   #;"129.65.138.226"
-  "calpolysolardecathlon.org"
+  #;"calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -307,6 +307,18 @@
      (flat-contract-predicate
       (or/c number? "no events"))
      (gett "interval-last-event" `((measurement "humidity")
+                                   (device "outside")
+                                   (start ,(- ts (* 3600 2)))
+                                   (end ,ts)))))
+
+   (test-case
+    "first in interval"
+    (define ts (find-seconds 23 14 17 4 9 2015))
+    (check-pred
+     (flat-contract-predicate
+      (or/c "no events"
+            (hash/c (symbols 't 'r) number? #:immutable #t)))
+     (gett "interval-first-event" `((measurement "humidity")
                                    (device "outside")
                                    (start ,(- ts (* 3600 2)))
                                    (end ,ts)))))

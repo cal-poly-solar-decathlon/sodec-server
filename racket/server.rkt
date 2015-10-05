@@ -48,6 +48,8 @@
               (handle-device-latest-event-request (url-query uri))]
              ["interval-last-event"
               (handle-last-event-in-interval-request (url-query uri))]
+             ["interval-first-event"
+              (handle-first-event-in-interval-request (url-query uri))]
              ["events-in-range"
               (handle-device-events-in-range-request (url-query uri))]
              ["count-events-in-range"
@@ -106,6 +108,25 @@
      (or (device-checks measurement device)
          (response/json
           (maybe-reading->jsexpr (device-latest-reading measurement device))))]
+    [else
+     (404-response
+      #"wrong query fields"
+      (format "expected a query with fields matching spec, got: ~v"
+              query))]))
+
+;; handle a request for the last reading in an interval
+(define (handle-first-event-in-interval-request query)
+  (match query
+    [(list-no-order (cons 'measurement (? string? measurement))
+                    (cons 'device (? string? device))
+                    (cons 'start (regexp NUM-REGEXP (list start-str)))
+                    (cons 'end (regexp NUM-REGEXP (list end-str))))
+     (define start (string->number start-str))
+     (define end (string->number end-str))
+     (or (device-checks measurement device)
+         (interval-checks start end)
+         (response/json
+          (maybe-datapoint->jsexpr (device-interval-first measurement device start end))))]
     [else
      (404-response
       #"wrong query fields"
@@ -398,6 +419,34 @@
    (list (jsexpr->bytes jsexpr))))
 
 
+;; JSEXPR:
+
+;; convert #f to "no events", other datapoints
+;; to corresponding jsexpr
+(define (maybe-datapoint->jsexpr datapoint)
+  (cond [datapoint (datapoint->jsexpr datapoint)]
+        [else "no events"]))
+
+;; convert a list of events and summaries to jsexprs
+(define (datapoints->jsexpr events)
+  (map datapoint->jsexpr events))
+
+;; convert a single event to a jsexpr
+(define (datapoint->jsexpr datapoint)
+  (cond [(event? datapoint)
+         (hash 't (event-timestamp datapoint)
+               'r (event-reading datapoint))]
+        [(summary? datapoint)
+         (hash 't (summary-timestamp datapoint)
+               'r (summary-maybe-reading datapoint))]))
+
+;; convert an Event to a jsexpr
+;; convert a temperature event to a jsexpr
+(define (maybe-reading->jsexpr reading)
+  (cond [(integer? reading) reading]
+        [else "no events"]))
+
+
 ;; find a member of the list matching the regexp
 (define (regexp-member rx l)
   (ormap (λ (h) (regexp-match rx h)) l))
@@ -424,4 +473,16 @@
   (require rackunit)
 
   (check-equal? (regexp-member #px"ad*e" (list "ab" "adddde" "aq"))
-                '("adddde")))
+                '("adddde"))
+
+  
+
+  (test-case
+   "datapoints->jsexpr"
+   (define ts (inexact->exact (round (current-inexact-milliseconds))))
+   (check-equal?
+    (datapoints->jsexpr
+     (list (event ts 201)
+           (summary ts 202)))
+    (list (hash 't ts 'r 201)
+          (hash 't ts 'r 202)))))

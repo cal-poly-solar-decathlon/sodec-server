@@ -32,16 +32,6 @@
 (test-suite
  "data model tests"
 (parameterize ([testing? #t])
-
-  (test-case
-   "datapoints->jsexpr"
-   (define ts (inexact->exact (round (current-inexact-milliseconds))))
-   (check-equal?
-    (datapoints->jsexpr
-     (list (event ts 201)
-           (summary ts 202)))
-    (list (hash 't ts 'r 201)
-          (hash 't ts 'r 202))))
   
   (test-case
    "record-device-status illegal names"
@@ -100,10 +90,6 @@
                          #:timestamp future2)
 
   (sleep 1)
- 
-  (check-equal? (maybe-reading->jsexpr
-                 (device-latest-reading "temperature" "living_room"))
-                331)
 
   (test-case
    "device-events-in-range"
@@ -152,16 +138,13 @@
                 3)
 
   
-  (check-match
-   (datapoints->jsexpr (device-events-in-range "temperature" "bedroom"
-                                           (ms->s/floor ts-1day)
-                                           (ms->s/ceiling ts+4sec)))
-   (list (hash-table ('t (? exact-integer? n1))
-                     ('r 229))
-         (hash-table ('t (? exact-integer? n2))
-                     ('r 228))
-         (hash-table ('t (? exact-integer? n3))
-                     ('r 224))))
+  (check-pred
+   (list/c (struct/c event exact-integer? 229)
+           (struct/c event exact-integer? 228)
+           (struct/c event exact-integer? 224))
+   (device-events-in-range "temperature" "bedroom"
+                           (ms->s/floor ts-1day)
+                           (ms->s/ceiling ts+4sec)))
 
 
   ;; list-devices
@@ -231,6 +214,19 @@
     (check-equal? (device-interval-last "temperature" "kitchen"
                                         (secs -8) (secs -2))
                   36))
+
+   (test-case
+    "first in single interval"
+    (check-equal? (device-interval-first "temperature" "kitchen"
+                                         (secs -8) (secs -4))
+                  #f)
+    (check-equal? (device-interval-first "temperature" "kitchen"
+                                         (secs -8) (secs -3))
+                  (event (* 1000 (secs -4)) 99))
+    ;; interval doesn't include start?
+    (check-equal? (device-interval-first "temperature" "kitchen"
+                                         (secs -3) (secs 10))
+                  (event (* 1000 (secs -1)) 24)))
    )
 
   )))
