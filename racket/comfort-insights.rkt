@@ -9,8 +9,13 @@
  (contract-out
   [struct insight ([message string?]
                    [priority number?])]
-  [generate-comfort-insights (-> (listof insight?))]
+  [comfort-insights (-> (listof insight?))]
   [insight->jsexpr (-> insight? jsexpr?)]))
+
+;; meanings of panic levels
+;0-25 possibly interesting insights
+;25-50 you should do this thing
+;50-100 you are losing contest points right now!
 
 
 ;; generate "comfort"-related insights
@@ -50,49 +55,82 @@
 ;; the insights
 (struct insight (message priority) #:transparent)
 
-(define (generate-comfort-insights)
-  (define inside-temps
-    (for/list ([temp-dev (in-list inside-temp-devices)])
-      (/ (device-latest-reading "temperature" temp-dev) 10)))
-  (define temp-mean (mean inside-temps))
-  (define temp-stddev (stddev inside-temps))
+(define (comfort-insights)
+  (join-insights
+   (append
+    (temperature-insights)
+    (humidity-insights)
+    (forecast-insights))))
+
+(define (temperature-insights)
+  (define indoor-temps
+    (for*/list ([temp-dev (in-list inside-temp-devices)]
+               [reading (in-value (device-latest-reading "temperature" temp-dev))]
+               #:when reading)
+      (/ reading 10)))
+  (cond [(not (null? indoor-temps))
+         (define indoor-temp-mean (mean indoor-temps))
+         (define indoor-temp-stddev (stddev indoor-temps))
+         (join-insights
+          (append
+           (maybe-open-windows-insights indoor-temp-mean )
+           (list ;; MEAN INTERIOR TEMPERATURE
+            (cond [(< indoor-temp-mean COMFORT-MIN-TEMP)
+                   (insight (format "The mean inside temperature is ~a°C, which is below the contest minimum."
+                                    (num-format indoor-temp-mean))
+                            (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP indoor-temp-mean)))]
+                  [(< indoor-temp-mean COMFORT-MAX-TEMP)
+                   (insight "The mean inside temperature is ~a°C"
+                            0)]
+                  [else
+                   (insight (format "The mean inside temperature is ~a°C, which is above the contest minimum."
+                                    (num-format indoor-temp-mean))
+                            (* COMFORT-TEMP-RAMP (- indoor-temp-mean COMFORT-MAX-TEMP)))])
+            ;; STDDEV OF INTERIOR TEMPS
+            (insight (format "The standard deviation of interior temperatures is ~a°C"
+                             (num-format indoor-temp-stddev))
+                     (min 100 (* indoor-temp-stddev 20)))) ) )]
+        [else (list)]
+  ))
+
+(define (maybe-open-windows-insights indoor-mean-temp outdoor-temp)
+  (list)
+  #;(list 
+   (cond [(and (< COMFORT-MIN-TEMP indoor-mean-temp)
+               (< outdoor-temp indoor-mean-temp))
+          (insight "You could cool the house by opening windows"
+                   )]
+         [(and (< indoor-mean-temp COMFORT-MAX-TEMP)
+               (< indoor-mean-temp outdoor-temp))])))
+
+(define (humidity-insights)
   (define inside-humidities
     (for/list ([humidity-dev (in-list inside-humidity-devices)])
       (/ (device-latest-reading "humidity" humidity-dev) 10)))
   (define max-inside-humidity
     (apply max inside-humidities))
-  (join-insights
-   ;; MEAN INTERIOR TEMPERATURE
-   (cond [(< temp-mean COMFORT-MIN-TEMP)
-          (insight (format "The mean inside temperature is ~a°C, which is below the contest minimum."
-                           (num-format temp-mean))
-          (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP temp-mean)))]
-         [(< temp-mean COMFORT-MAX-TEMP)
-          (insight "The mean inside temperature is ~a°C"
-          0)]
-         [else
-          (insight (format "The mean inside temperature is ~a°C, which is above the contest minimum."
-                           (num-format temp-mean))
-                   (* COMFORT-TEMP-RAMP (- temp-mean COMFORT-MAX-TEMP)))])
-   ;; STDDEV OF INTERIOR TEMPS
-   (insight (format "The standard deviation of interior temperatures is ~a°C"
-                    (num-format temp-stddev))
-            (min 100 (* temp-stddev 20)))
-   ;; INTERIOR HUMIDITY
-   (cond [(< max-inside-humidity COMFORT-MAX-HUM)
-          (insight (format "The maximum interior humidity is ~a%"
-                           (num-format max-inside-humidity))
-                   0)]
-         [else (insight (format "The maximum interior humidity is ~a%, which is higher than the contest maximum."
-                           (num-format max-inside-humidity))
-                        (min 100
-                             (* COMFORT-HUM-RAMP
-                                (- max-inside-humidity COMFORT-MAX-HUM))))])
-   )
+  (cond [(< max-inside-humidity COMFORT-MAX-HUM)
+         (insight (format "The maximum interior humidity is ~a%"
+                          (num-format max-inside-humidity))
+                  0)]
+        [else (insight (format "The maximum interior humidity is ~a%, which is higher than the contest maximum."
+                               (num-format max-inside-humidity))
+                       (min 100
+                            (* COMFORT-HUM-RAMP
+                               (- max-inside-humidity COMFORT-MAX-HUM))))]))
+
+;; basic outdoor-temperature insight
+(define (indoor-outdoor-insights)
+  (list))
+
+;; insights based on the forecast
+(define (forecast-insights)
+  (list)
   )
 
-(define (join-insights . args)
-  (sort args > #:key insight-priority))
+
+(define (join-insights insights)
+  (sort insights > #:key insight-priority))
 
 (define (insight->jsexpr insight)
   (hash 'm (insight-message insight)
@@ -105,6 +143,6 @@
                  (insight "I'm so awesome!" 75.223))
                 (hash 'm "I'm so awesome!"
                       'p 75.223))
-  (generate-comfort-insights)
+  (comfort-insights)
 
   )

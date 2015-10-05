@@ -54,3 +54,5 @@ instructions to lisa-marie about turning off wireless.
 egauge 2 not recording any data at all?
 
 configure water heater wireless
+
+will virtual registers show up in the XML read?

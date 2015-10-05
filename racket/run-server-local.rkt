@@ -2,12 +2,15 @@
 
 (require web-server/servlet-env
          racket/runtime-path
-         "server.rkt")
+         "server.rkt"
+         "forecast.rkt")
 
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
 (log-client-errors! (build-path here "error.log"))
+
+(use-fake-forecast!)
 
 (serve/servlet start
                ;; I see... changing server root path means you need
