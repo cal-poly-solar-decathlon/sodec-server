@@ -1,4 +1,4 @@
 #!/bin/sh
 
-racket -W 'error' -L 'error' ./run-server.rkt > server.out 2>&1
+exec ${HOME}/racket/bin/racket -W 'error' -L 'error' ${HOME}/sodec-server/racket/run-server.rkt > server.out 2>&1
 
