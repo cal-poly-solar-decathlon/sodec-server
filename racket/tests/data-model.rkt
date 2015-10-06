@@ -16,7 +16,7 @@
       (equal? s 'null)))
 
 
-#;(parameterize ([testing? #t])
+#;(parameterize ([target-db TESTING-DB])
   
   (check-not-exn (lambda () (record-device-status! "temperature" "outside" 9)))
   (check-equal? (device-latest-event "temperature" "outside") 9)
@@ -31,7 +31,7 @@
 (run-tests
 (test-suite
  "data model tests"
-(parameterize ([testing? #t])
+(parameterize ([target-db TESTING-DB])
   
   (test-case
    "record-device-status illegal names"

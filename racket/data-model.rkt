@@ -10,7 +10,6 @@
          racket/match
          net/url
          "device-table.rkt"
-         "testing-param.rkt"
          "web-funs.rkt"
          "secret.rkt"
          "time-contracts.rkt")
@@ -41,7 +40,6 @@
                 (#:timestamp ts-milliseconds?) void?)]
           [current-timestamp
            (-> ts-seconds?)])
-         testing?
          echo-data-to-host
          reset-database-test-tables!
          ts-seconds?
@@ -49,7 +47,9 @@
          ts-milliseconds?
          device?
          measurement?
-         reading?)
+         reading?
+         target-db
+         TESTING-DB)
 
 (define (false? x) (eq? x #false))
 
@@ -106,12 +106,14 @@
 
 
 (define TESTING-DB "sodec_test")
-(define REGULAR-DB "sodec")
 
-;; when testing, use the testing events table
-(define (DATABASE)
-  (cond [(testing?) TESTING-DB]
-        [else REGULAR-DB]))
+;; this parameter controls which database the data model targets
+(define target-db
+  (make-parameter "sodec"
+                  (λ (str)
+                    (cond [(string? str) str]
+                          [else "sodec"]))))
+
 
 ;; a parameter that allows data to be echoed to another remote host
 (define echo-data-to-host
@@ -395,7 +397,7 @@
    8086
    #t ;; absolute
    (list (path/param endpoint '()))
-   (cons `(db . ,(DATABASE))
+   (cons `(db . ,(target-db))
          extra-query-fields)
    #f ;;fragment
    ))
