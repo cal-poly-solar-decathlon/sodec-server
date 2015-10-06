@@ -71,7 +71,6 @@
    table-data))
 
 ;; this table maps measurements to the legal devices
-;; NB: TEMPERATURE AND HUMIDITY ONLY
 (define measurement-device-table
   (block
    ;; first, add the temp/hum devices:
