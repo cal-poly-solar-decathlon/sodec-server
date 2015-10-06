@@ -34,7 +34,7 @@ order of events on-site:
 - update software X
 - install autossh X
 - enable data echo? (could be a bad idea with no network?)
-- t/h sensors
+- t/h sensors X
 - zero out database
 
 -- for tunnel: be sure to get it set up right, test to local machine before pointing at cpsd
@@ -50,9 +50,12 @@ disable mock data on cpsd, zero out databases,
 TOO MUCH WIRELESS POWER. Turn off at night, turn down transmission power. shut down one antenna?
 
 instructions to lisa-marie about turning off wireless.
-
-egauge 2 not recording any data at all?
-
-configure water heater wireless
+talk to lisa-marie about power usage.
 
 will virtual registers show up in the XML read?
+
+
+** why does mechanical receps register as zero?
+
+configure water heater wireless (didn't seem to like static ip...)
+solar hot water MAC address: 00:90:c2:e1:91:b1

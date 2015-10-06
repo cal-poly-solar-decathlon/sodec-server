@@ -4,7 +4,8 @@
          racket/match
          racket/contract
          "../secret.rkt"
-         "../web-funs.rkt")
+         "../web-funs.rkt"
+         racket/date)
 
 (provide
  (contract-out [send-reading!
@@ -61,7 +62,9 @@
              "expected \"okay\" as result, got: ~v"
              result)))))))
   (cond [(eq? #f result)
-         (log-sodec-error "send-reading!: request timed out")]
+         (log-sodec-error "[~v] send-reading!: request timed out, sending ~v"
+                          (date->string (seconds->date (current-seconds)) #t)
+                          (list host port measurement id reading))]
         [(thread? result) '#t]))
 
 ;; the core reading-sender. Not behind a thread, no timeout, etc.

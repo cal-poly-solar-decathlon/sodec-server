@@ -95,8 +95,9 @@
      (define device-index (find-column-index column-names "device"))
      (for/list ([record (in-list (hash-ref series 'values))])
        (list-ref record device-index))]
+    [#f (list)]
     [other (error 'measurement-devices
-                  "inferred constraint failed, expected exactly one series in ~e"
+                  "inferred constraint failed, expected exactly one series or false in ~e"
                   other)]))
 
 ;; return the current time
