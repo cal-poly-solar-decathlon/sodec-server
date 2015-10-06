@@ -78,9 +78,7 @@
          (define indoor-temp-mean (mean indoor-temps))
          (define indoor-temp-stddev (stddev indoor-temps))
          (define cooler-outside? (and outdoor-temp (< outdoor-temp indoor-temp-mean)))
-         (define warmer-outside? (and outdoor-temp (< indoor-temp-mean (let ([ans outdoor-temp])
-                                                                         (printf "outdoor-temp ~s\n" ans)
-                                                                         ans))))
+         (define warmer-outside? (and outdoor-temp (< indoor-temp-mean outdoor-temp)))
      
          (list ;; MEAN INTERIOR TEMPERATURE
           (cond [(< indoor-temp-mean COMFORT-MIN-TEMP)

@@ -40,7 +40,7 @@
     (send-reading!/host (car host) (cadr host) measurement id reading)))
 
 ;; after this many seconds, give up on the POST
-(define TIMEOUT-SECONDS 3.0)
+(define TIMEOUT-SECONDS 20.0)
 
 ;; send a reading to one particular host
 (define (send-reading!/host host port measurement id reading)

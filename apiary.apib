@@ -7,8 +7,6 @@ tablets and the central home automation server.
 
 ## Devices
 
-REWRITE FOR INFLUXDB STARTS HERE...
-
 ## Measurements
 
 All recorded measurements must fall into one of these measurement categories:
@@ -103,14 +101,14 @@ Light settings are specified as tenths of a percent
 as 1000, and one set at 20% would be represented as 200.
 
 Electrical power readings are specified in CUMULATIVE watt-seconds.
+Note that this counter can *definitely* run backward, particularly in the case
+of the mains, where we expect to be pushing power out most of the time.
+
 PLEASE NOTE: under some circumstances, this counter may get reset. Display
 modules should be cognizant of this, and do the best they can if this
 value is seen to drop.
 
 ## Implementation
-
-Currently, the test server does not implement the resources listed as
-[UNIMPLEMENTED].
 
 # Group Server
 
