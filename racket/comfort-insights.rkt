@@ -106,17 +106,19 @@
                                   (string-append
                                    "The mean indoor temperature is ~a°C. You "
                                    "could cool the house by opening windows.")
-                                  indoor-temp-mean)
+                                  (num-format indoor-temp-mean))
                                  60)]
                        [(and (< indoor-temp-mean COMFORT-MAX-TEMP)
                              (< indoor-temp-mean outdoor-temp))
-                        (insight (string-append
-                                  "The mean indoor temperature is ~a°C. "
-                                  "You could heat the house by opening windows")
+                        (insight (format
+                                  (string-append
+                                   "The mean indoor temperature is ~a°C. "
+                                   "You could heat the house by opening windows")
+                                  (num-format indoor-temp-mean))
                                  60)]
                        [else
                         (insight (format "The mean indoor temperature is ~a°C"
-                                         indoor-temp-mean)
+                                         (num-format indoor-temp-mean))
                                  25)])
                  ]
                 [else
