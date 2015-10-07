@@ -30,20 +30,45 @@
 (define (get-timestamp)
   (hash-ref (gett "timestamp" #f) 'timestamp))
 
-(define (last-hour-events-count measurement device)
+;; expected intervals, in seconds
+(define TEMP-HUM-INTERVAL 45)
+(define ELEC-INTERVAL 15)
+
+;; status report covers this many trailing seconds
+(define CHECK-TIME (* 3600 2))
+
+(define (check-time-events-count measurement device)
   (define ts (current-seconds))
   (gett "count-events-in-range" `((measurement ,measurement)
                             (device ,device)
-                            (start ,(- ts 3600))
+                            (start ,(- ts CHECK-TIME))
                             (end ,ts))))
 
-(for ([measurement (in-list MEASUREMENT-NAMES)])
-  (for ([device (hash-ref measurement-device-table measurement)]
-        #:when (not (regexp-match #px"^testing_" device)))
-    (printf "~v ~v : ~v\n"
-            measurement
-            device
-            (last-hour-events-count measurement device))))
+(define temp-hum-readings-expected (/ CHECK-TIME TEMP-HUM-INTERVAL))
+(define elec-readings-expected (/ CHECK-TIME ELEC-INTERVAL))
+
+(define (print-status-report)
+  (for ([measurement (in-list MEASUREMENT-NAMES)])
+    (printf "## ~a\n" measurement)
+    (define expected-num-readings
+      (cond [(equal? measurement "electric_power") elec-readings-expected]
+            [else temp-hum-readings-expected]))
+    (for ([device (hash-ref measurement-device-table measurement)]
+          #:when (not (regexp-match #px"^testing_" device)))
+      (define num-readings (check-time-events-count measurement device))
+      (define pct (round
+                   (* 100 (/ num-readings expected-num-readings))))
+      (define alert (cond [(<= pct 95)
+                           (format " : *LOW* ~a%" pct)]
+                          [(<= pct 100) ""]
+                          [else
+                           (format " : *HIGH* ~a%" pct)]))
+      (printf "~v : ~v~a\n"
+              device
+              num-readings
+              alert))))
+
+(print-status-report)
 
 
 ;; ping check returns wrong result

@@ -34,35 +34,26 @@
 ;; will just cheerfully record whatever it gets. It only appears
 ;; here for the purpose of mock data generation and testing.
 (define electric-power-devices
-  '("laundry"
+  '("main_solar_array"
+    "bifacial_solar_array"
+    "laundry"
     "dishwasher"
     "refrigerator"
     "induction_stove"
     "water_heater"
-    "kitchen_outlets_1"
-    "kitchen_outlets_2"
-    "living_room_outlets"
-    "dining_room_outlets_1"
-    "dining_room_outlets_2"
-    "bathroom_outlets"
-    "bedroom_outlets_1"
-    "bedroom_outlets_2"
-    "mechanical_room_outlets"
-    "entry_hall_outlets"
-    "exterior_outlets"
     "greywater_pump"
     "blackwater_pump"
     "thermal_loop_pump"
     "water_supply_pump"
-    "water_supply_booster_pump"
-    "vehicle_charging"
-    "heat_pump"
+    "vehicle_charging_station"
+    "mechanical_room_outlets"
+    "heat_recovery_ventilation"
     "air_handler"
+    "mains"
     "air_conditioning"
     "microwave"
     "lighting_1"
-    "lighting_2"
-    "mains"))
+    "lighting_2"))
 
 ;; this table maps old ids to measurement/device lists
 ;; NB: TEMPERATURE AND HUMIDITY ONLY

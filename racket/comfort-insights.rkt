@@ -126,18 +126,18 @@
                  (cond [cooler-outside?
                         (insight (format (string-append
                                           "The mean indoor temperature is ~a°C, "
-                                         "which is above the contest minimum, "
+                                         "which is above the contest maximum, "
                                          "but it's cooler outside. Open the windows.")
                                          (num-format indoor-temp-mean))
                                  urgency)]
                        [else
                         (insight (format (string-append
                                           "The mean indoor temperature is ~a°C, "
-                                          "which is above the contest minimum.")
+                                          "which is above the contest maximum.")
                                          (num-format indoor-temp-mean))
                                  urgency)])])
           ;; STDDEV OF INTERIOR TEMPS
-          (insight (format "The standard deviation of interior temperatures is ~a°C"
+          (insight (format "The standard deviation of indoor temperatures is ~a°C"
                            (num-format indoor-temp-stddev))
                    (min 100 (* indoor-temp-stddev 20))))]
         [else (list)]
@@ -157,10 +157,10 @@
      (list
       (cond
         [(< max-indoor-humidity COMFORT-MAX-HUM)
-         (insight (format "The maximum interior humidity is ~a%"
+         (insight (format "The maximum indoor humidity is ~a%"
                           (num-format max-indoor-humidity))
                   25)]
-        [else (insight (format "The maximum interior humidity is ~a%, which is higher than the contest maximum."
+        [else (insight (format "The maximum indoor humidity is ~a%, which is higher than the contest maximum."
                                (num-format max-indoor-humidity))
                        (min 100
                             (+ FREAK-OUT-LEVEL
