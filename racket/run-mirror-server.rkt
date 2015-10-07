@@ -11,18 +11,22 @@
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
-(log-client-errors! (build-path here "error.log"))
+(module+ main
+  (log-client-errors! (build-path here "error.log"))
+  
+  (start-forecast-monitor)
+  
+  (parameterize ([target-db "sodecMirror"])
+    (serve/servlet start
+                   ;; I see... changing server root path means you need
+                   ;; your own configuration files....
+                   ;; #:server-root-path here
+                   #:extra-files-paths (list htdocs)
+                   #:servlet-regexp #px"^/srv/.*"
+                   #:launch-browser? #f
+                   #:listen-ip #f
+                   #:port 3000
+                   #:log-file (build-path here "server.log"))))
 
-(start-forecast-monitor)
-
-(parameterize ([target-db "sodecMirror"])
-  (serve/servlet start
-                 ;; I see... changing server root path means you need
-                 ;; your own configuration files....
-                 ;; #:server-root-path here
-                 #:extra-files-paths (list htdocs)
-                 #:servlet-regexp #px"^/srv/.*"
-                 #:launch-browser? #f
-                 #:listen-ip #f
-                 #:port 3000
-                 #:log-file (build-path here "server.log")))
+;; no testing
+(module* test racket/base)

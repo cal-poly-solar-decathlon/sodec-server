@@ -1,7 +1,7 @@
 #lang racket
 
 (require "../web-funs.rkt"
-         "../device-descriptions.rkt"
+         #;"../device-descriptions.rkt"
          rackunit
          racket/date
          plot)
@@ -9,12 +9,14 @@
 (define-logger sodec)
 
 (define HOST "calpolysolardecathlon.org")
-(define PORT 8080)
+(define PORT 3000)
 
 (define SECONDS-IN-DAY 86400)
 
-
-(check-equal?
+;; all old broken
+#;(
+;; FIXME BROKEN
+#;(check-equal?
  (remote-call/get
   HOST PORT
   (sodec-url "count-events-in-range"
@@ -47,4 +49,4 @@
 ;; running this for timing
 (for/list ([i (in-range divisions)])
            (printf "i: ~a\n" i)
-           (vector i (events-in-division i)))
+           (vector i (events-in-division i))))

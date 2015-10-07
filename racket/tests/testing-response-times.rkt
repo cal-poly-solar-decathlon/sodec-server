@@ -6,13 +6,12 @@
          rackunit/text-ui
          racket/date
          json
-         "../device-descriptions.rkt"
          "../web-funs.rkt")
 
 (define HOST 
   ;; test locally:
-  "localhost"
-  #;"calpolysolardecathlon.org"
+  #;"localhost"
+  "calpolysolardecathlon.org"
   #;"192.168.2.3")
 
 (define PORT
@@ -53,7 +52,8 @@
 
 (time
  (gett "count-events-in-range"
-       `((device s-temp-bed)
+       `((measurement "temperature")
+         (device "bedroom")
          (start ,june-one)
          (end ,(+ june-one 3600)))))
 

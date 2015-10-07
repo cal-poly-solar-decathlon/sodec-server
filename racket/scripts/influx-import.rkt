@@ -4,6 +4,8 @@
          rackunit
          racket/date)
 
+(module* test racket/base)
+
 (define SQLDUMP "/Users/clements/sodecdump.sql")
 (define measurements
   '(temperature humidity electricity_used

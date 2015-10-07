@@ -5,6 +5,8 @@
 (require "../device-table.rkt"
          "../data-model.rkt")
 
+(module* test racket/base)
+
 #;((define scraped-lines
   (file->lines "/tmp/gg.txt"))
 

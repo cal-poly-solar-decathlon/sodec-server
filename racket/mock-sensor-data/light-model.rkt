@@ -4,6 +4,9 @@
 
 (require math/distributions)
 
+;; no tests!
+(module* test racket/base)
+
 ;; modeling light usage.
 
 ;; we're going to imagine that people arrive independently, and

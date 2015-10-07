@@ -2,3 +2,4 @@ server.out
 mock-data.out
 error.out
 server.log.*
+coverage/

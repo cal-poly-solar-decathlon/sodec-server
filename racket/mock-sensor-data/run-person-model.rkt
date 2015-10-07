@@ -7,5 +7,9 @@
 
 (target-hosts '(("calpolysolardecathlon.org" 8080)))
 
-;; the lights:
-(run-alice-barry-lights)
+(module+ main
+  ;; the lights:
+  (run-alice-barry-lights))
+
+;; no tests
+(module* test racket/base)

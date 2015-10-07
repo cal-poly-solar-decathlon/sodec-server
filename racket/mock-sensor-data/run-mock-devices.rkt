@@ -8,16 +8,18 @@
 
 (target-hosts '(("localhost" 3000)))
 
+(module+ main
+  ;; the lights:
+  ;; lights ... aren't happening.
+  ;(run-alice-barry-lights)
+  
+  ;; everything else
+  (run-mock-temp-hum-elec)
+  
+  
+  ;; don't die, just run forever...
+  (let loop ()
+    (sleep 60)
+    (loop)))
 
-;; the lights:
-;; lights ... aren't happening.
-;(run-alice-barry-lights)
-
-;; everything else
-(run-mock-temp-hum-elec)
-
-
-;; don't die, just run forever...
-(let loop ()
-  (sleep 60)
-  (loop))
+(module* test racket/base)

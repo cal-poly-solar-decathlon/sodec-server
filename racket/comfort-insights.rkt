@@ -113,11 +113,11 @@
                         (insight (format
                                   (string-append
                                    "The mean indoor temperature is ~a°C. "
-                                   "You could heat the house by opening windows")
+                                   "You could heat the house by opening windows.")
                                   (num-format indoor-temp-mean))
                                  60)]
                        [else
-                        (insight (format "The mean indoor temperature is ~a°C"
+                        (insight (format "The mean indoor temperature is ~a°C."
                                          (num-format indoor-temp-mean))
                                  25)])
                  ]

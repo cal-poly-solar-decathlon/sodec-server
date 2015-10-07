@@ -15,11 +15,9 @@
 (define-logger sodec)
 
 (define HOST 
-  ;; test locally:
-  "localhost"
-  #;"129.65.138.226"
-  #;"calpolysolardecathlon.org"
-  #;"192.168.2.3")
+  #;"localhost"
+  "calpolysolardecathlon.org"
+  )
 
 (define PORT
   3000

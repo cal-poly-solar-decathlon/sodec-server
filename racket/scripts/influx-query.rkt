@@ -5,6 +5,8 @@
 
 (string->url "http://localhost:8086/query?db=mydb")
 
+(module* test racket/base)
+
 ;; express a query as a URL
 (define (query->url query)
   (url

@@ -8,6 +8,7 @@
 (define-runtime-path here ".")
 (define-runtime-path htdocs "./htdocs")
 
+(module+ main
 (log-client-errors! (build-path here "error.log"))
 
 (use-fake-forecast!)
@@ -22,4 +23,7 @@
                #:listen-ip #f
                #:port 3000
                #:log-file (build-path here "server.log")
-)
+               ))
+
+;; no testing
+(module* test racket/base)

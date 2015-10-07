@@ -10,6 +10,8 @@
          "../device-descriptions.rkt"
          "../mysql-socket.rkt")
 
+(module* test racket/base)
+
 
 
 (date-display-format 'iso-8601)

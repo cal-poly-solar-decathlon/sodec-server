@@ -1,12 +1,14 @@
 #lang racket
 
 (require "../web-funs.rkt"
-         "../device-descriptions.rkt"
+         #;"../device-descriptions.rkt"
          rackunit
          racket/date
          plot)
 
 (define-logger sodec)
+
+(module* test racket/base)
 
 (define HOST "calpolysolardecathlon.org")
 (define PORT 8080)
@@ -123,7 +125,7 @@
         [else
          (list 'too-high num-readings frac)]))
 
-(for/list ([device (in-list device-strs)])
+#;(for/list ([device (in-list device-strs)])
   (list device (device-alive? device)))
 
 

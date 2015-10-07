@@ -9,6 +9,7 @@
          racket/runtime-path
          racket/date)
 
+(module* test racket/base)
 
 
 (date-display-format 'iso-8601)

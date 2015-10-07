@@ -4,6 +4,8 @@
          "../data-model.rkt")
 
 
+(module* test racket/base)
+
 ;; certain measurements need to have at least one initial zero.
 (define (ensure-at-least-one-reading measurement)
   (for ([device (in-list (hash-ref measurement-device-table measurement))])
