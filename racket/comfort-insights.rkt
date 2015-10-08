@@ -152,28 +152,32 @@
                           (device-latest-reading "humidity" humidity-dev))]
                 #:when reading)
       (/ reading 10)))
+  (define outdoor-humidity
+    (device-latest-reading "humidity" "outside"))
   (cond
     [(not (null? indoor-humidities))
-     (define max-indoor-humidity
-       (apply max indoor-humidities))
+     (define mean-indoor-humidity
+       (mean indoor-humidities))
      (list
       (cond
-        [(< max-indoor-humidity COMFORT-MAX-HUM)
-         (insight (format "The maximum indoor humidity is ~a%"
-                          (num-format max-indoor-humidity))
+        [(< mean-indoor-humidity COMFORT-MAX-HUM)
+         (insight (format "The mean indoor humidity is ~a%"
+                          (num-format mean-indoor-humidity))
                   25)]
-        [else (insight (format "The maximum indoor humidity is ~a%, which is higher than the contest maximum."
-                               (num-format max-indoor-humidity))
-                       (min 100
-                            (+ FREAK-OUT-LEVEL
-                               (* COMFORT-HUM-RAMP
-                                  (- max-indoor-humidity COMFORT-MAX-HUM)))))]))]
+        [else (define priority
+                (min 100 (+ FREAK-OUT-LEVEL
+                            (* COMFORT-HUM-RAMP
+                               (- mean-indoor-humidity COMFORT-MAX-HUM)))))
+              (cond [(and outdoor-humidity (< outdoor-humidity mean-indoor-humidity))
+                     (insight (format "The mean indoor humidity is ~a%, which \
+is higher than the contest maximum, but the outdoor humidity is lower. Open the windows."
+                                      (num-format mean-indoor-humidity)))]
+                    [else
+                     (insight (format "The mean indoor humidity is ~a%, which \
+is higher than the contest maximum."
+                               (num-format mean-indoor-humidity)))])]))]
         [else (list)]
   ))
-
-;; basic outdoor-temperature insight
-(define (indoor-outdoor-insights)
-  (list))
 
 ;; insights based on the forecast
 (define (forecast-insights)

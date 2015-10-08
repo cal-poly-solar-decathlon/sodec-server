@@ -34,20 +34,19 @@
 (define TEMP-HUM-INTERVAL 45)
 (define ELEC-INTERVAL 15)
 
-;; status report covers this many trailing seconds
-(define CHECK-TIME (* 3600 2))
-
-(define (check-time-events-count measurement device)
+(define (check-time-events-count measurement device check-time)
   (define ts (current-seconds))
   (gett "count-events-in-range" `((measurement ,measurement)
                             (device ,device)
-                            (start ,(- ts CHECK-TIME))
+                            (start ,(- ts check-time))
                             (end ,ts))))
 
-(define temp-hum-readings-expected (/ CHECK-TIME TEMP-HUM-INTERVAL))
-(define elec-readings-expected (/ CHECK-TIME ELEC-INTERVAL))
+(define (print-status-report check-time-minutes #:verbose [verbose? #f])
+  (define check-time-seconds (* check-time-minutes 60))
+  (define temp-hum-readings-expected (/ check-time-seconds TEMP-HUM-INTERVAL))
+  (define elec-readings-expected (/ check-time-seconds ELEC-INTERVAL))
+  (printf "# Status Report for ~a minutes\n" check-time-minutes)
 
-(define (print-status-report)
   (for ([measurement (in-list MEASUREMENT-NAMES)])
     (printf "## ~a\n" measurement)
     (define expected-num-readings
@@ -55,7 +54,8 @@
             [else temp-hum-readings-expected]))
     (for ([device (hash-ref measurement-device-table measurement)]
           #:when (not (regexp-match #px"^testing_" device)))
-      (define num-readings (check-time-events-count measurement device))
+      (define num-readings (check-time-events-count measurement device
+                                                    check-time-seconds))
       (define pct (round
                    (* 100 (/ num-readings expected-num-readings))))
       (define alert (cond [(<= pct 95)
@@ -63,12 +63,18 @@
                           [(<= pct 100) ""]
                           [else
                            (format " : *HIGH* ~a%" pct)]))
-      (printf "~v : ~v~a\n"
-              device
-              num-readings
-              alert))))
+      (when (or (not (equal? alert ""))
+                verbose?)
+        (printf "~v : ~v~a\n"
+                device
+                num-readings
+                alert)
+        ))))
 
-(print-status-report)
+(print-status-report 5)
+(print-status-report 120)
+(print-status-report (* 60 24))
+
 
 
 ;; ping check returns wrong result
