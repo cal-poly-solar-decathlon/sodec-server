@@ -12,6 +12,13 @@
   [comfort-insights (-> (listof insight?))]
   [insight->jsexpr (-> insight? jsexpr?)]))
 
+;; convert a celsius temperature to a fahrenheit one
+(define (c2f n)
+  (+ 32 (* 9/5 n)))
+;; convert a celsius *difference* in temperatures to a fahrenheit one
+(define (dc2df n)
+  (* 9/5 n))
+
 ;; generate "comfort"-related insights
 
 (define temperature-devices
@@ -52,6 +59,14 @@
 (define (num-format n)
   (number->string (exact->inexact (/ (round (* 10 n)) 10))))
 
+;; format a temperature
+(define (temp-format n)
+  (string-append (num-format (c2f n)) "°F"))
+
+;; format a *difference* in temperatures
+(define (dtemp-format n)
+  (string-append (num-format (* 9/5 n)) "°F"))
+
 
 ;; an insight contains a string and a "priority" from 0 to 100
 ;; indicating how important it is. These priorities are used to rank
@@ -87,16 +102,16 @@
                       (* COMFORT-TEMP-RAMP (- COMFORT-MIN-TEMP indoor-temp-mean))))
                  (cond [warmer-outside?
                         (insight (format (string-append
-                                          "The mean indoor temperature is ~a°C, "
+                                          "The mean indoor temperature is ~a, "
                                           "which is below the contest minimum, "
                                           "but it's warmer outside. Open the windows.")
-                                         (num-format indoor-temp-mean))
+                                         (temp-format indoor-temp-mean))
                                  urgency)]
                        [else
                         (insight (format (string-append
-                                          "The mean indoor temperature is ~a°C, "
+                                          "The mean indoor temperature is ~a, "
                                           "which is below the contest minimum.")
-                                         (num-format indoor-temp-mean))
+                                         (temp-format indoor-temp-mean))
                                  urgency)])]
                 [(< indoor-temp-mean COMFORT-MAX-TEMP)
                  ;; temperature is okay
@@ -104,21 +119,21 @@
                              (< outdoor-temp indoor-temp-mean))
                         (insight (format
                                   (string-append
-                                   "The mean indoor temperature is ~a°C. You "
+                                   "The mean indoor temperature is ~a. You "
                                    "could cool the house by opening windows.")
-                                  (num-format indoor-temp-mean))
+                                  (temp-format indoor-temp-mean))
                                  60)]
                        [(and (< indoor-temp-mean COMFORT-MAX-TEMP)
                              (< indoor-temp-mean outdoor-temp))
                         (insight (format
                                   (string-append
-                                   "The mean indoor temperature is ~a°C. "
+                                   "The mean indoor temperature is ~a. "
                                    "You could heat the house by opening windows.")
-                                  (num-format indoor-temp-mean))
+                                  (temp-format indoor-temp-mean))
                                  60)]
                        [else
-                        (insight (format "The mean indoor temperature is ~a°C."
-                                         (num-format indoor-temp-mean))
+                        (insight (format "The mean indoor temperature is ~a."
+                                         (temp-format indoor-temp-mean))
                                  25)])
                  ]
                 [else
@@ -127,20 +142,20 @@
                       (* COMFORT-TEMP-RAMP (- indoor-temp-mean COMFORT-MAX-TEMP))))
                  (cond [cooler-outside?
                         (insight (format (string-append
-                                          "The mean indoor temperature is ~a°C, "
+                                          "The mean indoor temperature is ~a, "
                                          "which is above the contest maximum, "
                                          "but it's cooler outside. Open the windows.")
-                                         (num-format indoor-temp-mean))
+                                         (temp-format indoor-temp-mean))
                                  urgency)]
                        [else
                         (insight (format (string-append
-                                          "The mean indoor temperature is ~a°C, "
+                                          "The mean indoor temperature is ~a, "
                                           "which is above the contest maximum.")
-                                         (num-format indoor-temp-mean))
+                                         (temp-format indoor-temp-mean))
                                  urgency)])])
           ;; STDDEV OF INTERIOR TEMPS
-          (insight (format "The standard deviation of indoor temperatures is ~a°C"
-                           (num-format indoor-temp-stddev))
+          (insight (format "The standard deviation of indoor temperatures is ~a"
+                           (dtemp-format indoor-temp-stddev))
                    (min 100 (* indoor-temp-stddev 20))))]
         [else (list)]
   ))
