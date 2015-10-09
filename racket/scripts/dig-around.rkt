@@ -106,7 +106,7 @@
        (display status-char)))
    (display "\n"))
 
- (define LAST-HOURS 5)
+ (define LAST-HOURS 24)
  (for ([i LAST-HOURS])
    (print-hour-line (- LAST-HOURS i))))
 

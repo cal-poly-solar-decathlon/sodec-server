@@ -34,3 +34,4 @@ Possible choices are  8,9,10,12,13,14,15
 
 
 [ed. note: For the names we're using in the eGauge, see apiary.apib]
+aaoeuaoe
