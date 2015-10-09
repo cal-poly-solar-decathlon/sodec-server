@@ -26,13 +26,17 @@
   (hash-ref measurement-device-table "temperature"))
 
 (define indoor-temp-devices
-  (remove "outside" temperature-devices))
+  (filter (λ (d) (not (or (equal? d "outside")
+                          (regexp-match #px"^testing_" d))))
+          temperature-devices))
 
 (define humidity-devices
   (hash-ref measurement-device-table "humidity"))
 
 (define indoor-humidity-devices
-  (remove "outside" humidity-devices))
+  (filter (λ (d) (not (or (equal? d "outside")
+                          (regexp-match #px"^testing_" d))))
+          humidity-devices))
 
 (define COMFORT-MIN-TEMP 21.7)
 (define COMFORT-MAX-TEMP 24.4)
