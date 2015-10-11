@@ -243,8 +243,9 @@
   (response/json
    (map insight->jsexpr
         (join-insights
-         (comfort-insights)
-         (forecast-insights)))))
+         (append
+          (comfort-insights)
+          (forecast-insights))))))
 
 ;;;;
 ;;
