@@ -75,41 +75,6 @@
    
    (print-status-report))
 
-#;(block
- (define ts (current-seconds))
- (define (check-hour-events-count measurement device hours-ago)
-   (gett "count-events-in-range" `((measurement ,measurement)
-                                   (device ,device)
-                                   (start ,(- ts (* hours-ago 3600)))
-                                   (end ,(- ts (* (sub1 hours-ago) 3600))))))
- 
- (define temp-hum-readings-expected (/ 3600 TEMP-HUM-INTERVAL))
- (define elec-readings-expected (/ 3600 ELEC-INTERVAL))
- 
- (define (print-hour-line hours-ago)
-   (for ([measurement (in-list MEASUREMENT-NAMES)])
-     (define expected-num-readings
-       (cond [(equal? measurement "electric_power") elec-readings-expected]
-             [else temp-hum-readings-expected]))
-     (for ([device (hash-ref measurement-device-table measurement)]
-           #:when (not (regexp-match #px"^testing_" device)))
-       (define num-readings (check-hour-events-count measurement device hours-ago))
-       (define pct (round
-                    (* 100 (/ num-readings expected-num-readings))))
-       (define status-char
-         (cond [(<= pct 2) "X"]
-               [(<= pct 75) "d"]
-               [(<= pct 80)  "c"]
-               [(<= pct 90) "b"]
-               [(<= pct 95) "a"]
-               [else "."]))
-       (display status-char)))
-   (display "\n"))
-
- (define LAST-HOURS 10)
- (for ([i LAST-HOURS])
-   (print-hour-line (- LAST-HOURS i))))
-
 
 ;; convert watt-seconds to watt-hours
 (define (ws->wh ws)
@@ -117,11 +82,11 @@
 
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
+(define START (find-seconds 0 0 0 11 10 2015))
+(define END (find-seconds 0 0 0 12 10 2015))
 (define all-device-usages
   (for/list ([device all-electric-devices]
              #:when (not (regexp-match #px"^testing_" device)))
-    (define ts (find-seconds 0 0 0 9 10 2015))
-    (define contest-start (find-seconds 0 0 11 8 10 2015))
     (list
      device
      (round
@@ -130,13 +95,13 @@
         (hash-ref
          (gett "interval-first-event" `((measurement "electric_power")
                                         (device ,device)
-                                        (start ,contest-start)
-                                        (end ,ts)))
+                                        (start ,START)
+                                        (end ,END)))
          'r)
         (gett "interval-last-event" `((measurement "electric_power")
                                       (device ,device)
-                                      (start ,contest-start)
-                                      (end ,ts)))))))))
+                                      (start ,START)
+                                      (end ,END)))))))))
 
 (define generation-devices
   '(("main_solar_array" -1)
@@ -156,8 +121,8 @@
     ("dishwasher" ("dishwasher"))
     ("oven" ("microwave"))
     ("washing machine" ("laundry"))
-    ("HVAC" ("air_conditioning" "air_handler"))
-    ("Passive HVAC inline Fan" ("heat_recovery_ventilation"))
+    ("HVAC" ("air_conditioning" "air_handler" "heat_recovery_ventilation"))
+    ("Passive HVAC inline Fan" ())
     ("Mechanical Room Fan" ())
     ("blackwater pump" ("blackwater_pump"))
     ("greywater pump" ("greywater_pump"))
@@ -166,9 +131,8 @@
     ("TV" ())
     ("controls system" ("mechanical_room_outlets"))
     ("vehicle" ("vehicle_charging_station"))
-    ("UNBUDGETED" ())
-    ("water_heater" ("water_heater" "thermal_loop_pump"))
     ("everything_else" ("everything_else"))
+    ("water_heater" ("water_heater" "thermal_loop_pump"))
     ("UNCHARGED" ("water_supply_pump"))))
 
 (define budgeted-devices
@@ -211,6 +175,44 @@
        (for/list ([device (in-list (second b))])
          (first (dict-ref all-usages-with-everything-else device))))
       1000)))
+
+(printf "total used: ~v\n" total-used)
+
+
+(block
+ (define ts (current-seconds))
+ (define (check-hour-events-count measurement device hours-ago)
+   (gett "count-events-in-range" `((measurement ,measurement)
+                                   (device ,device)
+                                   (start ,(- ts (* hours-ago 3600)))
+                                   (end ,(- ts (* (sub1 hours-ago) 3600))))))
+ 
+ (define temp-hum-readings-expected (/ 3600 TEMP-HUM-INTERVAL))
+ (define elec-readings-expected (/ 3600 ELEC-INTERVAL))
+ 
+ (define (print-hour-line hours-ago)
+   (for ([measurement (in-list MEASUREMENT-NAMES)])
+     (define expected-num-readings
+       (cond [(equal? measurement "electric_power") elec-readings-expected]
+             [else temp-hum-readings-expected]))
+     (for ([device (hash-ref measurement-device-table measurement)]
+           #:when (not (regexp-match #px"^testing_" device)))
+       (define num-readings (check-hour-events-count measurement device hours-ago))
+       (define pct (round
+                    (* 100 (/ num-readings expected-num-readings))))
+       (define status-char
+         (cond [(<= pct 2) "X"]
+               [(<= pct 75) "d"]
+               [(<= pct 80)  "c"]
+               [(<= pct 90) "b"]
+               [(<= pct 95) "a"]
+               [else "."]))
+       (display status-char)))
+   (display "\n"))
+
+ (define LAST-HOURS 24)
+ (for ([i LAST-HOURS])
+   (print-hour-line (- LAST-HOURS i))))
 
 
 

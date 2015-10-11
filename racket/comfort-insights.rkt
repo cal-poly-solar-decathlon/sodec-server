@@ -3,22 +3,15 @@
 (require racket/contract
          "data-model.rkt"
          "device-table.rkt"
+         "insight-struct.rkt"
          (only-in math/statistics mean stddev)
          json)
 
 (provide
  (contract-out
-  [struct insight ([message string?]
-                   [priority number?])]
-  [comfort-insights (-> (listof insight?))]
-  [insight->jsexpr (-> insight? jsexpr?)]))
+  [comfort-insights (-> (listof insight?))]))
 
-;; convert a celsius temperature to a fahrenheit one
-(define (c2f n)
-  (+ 32 (* 9/5 n)))
-;; convert a celsius *difference* in temperatures to a fahrenheit one
-(define (dc2df n)
-  (* 9/5 n))
+
 
 ;; generate "comfort"-related insights
 
@@ -48,38 +41,15 @@
 ;; maximum freak-out at 10% above max
 (define COMFORT-HUM-RAMP (/ 25 10))
 
-;; meanings of panic levels
-;0-50 possibly interesting insights
-;50-75 you should do this thing
-;75-100 you are losing contest points right now!
-
-(define FREAK-OUT-LEVEL 75)
 
 
 
-(define (num-format n)
-  (number->string (exact->inexact (/ (round (* 10 n)) 10))))
-
-;; format a temperature
-(define (temp-format n)
-  (string-append (num-format (c2f n)) "°F"))
-
-;; format a *difference* in temperatures
-(define (dtemp-format n)
-  (string-append (num-format (* 9/5 n)) "°F"))
-
-
-;; an insight contains a string and a "priority" from 0 to 100
-;; indicating how important it is. These priorities are used to rank
-;; the insights
-(struct insight (message priority) #:transparent)
 
 (define (comfort-insights)
   (join-insights
    (append
     (temperature-insights)
-    (humidity-insights)
-    (forecast-insights))))
+    (humidity-insights))))
 
 (define (temperature-insights)
   (define indoor-temps
@@ -208,31 +178,14 @@ is higher than the contest maximum."
                               priority)])]))]
         [else (list)]))
 
-(module+ test
-)
 
 
-;; insights based on the forecast
-(define (forecast-insights)
-  (list)
-  )
 
 
-(define (join-insights insights)
-  (sort insights > #:key insight-priority))
-
-(define (insight->jsexpr insight)
-  (hash 'm (insight-message insight)
-        'p (exact->inexact (insight-priority insight))))
 
 (module+ test
   (require rackunit)
   
-  (check-equal? (insight->jsexpr
-                 (insight "I'm so awesome!" 75.223))
-                (hash 'm "I'm so awesome!"
-                      'p 75.223))
-
   ;; LAZY MAN'S CHECKS!
   (check-not-exn (λ() (temperatures->insights null 60)))
   (check-not-exn (λ() (temperatures->insights '(12 19) 60)))

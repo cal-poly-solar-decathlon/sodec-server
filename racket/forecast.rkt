@@ -14,7 +14,13 @@
   [latest-forecast (-> (or/c false? jsexpr?))]
   [latest-forecast-timestamp-ms (-> (or/c false? ts-milliseconds?))]
   [start-forecast-monitor (-> thread?)]
-  [use-fake-forecast! (-> void?)]))
+  [use-fake-forecast! (-> void?)]
+  ;; only for development... don't hit this all the time:
+  [fetch-forecast-from-web (-> jsexpr?)]))
+
+(define FORECAST-API-KEY "7ae8da03eeb40276c639d6591e1f9610")
+(define COMPETITION-LAT 33.673676)
+(define COMPETITION-LON -117.741895)
 
 (define FORECAST-SLEEP-INTERVAL (* 20 60))
 
@@ -39,10 +45,6 @@
 
 (define stored-forecast #f)
 (define stored-timestamp #f)
-
-(define FORECAST-API-KEY "7ae8da03eeb40276c639d6591e1f9610")
-(define COMPETITION-LAT 33.673676)
-(define COMPETITION-LON -117.741895)
 
 (define forecast-url
   (url
@@ -70,6 +72,13 @@
   stored-timestamp)
 
 (define (update-stored-forecast!)
+  (define the-forecast (fetch-forecast-from-web))
+  (set! stored-forecast the-forecast)
+  (set! stored-timestamp
+        (inexact->exact (floor (current-inexact-milliseconds)))))
+
+;; hit the forecast.io endpoint, fetch the forecast for irvine.
+(define (fetch-forecast-from-web)
   (define-values (status headers body-port)
     (http-sendrecv/url forecast-url))
   (unless (regexp-match #px"^HTTP/1.1 200" status)
@@ -77,9 +86,7 @@
            "expected 200 OK response, got ~e, with body ~e"
            status
            (regexp-match #px".*" body-port)))
-  (set! stored-forecast (read-json body-port))
-  (set! stored-timestamp
-        (inexact->exact (floor (current-inexact-milliseconds)))))
+  (read-json body-port))
 
 (define (use-fake-forecast!)
   (set! stored-forecast example-forecast)

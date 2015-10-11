@@ -11,6 +11,8 @@
          "device-table.rkt"
          "forecast.rkt"
          "comfort-insights.rkt"
+         "forecast-insights.rkt"
+         "insight-struct.rkt"
          xml)
 
 (provide start
@@ -239,7 +241,10 @@
 
 (define (handle-latest-insights-request)
   (response/json
-   (map insight->jsexpr (comfort-insights))))
+   (map insight->jsexpr
+        (join-insights
+         (comfort-insights)
+         (forecast-insights)))))
 
 ;;;;
 ;;
