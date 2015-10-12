@@ -98,7 +98,7 @@
                                    "The mean indoor temperature is ~a. You "
                                    "could cool the house by opening windows.")
                                   (temp-format indoor-temp-mean))
-                                 60)]
+                                 30)]
                        [(and (< indoor-temp-mean COMFORT-MAX-TEMP)
                              (< indoor-temp-mean outdoor-temp))
                         (insight (format
@@ -106,7 +106,7 @@
                                    "The mean indoor temperature is ~a. "
                                    "You could heat the house by opening windows.")
                                   (temp-format indoor-temp-mean))
-                                 60)]
+                                 30)]
                        ;; only happens when indoor mean EXACTLY EQUALS outdoor
                        [else
                         (insight (format "The mean indoor temperature is ~a."
