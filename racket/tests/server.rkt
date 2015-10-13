@@ -264,7 +264,10 @@
    (test-case
     "insights"
     (check-pred
-     (listof (hash/c symbol? (or/c string? number?) #:immutable #t))
+     (and/c
+      (listof (hash/c symbol? (or/c string? number?) #:immutable #t))
+      ;; should never be empty:
+      pair?)
      (gett "latest-insights" '())))
 
    ;; INTERVAL MEANS
