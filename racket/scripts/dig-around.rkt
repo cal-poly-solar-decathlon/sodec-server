@@ -82,26 +82,31 @@
 
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
-(define START (find-seconds 0 0 0 11 10 2015))
-(define END (find-seconds 0 0 0 12 10 2015))
+(define START (find-seconds 0 0 11 8 10 2015))
+(define END (find-seconds 0 0 0 9 10 2015))
 (define all-device-usages
   (for/list ([device all-electric-devices]
              #:when (not (regexp-match #px"^testing_" device)))
+    ;; ouch, double the air_conditioning:
+    (define multiplier
+      (cond [(equal? device "air_conditioning") 2]
+            [else 1]))
     (list
      device
      (round
-      (ws->wh
-       (-
-        (hash-ref
-         (gett "interval-first-event" `((measurement "electric_power")
-                                        (device ,device)
-                                        (start ,START)
-                                        (end ,END)))
-         'r)
-        (gett "interval-last-event" `((measurement "electric_power")
-                                      (device ,device)
-                                      (start ,START)
-                                      (end ,END)))))))))
+      (* multiplier
+         (ws->wh
+          (-
+           (hash-ref
+            (gett "interval-first-event" `((measurement "electric_power")
+                                           (device ,device)
+                                           (start ,START)
+                                           (end ,END)))
+            'r)
+           (gett "interval-last-event" `((measurement "electric_power")
+                                         (device ,device)
+                                         (start ,START)
+                                         (end ,END))))))))))
 
 (define generation-devices
   '(("main_solar_array" -1)
@@ -179,7 +184,7 @@
 (printf "total used: ~v\n" total-used)
 
 
-(block
+#;(block
  (define ts (current-seconds))
  (define (check-hour-events-count measurement device hours-ago)
    (gett "count-events-in-range" `((measurement ,measurement)
