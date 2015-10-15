@@ -82,8 +82,8 @@
 
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
-(define START (find-seconds 0 0 11 8 10 2015))
-(define END (find-seconds 0 0 0 9 10 2015))
+(define START (find-seconds 0 0 0 13 10 2015))
+(define END   (find-seconds 0 0 0 14 10 2015))
 (define all-device-usages
   (for/list ([device all-electric-devices]
              #:when (not (regexp-match #px"^testing_" device)))
@@ -123,6 +123,7 @@
 (define budget-map
   '(("refrigerator" ("refrigerator"))
     ("stovetop" ("induction_stove"))
+    ("cooking_task" ())
     ("dishwasher" ("dishwasher"))
     ("oven" ("microwave"))
     ("washing machine" ("laundry"))
