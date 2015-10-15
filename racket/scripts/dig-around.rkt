@@ -82,8 +82,8 @@
 
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
-(define START (find-seconds 0 0 0 13 10 2015))
-(define END   (find-seconds 0 0 0 14 10 2015))
+(define START (find-seconds 0 0 0 14 10 2015))
+(define END   (find-seconds 0 0 0 15 10 2015))
 (define all-device-usages
   (for/list ([device all-electric-devices]
              #:when (not (regexp-match #px"^testing_" device)))
@@ -184,8 +184,9 @@
 
 (printf "total used: ~v\n" total-used)
 
-
-#;(block
+;; STATUS REPORT
+(define STATUS-REPORT-HOURS 24)
+(block
  (define ts (current-seconds))
  (define (check-hour-events-count measurement device hours-ago)
    (gett "count-events-in-range" `((measurement ,measurement)
@@ -216,9 +217,8 @@
        (display status-char)))
    (display "\n"))
 
- (define LAST-HOURS 24)
- (for ([i LAST-HOURS])
-   (print-hour-line (- LAST-HOURS i))))
+ (for ([i STATUS-REPORT-HOURS])
+   (print-hour-line (- STATUS-REPORT-HOURS i))))
 
 
 
