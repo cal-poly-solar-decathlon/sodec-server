@@ -184,7 +184,6 @@
 
 (printf "total used: ~v\n" total-used)
 
-;; STATUS REPORT
 (define STATUS-REPORT-HOURS 24)
 (block
  (define ts (current-seconds))
