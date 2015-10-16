@@ -9,7 +9,8 @@
          racket/format
          json
          "../device-table.rkt"
-         "../web-funs.rkt")
+         "../web-funs.rkt"
+         (only-in math/statistics mean))
 
 (define-logger sodec)
 
@@ -80,112 +81,130 @@
 (define (ws->wh ws)
   (/ ws 3600))
 
+;; return the net power used by a device from start to end
+(define (device-net-power device start end)
+  (ws->wh
+   (-
+    (hash-ref
+     (gett "interval-first-event" `((measurement "electric_power")
+                                    (device ,device)
+                                    (start ,start)
+                                    (end ,end)))
+     'r)
+    (gett "interval-last-event" `((measurement "electric_power")
+                                  (device ,device)
+                                  (start ,start)
+                                  (end ,end))))))
+(block
+
+ (define (day-start-power date)
+   (define start (find-seconds 0 0 0  date 10 2015))
+   (define end   (find-seconds 0 0 11 date 10 2015))
+   
+   (+ (device-net-power "main_solar_array" start end)
+      (device-net-power "bifacial_solar_array" start end)))
+
+ (mean
+  (for/list ([i (in-range 9 16)])
+    (day-start-power i)))
+ )
+
+
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
-(define START (find-seconds 0 0 0 15 10 2015))
-(define END   (find-seconds 0 0 0 16 10 2015))
-(define all-device-usages
-  (for/list ([device all-electric-devices]
-             #:when (not (regexp-match #px"^testing_" device)))
-    ;; ouch, double the air_conditioning:
-    (define multiplier
-      (cond [(equal? device "air_conditioning") 2]
-            [else 1]))
-    (list
-     device
-     (round
-      (* multiplier
-         (ws->wh
-          (-
-           (hash-ref
-            (gett "interval-first-event" `((measurement "electric_power")
-                                           (device ,device)
-                                           (start ,START)
-                                           (end ,END)))
-            'r)
-           (gett "interval-last-event" `((measurement "electric_power")
-                                         (device ,device)
-                                         (start ,START)
-                                         (end ,END))))))))))
-
-(define generation-devices
-  '(("main_solar_array" -1)
-    ("bifacial_solar_array" -1)
-    ;; CT on mains installed backward...
-    ("mains" 1)))
-
-(define total-used
-  (apply +
-         (for/list ([device (in-list generation-devices)])
-           (* (cadr device)
-              (car (dict-ref all-device-usages (first device)))))))
-
-(define budget-map
-  '(("refrigerator" ("refrigerator"))
-    ("stovetop" ("induction_stove"))
-    ("cooking_task" ())
-    ("dishwasher" ("dishwasher"))
-    ("oven" ("microwave"))
-    ("washing machine" ("laundry"))
-    ("HVAC" ("air_conditioning" "air_handler" "heat_recovery_ventilation"))
-    ("Passive HVAC inline Fan" ())
-    ("Mechanical Room Fan" ())
-    ("blackwater pump" ("blackwater_pump"))
-    ("greywater pump" ("greywater_pump"))
-    ("lighting (assume 400 W)" ("lighting_1" "lighting_2"))
-    ("Laptop" ())
-    ("TV" ())
-    ("controls system" ("mechanical_room_outlets"))
-    ("vehicle" ("vehicle_charging_station"))
-    ("everything_else" ("everything_else"))
-    ("water_heater" ("water_heater" "thermal_loop_pump"))
-    ("UNCHARGED" ("water_supply_pump"))))
-
-(define budgeted-devices
-  (apply append (map second budget-map)))
-
-(unless (set-empty?
-         (set-intersect (list->set budgeted-devices)
-                        (list->set (map first generation-devices))))
-  (error 'set-empty "intersection of generation and budgeted not empty"))
-
-(unless (equal?
-         (set-union (set "everything_else")
-                    (list->set all-electric-devices))
-         (set-union (list->set budgeted-devices)
-                    (list->set (map first generation-devices))))
-  (printf "all - union: ~v" (set-subtract (list->set all-electric-devices)
-                                        (set-union (list->set budgeted-devices)
-                                                   (list->set (map first generation-devices)))))
-  (printf "union - all: ~v" (set-subtract (set-union (list->set budgeted-devices)
-                                                   (list->set (map first generation-devices)))
-                                        (list->set all-electric-devices)))
-  (error 'devices ""))
-
-(define total-known
-  (apply +
-         (for/list ([usage (in-list all-device-usages)]
-                    #:when (not (member (car usage) (map first generation-devices))))
-           (second usage))))
-
-(define everything-else (- total-used total-known))
-
-(define all-usages-with-everything-else
-  (cons (list "everything_else" everything-else)
-        all-device-usages))
-
-(for/list ([b (in-list budget-map)])
-  (exact->inexact
-   (/ (apply
-       +
-       (for/list ([device (in-list (second b))])
-         (first (dict-ref all-usages-with-everything-else device))))
-      1000)))
-
-(printf "total used: ~v\n" total-used)
-
-(define STATUS-REPORT-HOURS 24)
+;; print out data for one column of the spreadsheet:
 (block
+ (define START (find-seconds 0 0 0 15 10 2015))
+ (define END   (find-seconds 0 0 0 16 10 2015))
+ (define all-device-usages
+   (for/list ([device all-electric-devices]
+              #:when (not (regexp-match #px"^testing_" device)))
+     ;; ouch, double the air_conditioning:
+     (define multiplier
+       (cond [(equal? device "air_conditioning") 2]
+             [else 1]))
+     (list
+      device
+      (round (* multiplier (device-net-power device START END))))))
+ 
+ (define generation-devices
+   '(("main_solar_array" -1)
+     ("bifacial_solar_array" -1)
+     ;; CT on mains installed backward...
+     ("mains" 1)))
+ 
+ (define total-used
+   (apply +
+          (for/list ([device (in-list generation-devices)])
+            (* (cadr device)
+               (car (dict-ref all-device-usages (first device)))))))
+ 
+ (define budget-map
+   '(("refrigerator" ("refrigerator"))
+     ("stovetop" ("induction_stove"))
+     ("cooking_task" ())
+     ("dishwasher" ("dishwasher"))
+     ("oven" ("microwave"))
+     ("washing machine" ("laundry"))
+     ("HVAC" ("air_conditioning" "air_handler" "heat_recovery_ventilation"))
+     ("Passive HVAC inline Fan" ())
+     ("Mechanical Room Fan" ())
+     ("blackwater pump" ("blackwater_pump"))
+     ("greywater pump" ("greywater_pump"))
+     ("lighting (assume 400 W)" ("lighting_1" "lighting_2"))
+     ("Laptop" ())
+     ("TV" ())
+     ("controls system" ("mechanical_room_outlets"))
+     ("vehicle" ("vehicle_charging_station"))
+     ("everything_else" ("everything_else"))
+     ("water_heater" ("water_heater" "thermal_loop_pump"))
+     ("UNCHARGED" ("water_supply_pump"))))
+ 
+ (define budgeted-devices
+   (apply append (map second budget-map)))
+ 
+ (unless (set-empty?
+          (set-intersect (list->set budgeted-devices)
+                         (list->set (map first generation-devices))))
+   (error 'set-empty "intersection of generation and budgeted not empty"))
+ 
+ (unless (equal?
+          (set-union (set "everything_else")
+                     (list->set all-electric-devices))
+          (set-union (list->set budgeted-devices)
+                     (list->set (map first generation-devices))))
+   (printf "all - union: ~v" (set-subtract (list->set all-electric-devices)
+                                           (set-union (list->set budgeted-devices)
+                                                      (list->set (map first generation-devices)))))
+   (printf "union - all: ~v" (set-subtract (set-union (list->set budgeted-devices)
+                                                      (list->set (map first generation-devices)))
+                                           (list->set all-electric-devices)))
+   (error 'devices ""))
+ 
+ (define total-known
+   (apply +
+          (for/list ([usage (in-list all-device-usages)]
+                     #:when (not (member (car usage) (map first generation-devices))))
+            (second usage))))
+ 
+ (define everything-else (- total-used total-known))
+ 
+ (define all-usages-with-everything-else
+   (cons (list "everything_else" everything-else)
+         all-device-usages))
+ 
+ (for/list ([b (in-list budget-map)])
+   (exact->inexact
+    (/ (apply
+        +
+        (for/list ([device (in-list (second b))])
+          (first (dict-ref all-usages-with-everything-else device))))
+       1000)))
+ 
+ (printf "total used: ~v\n" total-used)
+ )
+(define STATUS-REPORT-HOURS 24)
+#;(block
  (define ts (current-seconds))
  (define (check-hour-events-count measurement device hours-ago)
    (gett "count-events-in-range" `((measurement ,measurement)
