@@ -9,6 +9,8 @@
   (make-csv-reader-maker
    '((quote-char . #\'))))
 
+"http://www.solardecathlon.gov/events/CumulativeEnergyConsumption.csv" 
+
 (define lines
   (call-with-input-file (build-path here "energyconsumption.csv")
     (λ (port)
@@ -18,7 +20,10 @@
           [(list) empty]
           [other (cons other (loop))])))))
 
-(define HOURS-DONE (+ 10 (* 6 24)))
+(define LAST-DATE (first (last lines)))
+
+;; ADJUST THIS MANUALLY...
+(define HOURS-DONE (* 7 24))
 (define HOURS-TOTAL (- (* 8 24) 1/2))
 
 (define pro-rated-golden (* 175 (/ HOURS-DONE HOURS-TOTAL)))
@@ -31,7 +36,7 @@
 (define team-usages
   (sort
    (for/list ([l (in-list lines)]
-              #:when (equal? (car l) "2015-10-14 20:45:00"))
+              #:when (equal? (car l) LAST-DATE))
      (define usage (string->number (fourth l)))
      (define score (cond [(< usage pro-rated-golden) pro-rated-points]
                          [(< usage pro-rated-cutoff)
@@ -45,21 +50,30 @@
    >
    #:key third))
 
+(define text-from-website
+  #<<|
+Stevens 		532.747
+U at Buffalo 		526.759
+Cal Poly 		521.004
+Missouri S&T 		515.874
+Crowder/Drury 		494.084
+Clemson 		493.430
+Sacramento State 		489.319
+Texas/Germany 		473.784
+Team NY Alfred 		470.102
+UC Davis 		450.270
+Team Orange County 		440.846
+West Virginia/Rome 		431.610
+NY City Tech 		339.167
+Mass/Central America 		326.610
+|
+  )
+
 (define data-from-website
-  '(("Stevens" 272.282)
-    ("U at Buffalo" 270.794)
-    ("Missouri S&T" 268.139)
-    ("Cal Poly" 266.216)
-    ("Team NY Alfred" 254.099)
-    ("Crowder/Drury" 251.019)
-    ("Sacramento State" 247.884)
-    ("West Virginia/Rome" 246.182)
-    ("Clemson" 245.600)
-    ("UC Davis" 232.213)
-    ("Team Orange County" 226.686)
-    ("Texas/Germany" 223.597)
-    ("Mass/Central America" 156.709)
-    ("NY City Tech" 130.065)))
+  (for/list ([line (regexp-split #px"\n" text-from-website)])
+    (match (regexp-split #px" *\t+" line)
+      [(list team score)
+       (list team (string->number score))])))
 
 (for/list ([t (in-list data-from-website)])
   (display

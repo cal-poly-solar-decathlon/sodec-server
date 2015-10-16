@@ -82,8 +82,8 @@
 
 (define all-electric-devices (hash-ref measurement-device-table "electric_power"))
 
-(define START (find-seconds 0 0 0 14 10 2015))
-(define END   (find-seconds 0 0 0 15 10 2015))
+(define START (find-seconds 0 0 0 15 10 2015))
+(define END   (find-seconds 0 0 0 16 10 2015))
 (define all-device-usages
   (for/list ([device all-electric-devices]
              #:when (not (regexp-match #px"^testing_" device)))
