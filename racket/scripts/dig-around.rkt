@@ -95,7 +95,7 @@
                                   (device ,device)
                                   (start ,start)
                                   (end ,end))))))
-(block
+#;(block
 
  (define (day-start-power date)
    (define start (find-seconds 0 0 0  date 10 2015))
@@ -114,8 +114,8 @@
 
 ;; print out data for one column of the spreadsheet:
 (block
- (define START (find-seconds 0 0 0 15 10 2015))
- (define END   (find-seconds 0 0 0 16 10 2015))
+ (define START (find-seconds 0 0 0  16 10 2015))
+ (define END   (find-seconds 0 0 11 16 10 2015))
  (define all-device-usages
    (for/list ([device all-electric-devices]
               #:when (not (regexp-match #px"^testing_" device)))
@@ -193,6 +193,8 @@
    (cons (list "everything_else" everything-else)
          all-device-usages))
  
+ (printf "total used: ~v\n" total-used)
+ 
  (for/list ([b (in-list budget-map)])
    (exact->inexact
     (/ (apply
@@ -200,11 +202,10 @@
         (for/list ([device (in-list (second b))])
           (first (dict-ref all-usages-with-everything-else device))))
        1000)))
- 
- (printf "total used: ~v\n" total-used)
  )
+
 (define STATUS-REPORT-HOURS 24)
-#;(block
+(block
  (define ts (current-seconds))
  (define (check-hour-events-count measurement device hours-ago)
    (gett "count-events-in-range" `((measurement ,measurement)
